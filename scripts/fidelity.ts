@@ -21,6 +21,7 @@ type Page = import('playwright-core').Page;
 
 const arg = (name: string, d: string) => (process.argv.find((a) => a.startsWith(`--${name}=`)) ?? `--${name}=${d}`).split('=').slice(1).join('=');
 const ONLY = arg('only', 'both');
+const FORM = arg('form', 'both');
 const LOCAL = arg('local', 'http://localhost:3100');
 const LIVE = 'https://pokestonkss.vercel.app';
 const OUT = path.join(root, 'docs/fidelity');
@@ -57,6 +58,7 @@ async function run(target: 'live' | 'local', form: keyof typeof VIEWPORTS) {
   const browser = await chromium.launch({ executablePath: chromePath(), args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });
   const ctx = await browser.newContext({ ...VIEWPORTS[form], deviceScaleFactor: 1 });
   const page = await ctx.newPage();
+  page.on('framenavigated', (f) => { if (f === page.mainFrame()) console.log('  navigated', f.url()); });
   page.on('pageerror', (e) => console.log(`  [${tag}] pageerror:`, e.message.slice(0, 200)));
   console.log(`== ${tag}`);
   try {
@@ -88,8 +90,10 @@ async function run(target: 'live' | 'local', form: keyof typeof VIEWPORTS) {
       await shot(page, '5a-versus');
       await sleep(5200);
       await shot(page, '5-battle');
-      // open the move list so the menu is compared too
-      await page.mouse.click(form === 'desktop' ? 640 : 195, form === 'desktop' ? 400 : 400);
+      // open the move list too (Enter = FIGHT)
+      await page.keyboard.press('Enter');
+      await sleep(700);
+      await shot(page, '5b-moves');
     } else {
       await walkUntilBattle(page);
       await sleep(30_000); // matchmaking: bot fills after ~20s on the live server
@@ -143,5 +147,5 @@ async function walkUntilBattle(page: Page) {
 
 for (const target of ['live', 'local'] as const) {
   if (ONLY !== 'both' && ONLY !== target) continue;
-  for (const form of ['desktop', 'mobile'] as const) await run(target, form);
+  for (const form of ['desktop', 'mobile'] as const) if (FORM === 'both' || FORM === form) await run(target, form);
 }
