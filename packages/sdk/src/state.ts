@@ -46,3 +46,13 @@ export function tierName(rating: number): string {
   if (rating >= 900) return "Crab";
   return "Shrimp";
 }
+
+export const TIERS: Array<[string, number]> = [['Shrimp', 0], ['Crab', 900], ['Dolphin', 1050], ['Shark', 1200], ['Whale', 1400]];
+/** Next rating tier and how far along you are (0..1). */
+export function tierProgress(rating: number): { name: string; next: string | null; pct: number } {
+  let i = 0;
+  for (let k = 0; k < TIERS.length; k++) if (rating >= TIERS[k][1]) i = k;
+  const next = TIERS[i + 1];
+  return { name: TIERS[i][0], next: next ? next[0] : null, pct: next ? (rating - TIERS[i][1]) / (next[1] - TIERS[i][1]) : 1 };
+}
+export const handleOf = (owner: string, tier: string) => `${tier}-${owner.slice(0, 4)}`;

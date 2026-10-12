@@ -78,6 +78,10 @@ export default function Hud() {
                   your Trainer on Solana ↗
                 </a>
               )}
+              <p className="mt-1 flex gap-1">
+                <a className="btn btn-sm" href="/trainer">Trainer card</a>
+                <a className="btn btn-sm btn-secondary" href="/leaderboard">Ranks</a>
+              </p>
             </div>
           </div>
         </Panel>

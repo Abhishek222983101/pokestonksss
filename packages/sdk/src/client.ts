@@ -52,6 +52,14 @@ export class GameClient {
     };
   }
 
+  /** Every Trainer on the rollup (leaderboard). Sorted by rating, then wins. */
+  async listTrainers(): Promise<TrainerView[]> {
+    const accts = await this.er.getProgramAccounts(this.cfg.programId, { filters: [{ dataSize: 8 + 52 }] });
+    const out: TrainerView[] = [];
+    for (const a of accts) { try { out.push(this.decodeTrainer(a.account.data)); } catch { /* not a Trainer */ } }
+    return out.sort((x, y) => y.rating - x.rating || y.wins - x.wins);
+  }
+
   /** Subscribe to an arena on the ER websocket with a 2 s poll fallback. Returns an unsubscribe function. */
   watchArena(owner: PublicKey, cb: (a: ArenaView) => void): () => void {
     const pda = arenaPda(owner, this.cfg.programId);

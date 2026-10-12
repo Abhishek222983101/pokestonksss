@@ -1,33 +1,33 @@
 {
-  "at": "2026-10-12T19:12:49.158Z",
+  "at": "2026-10-12T20:01:05.519Z",
   "onboard_ms": {
-    "host": 2620,
-    "guest": 2762
+    "host": 3143,
+    "guest": 2547
   },
   "open_duel": {
-    "ms": 346,
-    "link": "https://explorer.solana.com/tx/5HpjousJH4g7CzxjNDoyAUdoH1Ls6HuvpJU7D9GDPdZYoL6EzaPtMAa788D42zyiR9AtzKKzabu2KNsRSngqf342?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app"
+    "ms": 252,
+    "link": "https://explorer.solana.com/tx/B24FMDoWkHf7hgnFc1yhPQFiPkrgLwVieR5N2nGoN1rjTZ7oZQ6t4FCSx2QTA6iVKb3NApgSLX4ZSFcnWFhWxts?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app"
   },
   "NEG_wrong_token": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6005}]}",
   "NEG_self_join": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6010}]}",
   "join_duel": {
-    "ms": 513,
-    "link": "https://explorer.solana.com/tx/2Kv6CgMZ2JNnsErwHrYrRCJ8rDPhDkgZqkC6Mwi8PL9ZbRsqTmvofy48QFeaKreZTZxvQGiT5zuhcEeTzV6q4cmJ?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app"
+    "ms": 210,
+    "link": "https://explorer.solana.com/tx/5xptA69CyLngyRMFLonTH4Vo9kMGnxv3SkTMpBSrhVcchLkjvtiZoUtEa8wm2RxWYmkeDqeVUTpbjoSk8QymdoXa?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app"
   },
   "NEG_double_join": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6001}]}",
   "NEG_claim_timeout_early": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6008}]}",
   "NEG_reveal_wrong_salt": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6007}]}",
   "NEG_spectator_commit": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6001}]}",
   "turn_ms": {
-    "n": 16,
-    "p50": 973,
-    "p95": 1925,
-    "max": 1925
+    "n": 3,
+    "p50": 841,
+    "p95": 1688,
+    "max": 1688
   },
   "result": {
     "finished": true,
     "winner": 1,
-    "turns": 16
+    "turns": 3
   },
   "trainers": {
     "host": {
