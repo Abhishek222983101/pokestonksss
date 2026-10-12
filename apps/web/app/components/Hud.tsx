@@ -68,7 +68,7 @@ export default function Hud() {
   return (
     <aside
       aria-label="Trainer and controls"
-      className="pointer-events-none fixed top-0 right-0 flex max-w-full flex-col items-end p-1 pt-[max(0.25rem,env(safe-area-inset-top))] pr-[max(0.25rem,env(safe-area-inset-right))]"
+      className="pointer-events-none fixed top-0 right-0 z-40 flex max-w-full flex-col items-end p-1 pt-[max(0.25rem,env(safe-area-inset-top))] pr-[max(0.25rem,env(safe-area-inset-right))]"
     >
       {!playing && (
         <Panel tone="plate" className="pointer-events-auto p-2! short:p-1!">

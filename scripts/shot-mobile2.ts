@@ -1,0 +1,22 @@
+import { chromium } from "playwright-core";
+import { homedir } from "node:os";
+const BASE = process.env.BASE_URL ?? "http://localhost:3210";
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+(async () => {
+  const browser = await chromium.launch({ executablePath: `${homedir()}/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome`, args: ["--no-sandbox"] });
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  const page = await ctx.newPage();
+  await page.goto(BASE + "/?demo=1", { waitUntil: "domcontentloaded" }); await sleep(3500);
+  await page.getByRole("button", { name: /^play/i }).first().click(); await sleep(600);
+  await page.screenshot({ path: "../docs/fidelity/m2-start-dialog.png" });
+  await page.getByRole("button", { name: /play as guest/i }).first().click();
+  await page.getByText(/getting your wristband/i).first().waitFor({ state: "hidden", timeout: 70000 }).catch(() => {});
+  await sleep(1500);
+  await page.getByRole("button", { name: /^choose /i }).first().click({ timeout: 20000 }); await sleep(5000);
+  await page.screenshot({ path: "../docs/fidelity/m2-globe-hud.png" });
+  await page.getByRole("button", { name: /^rewards/i }).first().click(); await sleep(1200);
+  await page.screenshot({ path: "../docs/fidelity/m2-rewards.png" });
+  await page.goto(BASE + "/judge", { waitUntil: "domcontentloaded" }); await sleep(1500);
+  await page.screenshot({ path: "../docs/fidelity/m2-judge.png", fullPage: true });
+  await browser.close();
+})();

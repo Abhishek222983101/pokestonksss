@@ -73,7 +73,7 @@ export default function RewardsPanel({ onClose }: { onClose?: () => void }) {
           return (
             <li key={c.id} className="rounded-sm bg-navy-deep/60 p-2">
               <p className="flex items-baseline justify-between"><span className="font-pixel t-8 text-cream">{evolvedName(c.id, lp.level)} {stageStars(lp.level)}</span><span className="font-pixel t-8 text-yellow">Lv {lp.level + 1}</span></p>
-              <div className="bar mt-1" role="presentation"><i style={{ width: `${Math.round(lp.pct * 100)}%`, ['--bar' as string]: '#F8D030' }} /></div>
+              <div className="mt-1 h-2 w-full bg-[#3a3f66]" role="presentation"><div className="h-2 bg-yellow" style={{ width: `${Math.round(lp.pct * 100)}%` }} /></div>
               <p className="text-[11px] text-cream/70">{lp.toNext === null ? 'Max level' : `${xp} xp, ${lp.toNext} to next level`} · +{lp.level * 4}% stats</p>
             </li>
           );

@@ -77,7 +77,7 @@ export default function DuelHost() {
   }
   return (
     <>
-      <div className="fixed bottom-24 right-3 z-30"><Button onClick={() => setOpen(true)}>Duel a friend</Button></div>
+      <div className="fixed bottom-[11.5rem] right-3 z-30 sm:bottom-24"><Button onClick={() => setOpen(true)}>Duel a friend</Button></div>
       {open && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-navy-deep/80 p-4" role="dialog" aria-modal="true" aria-label="Duel a friend">
           <Panel tone="dialog" className="w-full max-w-md on-navy">
