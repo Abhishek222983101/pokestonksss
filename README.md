@@ -11,7 +11,7 @@ Beat a BrokerMon, capture its asset as a trophy token, level up, evolve. Every m
 ![Solana devnet](https://img.shields.io/badge/Solana-devnet-9945ff)
 ![MagicBlock](https://img.shields.io/badge/MagicBlock-ER_%C2%B7_Private_ER_%C2%B7_VRF_%C2%B7_Oracle_%C2%B7_Session_keys_%C2%B7_Crank-14f195)
 
-<img src="docs/fidelity/duel-5-host-end.png" alt="Private ER duel result: both picks stayed sealed in the TEE" width="88%">
+<img src="docs/media/pokestonksss-banner.png" alt="PokeStonksss: the rollup is the game server" width="92%">
 
 </div>
 
