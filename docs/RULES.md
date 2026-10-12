@@ -77,3 +77,7 @@ state: "don't trust us — replay it".
 - **Elo:** expected score from a 17-point integer table (rating diff 0..800 in steps of 50, linear interpolation, clamped at +-800); winner gains `max(1, 24*(1000-E)/1000)` (floor), loser loses the same, floored at 0 rating.
 - **Replay** returns `Outcome{winner,hp[2],turns}` or an error: `bad_species`, `bad_pick`, `too_long` (> 16 entries), `unfinished`, `trailing_turns`.
 - **Coverage design rule:** each BrokerMon's coverage move is type `own+2 (mod 5)`, the one type that is super-effective against both of its counters, so no matchup is a hard counter.
+
+## Momentum (added 13 Oct 2026)
+Each fighter has Momentum 0..3 (stored in bits 1–2 of its `last_guard` state byte, so account layouts did not change). After every turn: if your pick *out-reads* the opponent's by the triangle (Pump beats Leverage, Leverage beats Hedge, Hedge beats Pump) your Momentum +1 (max 3); if you were out-read it resets to 0; same kind leaves it unchanged. Strike damage gets +10% per Momentum level (applied after mood). The UI shows `MOMENTUM ▮▮▯ +20%` on the plate and reveals both sealed picks before a turn resolves.
+Per-BrokerMon move numbers now differ (see `rules/roster.json`); balance report: all 8 between 44.9% and 56.6% overall, average 5.33 turns (`cargo run -p duel-rules --example balance --release`).
