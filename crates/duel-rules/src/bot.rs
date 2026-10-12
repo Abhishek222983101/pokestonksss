@@ -3,21 +3,24 @@ use crate::{damage, eff, species, DamageIn, MatchState, MoveKind, RND_USED};
 /// House Agent difficulty = exploration noise.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Tier {
-    /// 50% random.
+    /// ~75% random.
     Rookie,
     /// 25% random.
     Pro,
     /// ~10% random.
     Champion,
+    /// Beginner opponent: always random, and passive (leans on Hedge/Leverage, which Pump punishes).
+    Trainee,
 }
 
 impl Tier {
     /// `rnd[8] < threshold` => random pick from `rnd[9] % 4`.
     pub const fn threshold(self) -> u8 {
         match self {
-            Tier::Rookie => 128,
+            Tier::Rookie => 190,
             Tier::Pro => 64,
             Tier::Champion => 26,
+            Tier::Trainee => 255,
         }
     }
     pub fn from_u8(v: u8) -> Option<Tier> {
@@ -25,6 +28,7 @@ impl Tier {
             0 => Some(Tier::Rookie),
             1 => Some(Tier::Pro),
             2 => Some(Tier::Champion),
+            3 => Some(Tier::Trainee),
             _ => None,
         }
     }
@@ -43,6 +47,15 @@ pub fn bot_pick(st: &MatchState, side: u8, rnd: &[u8; 32], tier: Tier) -> u8 {
     let _ = RND_USED;
     if side > 1 {
         return 0;
+    }
+    if tier == Tier::Trainee {
+        // 1/8 Signature, 1/8 Coverage, 3/8 Hedge, 3/8 Leverage: easy to read and to punish with Pump.
+        return match rnd[9] % 8 {
+            0 => 0,
+            1 => 1,
+            2..=4 => 2,
+            _ => 3,
+        };
     }
     if rnd[8] < tier.threshold() {
         return rnd[9] % 4;

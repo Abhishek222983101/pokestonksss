@@ -1,10 +1,10 @@
 {
-  "attacker locks a pick in the victim's arena": "rejected: tx 59Tx28wLgPXTxFtB5Eitioz1wnQ5tNDpETrigbRcSKbZSgkMnBehqE6H982ReUPenozCoSPz1k5BTopxcJ4YRGC",
-  "attacker starts a practice battle on the victim's arena": "rejected: tx 2xJ4QJ5WMXowBRRubcaZEpgyXXAi3sumY9CT991iEriU6urerQ4Sw3wUNSW8iRcQcqrmnVzwAuHR7gorCDap4sR",
-  "attacker commits the victim's trainer": "rejected: tx 3Utxajndo5VPHz6sZDA73AhdevcS2y3a7brGxVBRyfr4jujMzS65vyDuPz8Y8Gkk3i78XC1fQdawWYFeQuZYnvh",
-  "attacker resets the victim's live arena": "rejected: tx 3HHsdpqthtDPzv8JCSQs4Rf9TGumDMLMnR7ke5hgv7W4DKiwTZcb7hC5jDDpBB4Aq3JXSqQ1m4DM7MKMzSxVZ16",
-  "forged VRF callback (fake identity signer)": "rejected: tx 3Xsks5CgatS6fAZ9DWAcAz3ihcJcKKHhffB4pS1a5UAXgTY7QZAgQoQeftRbRSe56Y6o9BQynd8KjMwL8hZhxAK",
-  "attacker forfeits a duel they are not in (practice arena)": "rejected: tx KRozjYs3L8BnZcMdGTWeg1jXyztEotjPgf37UiDk7BbehxkA43sT5EWqJN6UcgpAiqzKoUbHbasvLeiPStSwHxy",
-  "start_practice with an out-of-range species": "rejected: tx 52FKZGjRH2r6ohHofCbKTCKP7avrY55hvmQsUoFUM2zcAKdfvrofcwDqX8VcV8ykFHRzmwKe2LrgNFVdgYugfKQ",
+  "attacker locks a pick in the victim's arena": "rejected: tx 5UjyjWfBqu9EQoHTCuXqthG4R2AyLw3VMb8CQpuAds828EhJRs3ShiDEnDfoEJs8H5EhZQoGNoKhp3bTLZNxGqg",
+  "attacker starts a practice battle on the victim's arena": "rejected: tx 5WAzBZ2TAxpzwnR5t3FZfowE33C7Ke41qbynmidZ38Fe24EdexjzAv8FHqopRdfbXnRCmU5ssP1u19vSjdN1fBV",
+  "attacker commits the victim's trainer": "rejected: tx 5f4vuT5m442E56Agk7EQySxwY1ujLvEf2eTnJCHXjoWky9htTcv7qQMDKjjnrZS8gVqvAmzjuv2mKxnjt5ES8zy",
+  "attacker resets the victim's live arena": "rejected: tx 5KJR9XDa2diFUfhWGMDUiSBN4tvh648SKwdmgGFNxzZzHtwYnJvzEc7iV8zTEzAF2dJr2UWvG1ERy2G5JNHsEpM",
+  "forged VRF callback (fake identity signer)": "rejected: tx 5vVW1dAfcVeBCGpi97j2jKjWq5AKz7EoMiyYfWSxGcPRr1jFKgJSYqhncBQ64GG3FNynYai7UfwzwJvbh75tKft",
+  "attacker forfeits a duel they are not in (practice arena)": "rejected: tx 4GBpXsV714aMRoD2An2kyaL2LXGYY2YfdWiUxoc26qvPx8roxFtygmnDRMnoAVs596qRBv9J7JXhEFBRc1xMPC5",
+  "start_practice with an out-of-range species": "rejected: tx WUYGXa6FcgMpacME2kBenLx4tVTqk1GydK5kVvKEygwHUjVLggjzrzRGJuxcBoiRLRMp4MX5BgYzVwcBm47XV63",
   "restart": "ok"
 }

@@ -1,7 +1,7 @@
 {
-  "at": "2026-10-12T20:00:51.284Z",
+  "at": "2026-10-12T20:25:45.581Z",
   "onboard": {
-    "totalMs": 2720,
+    "totalMs": 2843,
     "steps": [
       "funding",
       "creating",
@@ -11,32 +11,30 @@
     ]
   },
   "start_practice": {
-    "ms": 273,
-    "link": "https://explorer.solana.com/tx/4qf8dHecPrA9GUHedohWnUjuoMLD1ayvBfkjtS19KuWpDDhiRpxaXbZRkozNv4qvCMSZYkPKBdVXWNHAe65jEqVA?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app"
+    "ms": 476,
+    "link": "https://explorer.solana.com/tx/5MzfSXBujwi2B3efT1Kiv3kdSAcQvM1JwymATSTJJDGx4YYGZAGwDhPFeq2s5gHu6hpNPqMWCaSukNQ6QLSqfbBh?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app"
   },
   "lock_ms": {
-    "n": 6,
-    "p50": 229,
-    "p95": 308,
-    "max": 308
+    "n": 4,
+    "p50": 247,
+    "p95": 263,
+    "max": 263
   },
   "lock_to_resolved_ms": {
-    "n": 6,
-    "p50": 73,
-    "p95": 79,
-    "max": 79
+    "n": 4,
+    "p50": 70,
+    "p95": 75,
+    "max": 75
   },
   "battle": {
-    "turns": 6,
+    "turns": 4,
     "finished": true,
     "winner": 1,
     "snap": [
-      "10822802047",
-      "8278351673225"
+      "10849477790",
+      "8298018096340"
     ],
     "moods": [
-      "0/0",
-      "0/0",
       "0/0",
       "0/0",
       "0/0",
@@ -44,7 +42,7 @@
     ],
     "hp": [
       0,
-      72
+      74
     ]
   },
   "REPLAY_matches_chain": {
@@ -54,19 +52,19 @@
       "winner": 1,
       "hp": [
         0,
-        72
+        74
       ],
-      "turns": 6
+      "turns": 4
     },
     "chainHp": [
       0,
-      72
+      74
     ],
     "chainWinner": 1
   },
   "commit": {
-    "link": "https://explorer.solana.com/tx/59whsPNkJYEfopgXBEQA5cqya1wSQZVxCU7ggc4GXqMugJYJFsnZrTeChv7hKdPAm2nnDGEowicjTrP85yom5a2C?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app",
-    "ms": 217,
+    "link": "https://explorer.solana.com/tx/3RW5L3DTzQtBNDSWnSgkV448TgDBMHnbDsR2RZAvTswjFp2tZ55nki24mqtVkof5pDo9kgRW7jPhkytCxkiEZPw8?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app",
+    "ms": 209,
     "baseTrainer": {
       "rating": 988,
       "w": 0,
@@ -83,6 +81,6 @@
   "G1a_unfunded_guest": {
     "pass": true,
     "balanceLamports": 0,
-    "turns": 5
+    "turns": 14
   }
 }

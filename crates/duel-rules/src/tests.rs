@@ -655,7 +655,7 @@ fn bot_never_invalid_and_deterministic() {
 #[test]
 fn bot_exploration_thresholds() {
     let s = st(0, 1);
-    for (tier, thr) in [(Tier::Rookie, 128u8), (Tier::Pro, 64), (Tier::Champion, 26)] {
+    for (tier, thr) in [(Tier::Rookie, 190u8), (Tier::Pro, 64), (Tier::Champion, 26)] {
         assert_eq!(tier.threshold(), thr);
         for slot in 0..4u8 {
             let r = rnd(|r| {
@@ -672,10 +672,10 @@ fn bot_exploration_thresholds() {
     }
     // rates over all 256 values of rnd[8]: 50% / 25% / ~10%
     let pct = |t: Tier| (0..=255u8).filter(|&v| v < t.threshold()).count() * 100 / 256;
-    assert_eq!((pct(Tier::Rookie), pct(Tier::Pro), pct(Tier::Champion)), (50, 25, 10));
+    assert_eq!((pct(Tier::Rookie), pct(Tier::Pro), pct(Tier::Champion)), (74, 25, 10));
     assert_eq!(Tier::from_u8(0), Some(Tier::Rookie));
     assert_eq!(Tier::from_u8(2), Some(Tier::Champion));
-    assert!(Tier::from_u8(3).is_none());
+    assert!(Tier::from_u8(4).is_none());
 }
 
 #[test]
@@ -894,4 +894,20 @@ fn momentum_adds_ten_percent_per_level_and_roundtrips_in_state_bytes() {
     s.f[1].momentum = 3;
     let back = MatchState::from_bytes(&s.to_bytes()).unwrap();
     assert_eq!(back, s);
+}
+
+#[test]
+fn trainee_is_passive_valid_and_deterministic() {
+    let s = st(0, 1);
+    assert_eq!(Tier::from_u8(3), Some(Tier::Trainee));
+    let mut counts = [0u32; 4];
+    for v in 0..=255u8 {
+        let r = rnd(|r| r[9] = v);
+        let p = bot_pick(&s, 1, &r, Tier::Trainee);
+        assert!(p < 4);
+        assert_eq!(p, bot_pick(&s, 1, &r, Tier::Trainee));
+        counts[p as usize] += 1;
+    }
+    // Hedge + Leverage dominate (6/8), strikes are rare (2/8)
+    assert!(counts[2] + counts[3] > counts[0] + counts[1] * 2);
 }

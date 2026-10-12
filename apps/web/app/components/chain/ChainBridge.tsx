@@ -29,7 +29,8 @@ export default function ChainBridge() {
     setBattleSourceFactory(async (p, f) => {
       try {
         const r = useChain.getState().trainer?.rating ?? 1000;
-        const tier = r < 1050 ? 0 : r < 1150 ? 1 : 2; // beginners meet a Rookie House Agent; it gets sharper as you climb
+        // New players meet a passive Trainee; the House Agent sharpens as you climb: Trainee < 960 < Rookie < 1050 < Pro < 1150 < Champion
+        const tier = r < 960 ? 3 : r < 1050 ? 0 : r < 1150 ? 1 : 2;
         const s = new ChainBattleSource(p, f, tier);
         await s.ready();
         return s;
