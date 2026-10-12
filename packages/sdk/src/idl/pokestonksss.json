@@ -1961,6 +1961,1199 @@
       ]
     },
     {
+      "name": "s_cancel",
+      "docs": [
+        "Base layer. Host cancels an invite nobody joined."
+      ],
+      "discriminator": [
+        147,
+        123,
+        228,
+        166,
+        40,
+        244,
+        190,
+        252
+      ],
+      "accounts": [
+        {
+          "name": "duel",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  100,
+                  117,
+                  101,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "duel.players [0]",
+                "account": "SealedDuel"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pick",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  105,
+                  99,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "duel"
+              },
+              {
+                "kind": "account",
+                "path": "payer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "s_consume_seed",
+      "docs": [
+        "Base layer VRF callback."
+      ],
+      "discriminator": [
+        233,
+        218,
+        192,
+        136,
+        17,
+        164,
+        135,
+        86
+      ],
+      "accounts": [
+        {
+          "name": "vrf_program_identity",
+          "docs": [
+            "Scoped VRF identity PDA, bound to this program. Its presence as a signer proves",
+            "the callback was issued by the VRF program for this program."
+          ],
+          "signer": true
+        },
+        {
+          "name": "duel",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  100,
+                  117,
+                  101,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "duel.players [0]",
+                "account": "SealedDuel"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "randomness",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "s_create",
+      "docs": [
+        "Base layer. Host opens a sealed duel; `host` is the per-match key that will sign inside the TEE."
+      ],
+      "discriminator": [
+        8,
+        186,
+        110,
+        114,
+        182,
+        250,
+        124,
+        37
+      ],
+      "accounts": [
+        {
+          "name": "duel",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  100,
+                  117,
+                  101,
+                  108
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "host"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pick",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  105,
+                  99,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "duel"
+              },
+              {
+                "kind": "arg",
+                "path": "host"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "host",
+          "type": "pubkey"
+        },
+        {
+          "name": "species",
+          "type": "u8"
+        },
+        {
+          "name": "token_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "s_delegate",
+      "docs": [
+        "Base layer. Delegates the duel or one pick to the TEE validator."
+      ],
+      "discriminator": [
+        103,
+        79,
+        203,
+        209,
+        30,
+        22,
+        112,
+        81
+      ],
+      "accounts": [
+        {
+          "name": "buffer_pda",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  102,
+                  102,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pda"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                214,
+                103,
+                238,
+                151,
+                208,
+                123,
+                152,
+                228,
+                4,
+                156,
+                157,
+                152,
+                125,
+                112,
+                238,
+                115,
+                111,
+                232,
+                32,
+                110,
+                22,
+                91,
+                72,
+                105,
+                187,
+                47,
+                70,
+                140,
+                252,
+                195,
+                122,
+                36
+              ]
+            }
+          }
+        },
+        {
+          "name": "delegation_record_pda",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pda"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegation_program"
+            }
+          }
+        },
+        {
+          "name": "delegation_metadata_pda",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pda"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegation_program"
+            }
+          }
+        },
+        {
+          "name": "pda",
+          "writable": true
+        },
+        {
+          "name": "duel_view"
+        },
+        {
+          "name": "payer",
+          "signer": true
+        },
+        {
+          "name": "validator",
+          "optional": true
+        },
+        {
+          "name": "owner_program",
+          "address": "FRxAb7Nw1GFyLkV7KN7fitTztiZuJ1y1oNEmcW3mHM1M"
+        },
+        {
+          "name": "delegation_program",
+          "address": "DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "account",
+          "type": {
+            "defined": {
+              "name": "SealedAccount"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "s_finish",
+      "docs": [
+        "TEE. Commit the finished duel to Solana and undelegate."
+      ],
+      "discriminator": [
+        95,
+        180,
+        174,
+        107,
+        129,
+        109,
+        119,
+        91
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "duel",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  100,
+                  117,
+                  101,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "duel.players [0]",
+                "account": "SealedDuel"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pick_a",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  105,
+                  99,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "duel"
+              },
+              {
+                "kind": "account",
+                "path": "duel.players [0]",
+                "account": "SealedDuel"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pick_b",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  105,
+                  99,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "duel"
+              },
+              {
+                "kind": "account",
+                "path": "duel.players [1]",
+                "account": "SealedDuel"
+              }
+            ]
+          }
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        },
+        {
+          "name": "magic_context",
+          "writable": true,
+          "address": "MagicContext1111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "s_join",
+      "docs": [
+        "Base layer. Guest joins with the invite token and their own per-match key."
+      ],
+      "discriminator": [
+        4,
+        8,
+        249,
+        203,
+        217,
+        146,
+        3,
+        177
+      ],
+      "accounts": [
+        {
+          "name": "duel",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  100,
+                  117,
+                  101,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "duel.players [0]",
+                "account": "SealedDuel"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pick",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  105,
+                  99,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "duel"
+              },
+              {
+                "kind": "arg",
+                "path": "guest"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "guest",
+          "type": "pubkey"
+        },
+        {
+          "name": "species",
+          "type": "u8"
+        },
+        {
+          "name": "token",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "s_lock",
+      "docs": [
+        "TEE. Seal a pick (slot + secret nonce) into the player's private pick account."
+      ],
+      "discriminator": [
+        101,
+        137,
+        187,
+        112,
+        252,
+        147,
+        211,
+        40
+      ],
+      "accounts": [
+        {
+          "name": "duel",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  100,
+                  117,
+                  101,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "duel.players [0]",
+                "account": "SealedDuel"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pick",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  105,
+                  99,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "duel"
+              },
+              {
+                "kind": "account",
+                "path": "player"
+              }
+            ]
+          }
+        },
+        {
+          "name": "permission",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  101,
+                  114,
+                  109,
+                  105,
+                  115,
+                  115,
+                  105,
+                  111,
+                  110,
+                  58
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pick"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                136,
+                161,
+                10,
+                196,
+                33,
+                152,
+                1,
+                214,
+                246,
+                106,
+                29,
+                60,
+                6,
+                152,
+                192,
+                102,
+                169,
+                175,
+                212,
+                217,
+                180,
+                252,
+                231,
+                71,
+                151,
+                141,
+                209,
+                5,
+                168,
+                212,
+                103,
+                82
+              ]
+            }
+          }
+        },
+        {
+          "name": "player",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "slot",
+          "type": "u8"
+        },
+        {
+          "name": "nonce",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "s_open",
+      "docs": [
+        "TEE. Creates the private permissions on both picks and flips the duel live."
+      ],
+      "discriminator": [
+        145,
+        188,
+        249,
+        193,
+        8,
+        170,
+        239,
+        21
+      ],
+      "accounts": [
+        {
+          "name": "duel",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  100,
+                  117,
+                  101,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "duel.players [0]",
+                "account": "SealedDuel"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pick_a",
+          "writable": true
+        },
+        {
+          "name": "permission_a",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  101,
+                  114,
+                  109,
+                  105,
+                  115,
+                  115,
+                  105,
+                  111,
+                  110,
+                  58
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pick_a"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                136,
+                161,
+                10,
+                196,
+                33,
+                152,
+                1,
+                214,
+                246,
+                106,
+                29,
+                60,
+                6,
+                152,
+                192,
+                102,
+                169,
+                175,
+                212,
+                217,
+                180,
+                252,
+                231,
+                71,
+                151,
+                141,
+                209,
+                5,
+                168,
+                212,
+                103,
+                82
+              ]
+            }
+          }
+        },
+        {
+          "name": "pick_b",
+          "writable": true
+        },
+        {
+          "name": "permission_b",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  101,
+                  114,
+                  109,
+                  105,
+                  115,
+                  115,
+                  105,
+                  111,
+                  110,
+                  58
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pick_b"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                136,
+                161,
+                10,
+                196,
+                33,
+                152,
+                1,
+                214,
+                246,
+                106,
+                29,
+                60,
+                6,
+                152,
+                192,
+                102,
+                169,
+                175,
+                212,
+                217,
+                180,
+                252,
+                231,
+                71,
+                151,
+                141,
+                209,
+                5,
+                168,
+                212,
+                103,
+                82
+              ]
+            }
+          }
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "permission_program",
+          "address": "ACLseoPoyC3cBqoUtkbjZ4aDrkurZW86v19pXz2XQnp1"
+        },
+        {
+          "name": "ephemeral_vault",
+          "writable": true,
+          "address": "MagicVau1t999999999999999999999999999999999"
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "s_request_seed",
+      "docs": [
+        "Base layer. Requests the duel seed from MagicBlock VRF (before delegation)."
+      ],
+      "discriminator": [
+        193,
+        172,
+        171,
+        84,
+        165,
+        101,
+        7,
+        149
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "duel",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  100,
+                  117,
+                  101,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "duel.players [0]",
+                "account": "SealedDuel"
+              }
+            ]
+          }
+        },
+        {
+          "name": "oracle_queue",
+          "writable": true,
+          "address": "Cuj97ggrhhidhbu39TijNVqE74xvKJ69gDervRUXAxGh"
+        },
+        {
+          "name": "program_identity",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  100,
+                  101,
+                  110,
+                  116,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "vrf_program",
+          "address": "Vrf1RNUjXmQGjmQrQLvJHs9SNkvDJEsRVFPkfSQUwGz"
+        },
+        {
+          "name": "slot_hashes",
+          "address": "SysvarS1otHashes111111111111111111111111111"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "s_resolve",
+      "docs": [
+        "TEE. Anyone resolves the turn once both picks are sealed."
+      ],
+      "discriminator": [
+        92,
+        231,
+        137,
+        184,
+        195,
+        173,
+        54,
+        140
+      ],
+      "accounts": [
+        {
+          "name": "duel",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  100,
+                  117,
+                  101,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "duel.players [0]",
+                "account": "SealedDuel"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pick_a",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  105,
+                  99,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "duel"
+              },
+              {
+                "kind": "account",
+                "path": "duel.players [0]",
+                "account": "SealedDuel"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pick_b",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  105,
+                  99,
+                  107
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "duel"
+              },
+              {
+                "kind": "account",
+                "path": "duel.players [1]",
+                "account": "SealedDuel"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payer",
+          "docs": [
+            "Anyone can crank the resolve."
+          ],
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "s_timeout",
+      "docs": [
+        "TEE. Permissionless timeout for a duel a player walked away from."
+      ],
+      "discriminator": [
+        237,
+        11,
+        131,
+        152,
+        52,
+        215,
+        86,
+        21
+      ],
+      "accounts": [
+        {
+          "name": "duel",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  100,
+                  117,
+                  101,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "duel.players [0]",
+                "account": "SealedDuel"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payer",
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "save_and_leave",
       "docs": [
         "Final commit + undelegate of Trainer and Arena (leave the rollup)."
@@ -2166,6 +3359,32 @@
       ]
     },
     {
+      "name": "SealedDuel",
+      "discriminator": [
+        31,
+        233,
+        27,
+        31,
+        11,
+        236,
+        181,
+        130
+      ]
+    },
+    {
+      "name": "SealedPick",
+      "discriminator": [
+        159,
+        154,
+        241,
+        217,
+        52,
+        193,
+        132,
+        11
+      ]
+    },
+    {
       "name": "Trainer",
       "discriminator": [
         7,
@@ -2239,6 +3458,16 @@
       "code": 6011,
       "name": "BadgeNotEarned",
       "msg": "this trainer has not earned that badge yet (save progress to Solana first)"
+    },
+    {
+      "code": 6012,
+      "name": "PermissionMissing",
+      "msg": "the pick permission account is missing"
+    },
+    {
+      "code": 6013,
+      "name": "PermissionNotPrivate",
+      "msg": "the pick permission must be private and list only its owner"
     }
   ],
   "types": [
@@ -2417,6 +3646,220 @@
           {
             "name": "slot",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SealedAccount",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Duel",
+            "fields": [
+              {
+                "name": "host",
+                "type": "pubkey"
+              }
+            ]
+          },
+          {
+            "name": "Pick",
+            "fields": [
+              {
+                "name": "duel",
+                "type": "pubkey"
+              },
+              {
+                "name": "player",
+                "type": "pubkey"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "SealedDuel",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "status",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "players",
+            "docs": [
+              "Per-match keys: the only signers inside the TEE and the only members of their own pick's permission."
+            ],
+            "type": {
+              "array": [
+                "pubkey",
+                2
+              ]
+            }
+          },
+          {
+            "name": "token_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "species",
+            "type": {
+              "array": [
+                "u8",
+                2
+              ]
+            }
+          },
+          {
+            "name": "state",
+            "docs": [
+              "duel_rules::MatchState bytes (public: hp and flags are not secret)."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          },
+          {
+            "name": "locked_mask",
+            "docs": [
+              "Public \"who is ready\" bits. Carries no secret."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "lock_slot",
+            "type": "u64"
+          },
+          {
+            "name": "lock_ts",
+            "type": "i64"
+          },
+          {
+            "name": "progress_ts",
+            "type": "i64"
+          },
+          {
+            "name": "seed",
+            "docs": [
+              "MagicBlock VRF output, written on the base layer before delegation (public by design)."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "winner",
+            "type": "u8"
+          },
+          {
+            "name": "log_len",
+            "type": "u8"
+          },
+          {
+            "name": "log",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "SealedTurn"
+                  }
+                },
+                16
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "SealedPick",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "duel",
+            "type": "pubkey"
+          },
+          {
+            "name": "player",
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "turn",
+            "type": "u8"
+          },
+          {
+            "name": "locked",
+            "type": "bool"
+          },
+          {
+            "name": "slot",
+            "type": "u8"
+          },
+          {
+            "name": "nonce",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SealedTurn",
+      "docs": [
+        "One resolved turn, public once resolved: the picks, the sealed nonces that fed the roll, and the roll bytes."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "picks",
+            "type": {
+              "array": [
+                "u8",
+                2
+              ]
+            }
+          },
+          {
+            "name": "nonces",
+            "type": {
+              "array": [
+                "u64",
+                2
+              ]
+            }
+          },
+          {
+            "name": "rnd",
+            "type": {
+              "array": [
+                "u8",
+                10
+              ]
+            }
           }
         ]
       }

@@ -26,4 +26,8 @@ pub enum GameError {
     SelfDuel,
     #[msg("this trainer has not earned that badge yet (save progress to Solana first)")]
     BadgeNotEarned,
+    #[msg("the pick permission account is missing")]
+    PermissionMissing,
+    #[msg("the pick permission must be private and list only its owner")]
+    PermissionNotPrivate,
 }

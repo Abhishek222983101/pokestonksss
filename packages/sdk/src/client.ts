@@ -93,6 +93,8 @@ export class GameClient {
     return { ...r, layer: "base", link: txLink(r.sig, "base", this.cfg) };
   }
   private m() { return this.program.methods as any; }
+  /** Anchor program (instruction builders and account coder), for the sealed duel client. */
+  get anchor() { return this.program; }
   /** Accounts every session-aware instruction takes: the optional token is `null` for a plain wallet or guest. */
   private sess(signer: TxSigner) { return { sessionToken: signer.sessionToken ?? null, signer: signer.publicKey }; }
   private owner(signer: TxSigner) { return authorityOf(signer); }

@@ -7,3 +7,4 @@ export * from "./tx";
 export * from "./client";
 export * from "./faucet";
 export * from "./onboarding";
+export * from "./sealed";

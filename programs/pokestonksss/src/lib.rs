@@ -30,11 +30,13 @@ pub mod consts;
 pub mod engine;
 pub mod errors;
 pub mod oracle;
+pub mod sealed;
 pub mod state;
 
 use consts::*;
 use engine::*;
 use errors::GameError;
+pub use sealed::*;
 use state::*;
 
 declare_id!("FRxAb7Nw1GFyLkV7KN7fitTztiZuJ1y1oNEmcW3mHM1M");
@@ -401,6 +403,53 @@ pub mod pokestonksss {
             a.deadline = if duel { now + TURN_TIMEOUT_SECS } else { 0 };
         }
         Ok(())
+    }
+
+    // ------------------------------------------------------------------------- sealed duels (Private ER / TEE)
+
+    /// Base layer. Host opens a sealed duel; `host` is the per-match key that will sign inside the TEE.
+    pub fn s_create(ctx: Context<SCreate>, host: Pubkey, species: u8, token_hash: [u8; 32]) -> Result<()> {
+        sealed::create(ctx, host, species, token_hash)
+    }
+    /// Base layer. Guest joins with the invite token and their own per-match key.
+    pub fn s_join(ctx: Context<SJoin>, guest: Pubkey, species: u8, token: [u8; 32]) -> Result<()> {
+        sealed::join(ctx, guest, species, token)
+    }
+    /// Base layer. Requests the duel seed from MagicBlock VRF (before delegation).
+    pub fn s_request_seed(ctx: Context<SRequestSeed>) -> Result<()> {
+        sealed::request_seed(ctx)
+    }
+    /// Base layer VRF callback.
+    pub fn s_consume_seed(ctx: Context<SConsumeSeed>, randomness: [u8; 32]) -> Result<()> {
+        sealed::consume_seed(ctx, randomness)
+    }
+    /// Base layer. Delegates the duel or one pick to the TEE validator.
+    pub fn s_delegate(ctx: Context<SDelegate>, account: SealedAccount) -> Result<()> {
+        sealed::delegate_one(ctx, account)
+    }
+    /// Base layer. Host cancels an invite nobody joined.
+    pub fn s_cancel(ctx: Context<SCancel>) -> Result<()> {
+        sealed::cancel(ctx)
+    }
+    /// TEE. Creates the private permissions on both picks and flips the duel live.
+    pub fn s_open(ctx: Context<SOpen>) -> Result<()> {
+        sealed::open(ctx)
+    }
+    /// TEE. Seal a pick (slot + secret nonce) into the player's private pick account.
+    pub fn s_lock(ctx: Context<SLock>, slot: u8, nonce: u64) -> Result<()> {
+        sealed::lock(ctx, slot, nonce)
+    }
+    /// TEE. Anyone resolves the turn once both picks are sealed.
+    pub fn s_resolve(ctx: Context<SResolve>) -> Result<()> {
+        sealed::resolve(ctx)
+    }
+    /// TEE. Permissionless timeout for a duel a player walked away from.
+    pub fn s_timeout(ctx: Context<STimeout>) -> Result<()> {
+        sealed::timeout(ctx)
+    }
+    /// TEE. Commit the finished duel to Solana and undelegate.
+    pub fn s_finish(ctx: Context<SFinish>) -> Result<()> {
+        sealed::finish(ctx)
     }
 
     // ------------------------------------------------------------------------- crank

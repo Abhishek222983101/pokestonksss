@@ -3,8 +3,8 @@
   "attacker starts a practice battle on the victim's arena": "rejected: Account `sessionToken` not provided.",
   "attacker commits the victim's trainer": "rejected: Account `sessionToken` not provided.",
   "attacker resets the victim's live arena": "rejected: Account `sessionToken` not provided.",
-  "forged VRF callback (fake identity signer)": "rejected: tx 4kM4xpq7iRhVUefYch4MMBfPcDYQbwMwoJia2fLVgHrYAPit7pUn2je67HoRhcoPETCqm9cQoTg1CWtHrRMYVkS",
-  "attacker forfeits a duel they are not in (practice arena)": "rejected: tx 2mUtPdAHJLE97qchExKch3am5MDib21pmVPCuSfvVGDrJexdR2KVCDVU7BdEBsaTDuXqVZo1rRBFJpPKuQuxzXA",
+  "forged VRF callback (fake identity signer)": "rejected: tx 2qfoEoVaWAtqrsjwQe2is7yGPWQ3KC3iwGCWGQzxEtAHYp47p8vDpons2UnkA9JLkUiXmWU4Gv9Uc1w79hWi2YD",
+  "attacker forfeits a duel they are not in (practice arena)": "rejected: Reached maximum depth for account resolution. Unresolved accounts: `actor`",
   "start_practice with an out-of-range species": "rejected: Account `sessionToken` not provided.",
   "restart": "ok"
 }
