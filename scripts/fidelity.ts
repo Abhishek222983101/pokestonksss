@@ -112,7 +112,7 @@ async function pickRoute(page: Page) {
   for (let i = 0; i < 6; i++) {
     const single = page.locator('button.pin:not(.pin-cluster)');
     const pin = (await single.count()) > 0 ? single.first() : page.locator('button.pin').first();
-    await pin.click({ timeout: 20_000, force: true });
+    await pin.evaluate((el: HTMLElement) => el.click());
     await sleep(2200);
     if (await page.getByRole('button', { name: /enter route/i }).isVisible().catch(() => false)) return;
   }
@@ -136,6 +136,7 @@ async function walkUntilBattle(page: Page) {
   while (Date.now() - started < 300_000) {
     for (let i = 0; i < 8; i++) {
       await hold(dir, 1);
+      await page.keyboard.press('z'); // advances trainer dialogs that would otherwise block the sweep
       if (await hudGone()) { console.log('  encounter started'); return; }
     }
     dir = dir === 'ArrowRight' ? 'ArrowLeft' : 'ArrowRight';
