@@ -18,7 +18,7 @@ pub const MAX_SPECIES: u8 = 8;
 pub const NO_PICK: u8 = 255;
 pub const START_RATING: u16 = 1000;
 /// Practice opponents' Elo by House Agent tier (Rookie, Pro, Champion, Trainee).
-pub const BOT_RATING: [i32; 4] = [800, 1000, 1200, 700];
+pub const BOT_RATING: [i32; 5] = [800, 1000, 1200, 700, 600];
 
 // Arena phases
 pub const PHASE_IDLE: u8 = 0;

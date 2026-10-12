@@ -49,7 +49,7 @@ pub fn settle(a: &Arena, st: &MatchState, host: &mut Trainer, guest: Option<&mut
     };
     match guest {
         None => {
-            let bot = BOT_RATING[(a.tier as usize).min(3)];
+            let bot = BOT_RATING[(a.tier as usize).min(4)];
             bump(host, winner == 0, bot, st.f[1].species);
         }
         Some(g) => {

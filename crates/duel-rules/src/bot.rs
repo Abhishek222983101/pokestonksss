@@ -11,6 +11,8 @@ pub enum Tier {
     Champion,
     /// Beginner opponent: always random, and passive (leans on Hedge/Leverage, which Pump punishes).
     Trainee,
+    /// Judge demo dummy: only ever Hedges (never attacks), so any attack line wins.
+    Dummy,
 }
 
 impl Tier {
@@ -21,6 +23,7 @@ impl Tier {
             Tier::Pro => 64,
             Tier::Champion => 26,
             Tier::Trainee => 255,
+            Tier::Dummy => 255,
         }
     }
     pub fn from_u8(v: u8) -> Option<Tier> {
@@ -29,6 +32,7 @@ impl Tier {
             1 => Some(Tier::Pro),
             2 => Some(Tier::Champion),
             3 => Some(Tier::Trainee),
+            4 => Some(Tier::Dummy),
             _ => None,
         }
     }
@@ -47,6 +51,9 @@ pub fn bot_pick(st: &MatchState, side: u8, rnd: &[u8; 32], tier: Tier) -> u8 {
     let _ = RND_USED;
     if side > 1 {
         return 0;
+    }
+    if tier == Tier::Dummy {
+        return 2;
     }
     if tier == Tier::Trainee {
         // 1/8 Signature, 1/8 Coverage, 3/8 Hedge, 3/8 Leverage: easy to read and to punish with Pump.

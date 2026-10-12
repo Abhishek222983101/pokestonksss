@@ -55,6 +55,7 @@ export default function JudgePage() {
     <main className="mx-auto max-w-3xl p-4 sm:p-8">
       <h1 className="font-pixel t-16 text-navy mb-2">Judge self-test</h1>
       <p className="mb-4 text-sm">Plays a real battle on MagicBlock devnet from this browser and lists every proof. No wallet needed. About 30 seconds.</p>
+      <p className="mb-4 text-sm"><b>Want to play it yourself and win?</b> <a className="underline" href="/?demo=1">Open the Judge Demo</a>: the opponent is a Dummy House Agent that only Hedges, so any attack wins. Every move is still a real MagicBlock rollup transaction with VRF, the oracle and a commit.</p>
       <Panel className="mb-4">
         <dl className="grid grid-cols-[8rem_1fr] gap-y-1 text-sm break-all">
           <dt className="font-pixel t-8">Program</dt><dd><a className="underline" target="_blank" rel="noreferrer" href={accountLink(PROGRAM_ID.toBase58(), 'base', cfg)}>{PROGRAM_ID.toBase58()}</a></dd>

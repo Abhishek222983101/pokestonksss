@@ -151,7 +151,7 @@ pub mod pokestonksss {
     /// Starts an instant practice battle against the House Agent.
     pub fn start_practice(ctx: Context<StartPractice>, species: u8, opp_species: u8, tier: u8) -> Result<()> {
         let now = Clock::get()?.unix_timestamp;
-        require!(species < MAX_SPECIES && opp_species < MAX_SPECIES && tier <= 3, GameError::BadInput);
+        require!(species < MAX_SPECIES && opp_species < MAX_SPECIES && tier <= 4, GameError::BadInput);
         let a = &mut ctx.accounts.arena;
         require!(startable(a, now), GameError::WrongPhase);
         let host = ctx.accounts.signer.key();

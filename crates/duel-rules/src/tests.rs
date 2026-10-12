@@ -675,7 +675,7 @@ fn bot_exploration_thresholds() {
     assert_eq!((pct(Tier::Rookie), pct(Tier::Pro), pct(Tier::Champion)), (74, 25, 10));
     assert_eq!(Tier::from_u8(0), Some(Tier::Rookie));
     assert_eq!(Tier::from_u8(2), Some(Tier::Champion));
-    assert!(Tier::from_u8(4).is_none());
+    assert!(Tier::from_u8(5).is_none());
 }
 
 #[test]
