@@ -53,9 +53,9 @@ export class MonPlate {
     ]).setDepth(20);
   }
 
-  setMon(mon: PlateMon, ticker: string) {
+  setMon(mon: PlateMon, ticker: string, foeTag = 'HOUSE') {
     this.nameT.setText(mon.name.toUpperCase());
-    this.lvT.setText(this.ally ? 'YOU' : 'HOUSE');
+    this.lvT.setText(this.ally ? 'YOU' : foeTag);
     this.maxHp = Math.max(1, mon.maxHp);
     this.shown = mon.hp;
     this.drawBar(mon.hp);

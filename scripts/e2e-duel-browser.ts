@@ -16,7 +16,7 @@ const check = (n: string, ok: boolean, d = "") => { console.log(`${ok ? "✓" : 
   const guestCtx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const host = await hostCtx.newPage(), guest = await guestCtx.newPage();
   const errs: string[] = [];
-  for (const p of [host, guest]) p.on("pageerror", (e) => errs.push(e.message.slice(0, 140)));
+  for (const [n, p] of [["host", host], ["guest", guest]] as const) { p.on("pageerror", (e) => errs.push(n + ": " + e.message.slice(0, 140))); p.on("console", (m) => { if (["error", "warning"].includes(m.type())) console.log(`  [${n} console.${m.type()}]`, m.text().slice(0, 220)); }); }
 
   await host.goto(BASE, { waitUntil: "domcontentloaded" }); await sleep(3500);
   await host.getByRole("button", { name: /play as guest/i }).first().click();

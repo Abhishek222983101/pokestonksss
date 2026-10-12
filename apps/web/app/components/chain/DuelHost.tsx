@@ -22,7 +22,7 @@ export default function DuelHost() {
   const [qr, setQr] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [guest, setGuest] = useState<string | null>(null);
+  const [guest, setGuest] = useState<{ key: string; species: number } | null>(null);
   const cancelRef = useRef<(() => Promise<unknown>) | null>(null);
 
   const num = speciesId ? getBroker(speciesId).num : 0;
@@ -38,7 +38,7 @@ export default function DuelHost() {
         setLink(d.link);
         setQr(await QRCode.toDataURL(d.link, { margin: 1, width: 220, color: { dark: '#183088', light: '#f8f8d0' } }));
         const a = await d.joined;
-        if (!dead) setGuest(a.guest);
+        if (!dead) setGuest({ key: a.guest, species: a.match.sides[1].species });
       } catch (e) { if (!dead) setErr(String((e as Error).message)); }
     })();
     return () => { dead = true; };
@@ -48,7 +48,7 @@ export default function DuelHost() {
 
   if (status !== 'ready' || stage !== 'globe' || routeId) return null;
   if (guest) {
-    return <DuelStage role="host" host={guestKeypair().publicKey} hostSpecies={num} guestSpecies={0} opponent={new PublicKey(guest)} onExit={close} />;
+    return <DuelStage role="host" host={guestKeypair().publicKey} hostSpecies={num} guestSpecies={guest.species} opponent={new PublicKey(guest.key)} onExit={close} />;
   }
   return (
     <>

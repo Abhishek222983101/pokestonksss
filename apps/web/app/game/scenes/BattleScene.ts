@@ -136,7 +136,7 @@ export class BattleScene extends Phaser.Scene {
     const shadow = this.add.ellipse(pos.x, pos.platY - 10, pos.size * 0.8, pos.size * 0.16, 0x000000, 0.22).setDepth(3);
     const plate = new MonPlate(this, pos.plateX, pos.plateY, pos.plateW, pos.plateH, ally);
     const f = snap.state.fighters[side];
-    plate.setMon({ name: broker.name, typeName: typeName(champ.type), hp: f.hp, maxHp: f.maxHp }, broker.ticker);
+    plate.setMon({ name: broker.name, typeName: typeName(champ.type), hp: f.hp, maxHp: f.maxHp }, broker.ticker, ally ? undefined : this.foeTag());
     const c: Combatant = {
       side, ally, speciesId: broker.id, name: broker.name, typeName: typeName(champ.type),
       sprite, shadow, plate, baseX: pos.x, baseY: pos.y, baseScale,
@@ -244,7 +244,7 @@ export class BattleScene extends Phaser.Scene {
     if (snap.phase === 'FINISHED') { void this.finish(); return; }
 
     // 3) Opponent indicator while we choose.
-    if (this.mode === 'command' || this.mode === 'moves') this.foeStatus.setText('VS HOUSE AGENT').setColor('#f8d858');
+    if (this.mode === 'command' || this.mode === 'moves') this.foeStatus.setText(`VS ${snap.opponent.label.toUpperCase()}`).setColor('#f8d858');
     else this.foeStatus.setText('');
 
     // 4) Open our command window.
@@ -288,12 +288,26 @@ export class BattleScene extends Phaser.Scene {
     this.command!.show();
   }
 
+  private foeTag(): string {
+    const o = this.src.getSnapshot().opponent;
+    return o.isBot ? 'HOUSE' : o.label.replace(/ .*/, '').toUpperCase();
+  }
+
   private async onPickMove(slot: Slot) {
     if (this.mode !== 'moves') return;
     this.moveMenu?.hide();
     this.mode = 'locked';
-    this.dialog.prompt('Locked in. The House Agent\nis deciding...');
-    await this.src.lock(slot);
+    const bot = this.src.getSnapshot().opponent.isBot;
+    this.dialog.prompt(bot ? 'Locked in. The House Agent\nis deciding...' : 'Locked in and sealed.\nWaiting for your friend...');
+    try {
+      await this.src.lock(slot);
+    } catch (e) {
+      // The pick did not go through (network, rollup hiccup): hand the choice back instead of freezing.
+      EventBus.emit('toast', { text: (e as Error).message || 'That move did not go through. Try again.', tone: 'bad' });
+      this.mode = 'command';
+      this.dialog.prompt(`What will\n${this.cmb[ME].name.toUpperCase()} do?`);
+      this.command!.show();
+    }
   }
 
   private confirmRun() {
