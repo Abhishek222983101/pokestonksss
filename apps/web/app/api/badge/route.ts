@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     const b = (await req.json()) as { owner?: string; id?: number };
     owner = new PublicKey(b.owner ?? "");
     id = Number(b.id);
-    if (!Number.isInteger(id) || id < 0 || id > 7) throw new Error("bad id");
+    if (!Number.isInteger(id) || id < 0 || id > 15) throw new Error("bad id");
   } catch { return json({ error: "invalid request" }, 400); }
 
   const now = Date.now();

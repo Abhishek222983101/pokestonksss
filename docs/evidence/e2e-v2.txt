@@ -1,4 +1,4 @@
-✓ onboard + delegate + session token in ONE base tx 829 ms 3Rw1tAwFWsYu…
+✓ onboard + delegate + session token in ONE base tx 934 ms 37Z1TStgpYYX…
 ✓ session token exists on chain 
 ✓ session key holds no SOL 
 ✓ trainer owner is the wallet, avatar saved {"avatar":2}
@@ -10,10 +10,10 @@
 ✓ xp 120 => level 3 xp 120
 ✓ level shows up in the arena state level 2
 ✓ no dummy farming past the first evolution xp 120
-  commit https://explorer.solana.com/tx/4PdUms3KPZzY9f4s9BPw9UwLwfWC2jWcHR373UNYfRhyNNCjedRKxGRBPmpRykrBE8qrBbotEmSCJQgGoAkNbfqG?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app
+  commit https://explorer.solana.com/tx/23R4h7y37oEaAgTEp14eDYKezr7FmWk1aMpnH2ikxW8ZtcNkAdUDPe7TYKzBDjmqgbPQaSXG7c5ZoQF5pFiMGyTJ?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app
 ✓ progress committed to base wins 5
 ✓ client badge rules say First Blood, Regular, Evolved 
-  badge 0 https://explorer.solana.com/tx/vd2bfLehaCTU3td7Ndz92hSSjQYSL7NpJH96Z3SgqRmiWPbeEsERi2Lc42LStd2TEeSNiN4pmAG19cL3BK1HQer?cluster=devnet
+  badge 0 https://explorer.solana.com/tx/2tUUtnRKpKJKB93EDiLkvubcwjZ2w4bhmzRQFBzovVc6SN3rLuNFCiU25oG9KBs43eNjMhJzQ5zXBeKzxEnq6gDf?cluster=devnet
 ✓ badge token is in the wallet balance 1
 ✓ a badge cannot be minted twice rejected: Simulation failed. 
 Message: Transaction simulation failed. 
@@ -23,8 +23,13 @@ Logs:
 Message: Transaction simulation failed. 
 Logs: 
 [
-  badge 5 https://explorer.solana.com/tx/T3SBUB6WXRwp8ytdJ661URQDU4YmebtJJWogCXERhnjRVup9W4EEkSRoodsrcvsLXKbXfjBdpqJ84CRpnKiytt5?cluster=devnet
-✓ claimed list 
-✓ crank armed (ScheduleTask CPI succeeded on the rollup) https://explorer.solana.com/tx/WB3HoxS6bQ3DywroofNZZKFMunqt1Ho3C7djjvb6YTYcjoRF7bBMYvXLK1RSBqYwauVjyNroZU8VcYZvnrbGFdH?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app
+  badge 5 https://explorer.solana.com/tx/KB6X2hD1enUbY5RJ656cBACv8WL2TwAnVdBaKv242H4m8bWNxw1GfmPLi6UjsG2HF44gEHbUbNdaDXNT2JQRxKp?cluster=devnet
+  trophy $BTC (badge 9) https://explorer.solana.com/tx/QdNMfXNn4yDh3DRNvcScnd9f76EfwP1La5xpJS78HBypGjPmBAME4381V4GEvXLLWiVDZZTtQ9T8zDV4f1bQSu2?cluster=devnet
+✓ claimed list (First Blood, Evolved, $BTC trophy) 
+✓ a trophy for an asset you never beat ($SUI) is refused rejected: Simulation failed. 
+Message: Transaction simulation failed. 
+Logs: 
+[
+✓ crank armed (ScheduleTask CPI succeeded on the rollup) https://explorer.solana.com/tx/5CETW1YDDxg4uZfDuaAGJkMMFh68ccLRtTJyjwcVmhtSAfE4KvqoHm6udPD8sDHXUv4nX2cgnuDyaAGDoC7GJ5Ba?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app
 ✓ crank settled the idle duel winner seat 0 after 63 s
 ALL PASSED

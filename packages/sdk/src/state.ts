@@ -59,7 +59,7 @@ export function levelProgress(xp: number): { level: number; pct: number; toNext:
 }
 
 // ---- badges (mirror of the program's `badge_earned`)
-export interface BadgeInfo { id: number; name: string; how: string; rarity: "common" | "rare" | "epic" }
+export interface BadgeInfo { id: number; name: string; how: string; rarity: "common" | "rare" | "epic"; /** trophy of a defeated BrokerMon (species id) */ species?: number }
 export const BADGES: BadgeInfo[] = [
   { id: 0, name: "First Blood", how: "Win your first battle", rarity: "common" },
   { id: 1, name: "Regular", how: "Win 5 battles", rarity: "common" },
@@ -69,12 +69,16 @@ export const BADGES: BadgeInfo[] = [
   { id: 5, name: "Evolved", how: "Evolve a BrokerMon (Lv 4)", rarity: "rare" },
   { id: 6, name: "Apex", how: "Evolve a BrokerMon again (Lv 7)", rarity: "epic" },
   { id: 7, name: "Hot Streak", how: "Hold a 3 win streak", rarity: "rare" },
+  ...(["SOL", "BTC", "ETH", "SUI", "ZEC", "BNB", "DOGE", "XRP"] as const).map((t, i): BadgeInfo => ({
+    id: 8 + i, name: `$${t} Trophy`, how: `Beat the $${t} BrokerMon`, rarity: "common", species: i,
+  })),
 ];
 const popcount = (x: number) => { let n = 0; for (let v = x; v; v &= v - 1) n++; return n; };
 /** Which badges this Trainer record qualifies for right now. */
 export function badgesEarned(t: Pick<TrainerView, "wins" | "dex" | "rating" | "streak" | "xp">): boolean[] {
   const top = Math.max(0, ...t.xp.map(levelForXp));
-  return [t.wins >= 1, t.wins >= 5, popcount(t.dex) >= 4, t.rating >= 1050, t.rating >= 1200, top >= 3, top >= 6, t.streak >= 3];
+  return [t.wins >= 1, t.wins >= 5, popcount(t.dex) >= 4, t.rating >= 1050, t.rating >= 1200, top >= 3, top >= 6, t.streak >= 3,
+    ...Array.from({ length: 8 }, (_, i) => (t.dex & (1 << i)) !== 0)];
 }
 
 /** Rating tier names (crypto wallet-size taxonomy). */

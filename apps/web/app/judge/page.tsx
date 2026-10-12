@@ -65,6 +65,7 @@ export default function JudgePage() {
   return (
     <main className="mx-auto max-w-3xl p-4 sm:p-8">
       <h1 className="font-pixel t-16 text-navy mb-2">Judge self-test</h1>
+      <p className="mb-2 text-sm">New here? Start at the <Link className="underline" href="/judges">judges page</Link> (demo video, step by step guide).</p>
       <p className="mb-4 text-sm">Plays a real battle on MagicBlock devnet from this browser and lists every proof. No wallet needed. About 30 seconds.</p>
       <p className="mb-4 text-sm"><b>Want to play it yourself and win?</b> <Link className="underline" href="/?demo=1">Open the Judge Demo</Link>: the opponent is a Dummy House Agent that never attacks, so any attack wins in a few turns and your first win levels up your BrokerMon and mints a badge token. Every move is still a real MagicBlock rollup transaction with VRF, the oracle and a commit.</p>
       <Panel className="mb-4">

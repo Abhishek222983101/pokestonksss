@@ -86,7 +86,10 @@ async function winDummy(client: GameClient, ss: ReturnType<typeof sessionSigner>
   await expectFail("an unearned badge (Shark) is refused", () => client.mintBadge(payer, W.publicKey, 4));
   const m5 = await client.mintBadge(payer, W.publicKey, 5);
   console.log("  badge 5", m5.link);
-  ok("claimed list", (await client.claimedBadges(W.publicKey)).join() === "0,5");
+  const m9 = await client.mintBadge(payer, W.publicKey, 9);
+  console.log("  trophy $BTC (badge 9)", m9.link);
+  ok("claimed list (First Blood, Evolved, $BTC trophy)", (await client.claimedBadges(W.publicKey)).join() === "0,5,9");
+  await expectFail("a trophy for an asset you never beat ($SUI) is refused", () => client.mintBadge(payer, W.publicKey, 11));
 
   // 5. crank: a duel abandoned by the guest is settled by the validator's task scheduler
   const H = Keypair.generate(), G = Keypair.generate();

@@ -101,9 +101,18 @@ export class EndOverlay {
     audio.sfx(won ? 'win' : 'lose');
   }
 
+  /** Shown right after a win while the trophy mint is in flight. */
+  setClaiming() { this.badge.setText('CLAIMING YOUR TROPHY TOKEN...').setColor('#a8b8f8'); }
+
   /** Badge tokens minted to the player's wallet because of this battle. */
   setBadges(names: string[]) {
-    this.badge.setText(`BADGE EARNED: ${names.join(', ').toUpperCase()}  (minted to your wallet)`);
+    if (!names.length) { this.badge.setText(''); return; }
+    const trophies = names.filter((n) => n.endsWith('Trophy'));
+    const rest = names.filter((n) => !n.endsWith('Trophy'));
+    const parts: string[] = [];
+    if (trophies.length) parts.push(`CAPTURED ${trophies.map((n) => n.replace(' Trophy', '')).join(', ')}`);
+    if (rest.length) parts.push(`BADGE ${rest.join(', ')}`);
+    this.badge.setText(`${parts.join('  +  ').toUpperCase()}  (minted to your wallet)`);
     this.scene.tweens.add({ targets: this.badge, scale: { from: 0.6, to: 1 }, duration: 320, ease: 'Back.easeOut' });
     audio.sfx('levelup');
   }

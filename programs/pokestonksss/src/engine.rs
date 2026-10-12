@@ -85,6 +85,8 @@ pub fn badge_earned(id: u8, t: &Trainer) -> bool {
         5 => top >= 3,
         6 => top >= 6,
         7 => t.streak >= 3,
+        // trophies: defeat BrokerMon (id - 8) at least once (the dex bit)
+        8..=15 => t.dex & (1u16 << (id - 8)) != 0,
         _ => false,
     }
 }
@@ -163,7 +165,10 @@ mod tests {
         assert!(badge_earned(6, &t));
         t.streak = 3;
         assert!(badge_earned(7, &t));
-        assert!(!badge_earned(8, &t));
+        assert!(badge_earned(8, &t) && !badge_earned(12, &t), "dex 0b1111 holds trophies 8..=11");
+        t.dex = 0b1000;
+        assert!(badge_earned(11, &t) && !badge_earned(10, &t), "trophy for the 4th BrokerMon");
+        assert!(!badge_earned(16, &t));
     }
 
     #[test]

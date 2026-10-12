@@ -9,6 +9,8 @@ import { ownerKey } from '../../../lib/chain/guest';
 import { evolvedName, stageStars } from '../../../lib/evolution';
 import { rules } from '../../../lib/rules';
 import { Panel } from '../ui';
+import { Portrait } from '../Portrait';
+import { BROKERMON } from '../../../lib/brokermon';
 import { badgeMintPda } from '@pokestonksss/sdk';
 
 const RARITY: Record<string, string> = { common: 'border-sky/60', rare: 'border-yellow', epic: 'border-pink' };
@@ -38,9 +40,9 @@ export default function RewardsPanel({ onClose }: { onClose?: () => void }) {
         {owner && <> <a className="underline text-sky" target="_blank" rel="noreferrer" href={`https://explorer.solana.com/address/${owner.toBase58()}/tokens?cluster=devnet`}>See tokens ↗</a></>}
       </p>
 
-      <h3 className="font-pixel t-10 text-cream mt-3 mb-1">Badges ({claimed.length}/{BADGES.length})</h3>
+      <h3 className="font-pixel t-10 text-cream mt-3 mb-1">Badges ({claimed.filter((i) => i < 8).length}/8)</h3>
       <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {BADGES.map((b) => {
+        {BADGES.filter((b) => b.id < 8).map((b) => {
           const got = claimed.includes(b.id);
           const ready = !got && earned[b.id];
           const m = minted.find((x) => x.id === b.id);
@@ -64,6 +66,27 @@ export default function RewardsPanel({ onClose }: { onClose?: () => void }) {
         <p className="mt-2 text-sm"><button type="button" className="btn btn-sm" disabled={syncing} onClick={() => void sync()}>{syncing ? 'Minting…' : 'Mint earned badges now'}</button></p>
       )}
       {error && <p role="alert" className="mt-1 text-sm text-yellow">{error}</p>}
+
+      <h3 className="font-pixel t-10 text-cream mt-3 mb-1">Captured assets ({claimed.filter((i) => i >= 8).length}/8)</h3>
+      <p className="text-[12px] text-cream/75 mb-1">Beat a BrokerMon and its trophy token is minted to {identity === 'wallet' ? 'your wallet' : 'your guest key'}. Devnet tokens that stand for the asset you took down, not real securities.</p>
+      <ul className="grid grid-cols-4 gap-2">
+        {BADGES.filter((b) => b.id >= 8).map((b) => {
+          const got = claimed.includes(b.id);
+          const ready = !got && earned[b.id];
+          const broker = BROKERMON[b.species ?? 0];
+          const m = minted.find((x) => x.id === b.id);
+          return (
+            <li key={b.id} className={`rounded-sm border-2 p-1 text-center ${got ? 'border-yellow bg-yellow/15' : ready ? 'border-sky/60 bg-sky/10' : 'border-slate/50 bg-navy-deep/60'}`}>
+              <div style={got || ready ? undefined : { filter: 'brightness(0) opacity(0.35)' }} className="grid place-items-center"><Portrait speciesId={broker.id} size={40} /></div>
+              <p className="font-pixel t-8 text-cream mt-1">${broker.ticker}</p>
+              <p className="text-[11px]">
+                {got ? (<><a className="underline text-sky" target="_blank" rel="noreferrer" href={`https://explorer.solana.com/address/${badgeMintPda(b.id, cfg.programId).toBase58()}?cluster=devnet`}>token ↗</a>{m?.link && <> · <a className="underline text-sky" target="_blank" rel="noreferrer" href={m.link}>tx ↗</a></>}</>)
+                  : ready ? <span className="text-yellow">{syncing ? 'minting…' : 'earned'}</span> : <span className="text-cream/60">beat it</span>}
+              </p>
+            </li>
+          );
+        })}
+      </ul>
 
       <h3 className="font-pixel t-10 text-cream mt-3 mb-1">BrokerMon levels</h3>
       <ul className="grid grid-cols-1 gap-1 sm:grid-cols-2">

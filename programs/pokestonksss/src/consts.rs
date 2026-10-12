@@ -8,8 +8,8 @@ pub const BADGE_AUTH_SEED: &[u8] = b"badge_auth";
 pub const CLAIM_SEED: &[u8] = b"claim";
 /// Seed the validator's task scheduler uses for the per-task signer PDA.
 pub const CRANK_SEED: &[u8] = b"crank-executor";
-/// Number of badge types (see `badge_earned`).
-pub const BADGES: u8 = 8;
+/// Number of badge types (see `badge_earned`): 0..=7 milestones, 8..=15 one trophy per defeated BrokerMon.
+pub const BADGES: u8 = 16;
 /// A duel untouched this long is settled by the crank (the idle side forfeits).
 pub const ABANDON_SECS: i64 = 60;
 pub const CRANK_INTERVAL_MS: i64 = 20_000;

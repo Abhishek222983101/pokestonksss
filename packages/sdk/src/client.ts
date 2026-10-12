@@ -249,7 +249,7 @@ export class GameClient {
   }
   /** Badge ids already minted to `owner` (a claim record exists). */
   async claimedBadges(owner: PublicKey): Promise<number[]> {
-    const ids = [0, 1, 2, 3, 4, 5, 6, 7];
+    const ids = Array.from({ length: 16 }, (_, i) => i);
     const infos = await this.base.getMultipleAccountsInfo(ids.map((i) => claimPda(owner, i, this.cfg.programId)));
     return ids.filter((_, i) => !!infos[i]);
   }

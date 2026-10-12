@@ -69,7 +69,8 @@ describe("sdk", () => {
     expect(badgesEarned({ ...base, xp: [0, 0, 120, 0, 0, 0, 0, 0] })[5]).toBe(true);
     expect(badgesEarned({ ...base, xp: [0, 0, 330, 0, 0, 0, 0, 0] })[6]).toBe(true);
     expect(badgesEarned({ ...base, streak: 3 })[7]).toBe(true);
-    expect(BADGES.length).toBe(8);
+    expect(BADGES.length).toBe(16);
+    expect(badgesEarned({ ...base, dex: 0b1000 }).slice(8).map(Boolean)).toEqual([false, false, false, true, false, false, false, false]);
   });
   it("season 2 pdas are distinct per owner and purpose", () => {
     const a = Keypair.generate().publicKey, b = Keypair.generate().publicKey;
