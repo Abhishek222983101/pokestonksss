@@ -141,6 +141,8 @@ export class ChainDuelSource implements BattleSource {
       turns,
       phase: finished ? 'FINISHED' : locked ? 'RESOLVING' : 'PICKING',
       locked,
+      oppLocked: ((a.phase === PHASE.REVEALING ? a.revealedMask || a.committedMask : a.committedMask) & (1 << (1 - my))) !== 0 || a.phase === PHASE.REVEALING,
+      deadlineMs: a.deadline > 0 && (a.phase === PHASE.PICKING || a.phase === PHASE.REVEALING) ? a.deadline * 1000 : undefined,
     });
     this.refreshMood();
     if (a.phase === PHASE.REVEALING) void this.autoReveal(a);

@@ -2,6 +2,11 @@ import { Keypair, PublicKey } from '@solana/web3.js';
 import { SEALED, SealedClient, keypairSigner, requestDrip, type SealedDuelView, type TeeSession } from '@pokestonksss/sdk';
 import { FAUCET_URL, getClient } from './config';
 import { useSealedProof } from './sealedProof';
+import { friendly } from './store';
+
+async function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+}
 
 const b64u = (u: Uint8Array) => btoa(String.fromCharCode(...u)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const unb64u = (s: string) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
@@ -85,13 +90,30 @@ export async function openSealed(kp: Keypair, players: [PublicKey, PublicKey], o
   const signer = keypairSigner(kp);
   const host = kp.publicKey;
   onStep('seed');
-  const rs = await sealed.requestSeed(signer, host);
-  P().step({ id: 'seed', label: 'request_seed (MagicBlock VRF, base layer)', link: rs.link, ms: rs.ms });
-  const seeded = await sealed.waitSeeded(host);
+  // devnet can drop a transaction or delay the VRF callback: retry both steps (each is safe to repeat)
+  let seeded: SealedDuelView | null = null;
+  for (let attempt = 0; attempt < 3 && !seeded; attempt++) {
+    const cur = await sealed.readDuel(host, 'base').catch(() => null);
+    if (cur && cur.status >= SEALED.SEEDED) { seeded = cur; break; }
+    try {
+      const rs = await sealed.requestSeed(signer, host);
+      P().step({ id: 'seed', label: 'request_seed (MagicBlock VRF, base layer)', link: rs.link, ms: rs.ms });
+    } catch { /* a repeated request may fail once the first callback landed: re-read below */ }
+    seeded = await sealed.waitSeeded(host, 25_000).catch(() => null);
+  }
+  if (!seeded) throw new Error('The MagicBlock VRF seed did not arrive. Please try again.');
   P().patch({ seed: seeded.seed });
   onStep('delegate');
-  const del = await sealed.delegateAll(signer, host, players);
-  P().step({ id: 'delegate', label: 'delegate duel + 2 picks to the TEE validator', link: del.link, ms: del.ms });
+  const dutyKey = sealed.duel(host);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const info = await getClient().base.getAccountInfo(dutyKey).catch(() => null);
+    if (info && !info.owner.equals(getClient().cfg.programId)) break; // already delegated
+    try {
+      const del = await withTimeout(sealed.delegateAll(signer, host, players), 35_000);
+      P().step({ id: 'delegate', label: 'delegate duel + 2 picks to the TEE validator', link: del.link, ms: del.ms });
+      break;
+    } catch (e) { if (attempt === 2) throw new Error(`Could not move the duel into the private rollup: ${friendly(e)}`); }
+  }
   onStep('tee');
   const tee = await sealed.connect(kp);
   P().step({ id: 'auth', label: 'TEE login: challenge signed by the match key', note: 'JWT token, no wallet involved' });

@@ -1,10 +1,9 @@
-# 2–3 minute demo (record on the live site with a fresh browser profile)
-0:00 Open https://pokestonksss.vercel.app → "Play as guest" (say: no wallet, no server).
-0:12 Wristband screen: real transactions, ~2 s. Pick Voltfox (live oracle prices on cards).
-0:30 Globe → Validator Run (SOL route) → walk into tall grass → encounter.
-0:50 Battle: point at the Proof Strip (Weighed · Sealed · Rolled · Saved) and the ROLLUP badge; pick moves; each turn = rollup tx + VRF roll (~75 ms).
-1:20 Win/lose → rating changes, "Saved" link → open the explorer link (commit from the rollup).
-1:35 "Duel a friend": QR/link → second phone/browser joins in two taps; sealed picks; friend label.
-2:05 Open /judge → Run self-test → scroll the checklist, open a VRF turn link and the delegation link.
-2:30 Open /verify/<arena> → "Replay matches the on-chain state".
-2:45 Close: no server, no claim button, provably fair; reusable engine; next: wallet link, quick match, sponsored routes.
+# 2-3 minute demo (record on the live site with a fresh browser profile)
+0:00 Open https://pokestonksss.vercel.app/?demo=1. Say: no server, no cold start. Press Play, choose a trainer look, then "Connect wallet" (or guest). One approval, then no popups.
+0:25 Pick a BrokerMon. Globe, route, walk into tall grass. Encounter vs the Judge Dummy.
+0:45 Battle: point at the Proof Strip (Weighed, Sealed, Rolled, Saved) and the ROLLUP badge; Pump a few times. Each turn = a rollup transaction by the session key plus a MagicBlock VRF roll (about 70 ms).
+1:10 Win: XP bar, LEVEL UP, then the badge banner. Open Rewards: the badge is a real token in your wallet; click the mint link.
+1:30 Duel a friend (Private duel). Show the QR, join from a second browser. In Proof press "Peek at my opponent": denied. Say: Private ER, Intel TDX, permission derived on chain.
+2:00 Finish the duel. Open the committed result and /verify/sealed/<match key>: every roll recomputes from the VRF seed and both sealed nonces.
+2:20 Open /judge, run the self-test, open one VRF link and the delegation link.
+2:40 Close: one program, three layers (rollup, private rollup, base layer), wallet badges, evolutions. Next: mainnet and Solana Seeker.

@@ -1,0 +1,42 @@
+  [1.3s] match keys funded
+  [2.6s] create https://explorer.solana.com/tx/5pCd9fojzVubdgd5xwZyLwQqtPf1kNsNFmLgNqX3KJ44YLtdYjZ4ZDokjH7e6RAUoX4ZbksLYxi3PiL5KRfZk9Br?cluster=devnet
+✓ join with a wrong token is rejected 
+  [4.5s] join https://explorer.solana.com/tx/4ZuEEnCDSgW47e6vpjXnS83JnmmgrtBxvDDE7RPWkubhFAAhnnLEUXyZgHMx61GTuefV7jUR9hPZZQebSqFYvVWL?cluster=devnet
+  [5.7s] request_seed (MagicBlock VRF, base layer) https://explorer.solana.com/tx/5VE94RTGyqFHhPKXH2pa9YVDRAVnCeMAs9d2roRWHYw7PaDKhPAT3E4xZj28oXdi87XA56x4KBMZ1rWuFxezpvSd?cluster=devnet
+✓ VRF seed landed on the base layer seed 2e3b7ba04e76bd22…
+  [6.7s] seed callback
+  [7.9s] delegate duel + 2 picks to the TEE https://explorer.solana.com/tx/25cLKkyuZDSoSAgLSbb9o3iinXUo7k293DwaijdELTbn6W9iDUeHncM6joDUkk9QfM6nxRZzPQxBZS4Fdqu42P1H?cluster=devnet
+  [8.4s] TEE auth tokens (challenge signed by each match key)
+  [8.6s] accounts cloned into the TEE
+  [9.0s] open (private permissions on both picks) https://explorer.solana.com/tx/teZVNHkynvv7cBxzC3zo5goXD4i1gXPbJZvuEdb1uZ9dzTU4jf35w7NZHc9AvMEAhsij83Hcu697dZD4XcfJrdJ?cluster=custom&customUrl=https%3A%2F%2Fdevnet-tee.magicblock.app
+✓ each pick has a PRIVATE permission on the TEE that lists only its owner 
+✓ the host cannot even read the guest's permission account 
+✓ host pick: members = [host match key] ["BwjzUpFJJjjBs1VLzCxuN8jKn9boBNBsV3cAjagBkbdj"]
+✓ guest pick: members = [guest match key] ["Dm8Fxf3urfFNfEFkC1jUNzbQFEKAS8hhZ7nfodtjJtSu"]
+✓ host can read its own sealed pick {"visible":true,"slot":1,"locked":true}
+✓ host CANNOT read the guest's sealed pick 
+✓ guest CANNOT read the host's sealed pick 
+✓ an anonymous visitor CANNOT read a sealed pick 
+✓ an authenticated stranger CANNOT read a sealed pick 
+✓ the public duel state shows who locked, never what 
+  [10.3s] lock https://explorer.solana.com/tx/3JVA4NZN3XvvZMfb41Rjj9eFQrQS2RhTpuWYM2WfMs4A8NCN1QBv4YtwqAdjR5o1yxNBxtMtyp9E64qz3QjfYTmj?cluster=custom&customUrl=https%3A%2F%2Fdevnet-tee.magicblock.app
+✓ turn 1 resolved 
+✓ turn 2 resolved 
+✓ turn 3 resolved 
+✓ turn 4 resolved 
+✓ turn 5 resolved 
+✓ turn 6 resolved 
+✓ turn 7 resolved 
+✓ turn 8 resolved 
+✓ turn 9 resolved 
+✓ turn 10 resolved 
+✓ turn 11 resolved 
+✓ turn 12 resolved 
+✓ duel finished inside the TEE turns 12, winner seat 1
+  [16.6s] finish: commit + undelegate https://explorer.solana.com/tx/4JDxxzs4t3erJihCUc4mB338Xxvuebjcfbf3dfV6Hw6XAkv9TSaJf398aymtUSdK89UVMN7gShoKjfYy1gkhfqvx?cluster=custom&customUrl=https%3A%2F%2Fdevnet-tee.magicblock.app
+✓ the finished duel is on Solana (undelegated, owned by our program) 
+✓ every roll recomputes from the public seed and the two sealed nonces 
+✓ picks in the public log are the ones the players sealed 
+✓ replaying the log with the shared Rust rules reproduces the result {"ok":true,"winner":1,"hp":[0,154],"turns":12}
+Total 30.0 s. duel account: https://explorer.solana.com/address/GpsmPXQ2FYc8FHT5JS4SQ8ZLSWqhcsEYkr35CmjaPkjN?cluster=devnet
+ALL PASSED

@@ -268,9 +268,14 @@ export class BattleScene extends Phaser.Scene {
     // 2) The match ended without a final turn (forfeit).
     if (snap.phase === 'FINISHED') { void this.finish(); return; }
 
-    // 3) Opponent indicator while we choose.
-    if (this.mode === 'command' || this.mode === 'moves') this.foeStatus.setText(`VS ${snap.opponent.label.toUpperCase()}`).setColor('#f8d858');
-    else this.foeStatus.setText('');
+    // 3) Opponent indicator: who we face, whether they already sealed their pick (pressure), or that we are the one waited on.
+    const human = !snap.opponent.isBot;
+    if (this.mode === 'command' || this.mode === 'moves') {
+      if (human && snap.oppLocked) this.foeStatus.setText('OPPONENT LOCKED IN').setColor('#f85858');
+      else this.foeStatus.setText(`VS ${snap.opponent.label.toUpperCase()}`).setColor('#f8d858');
+    } else if (human && snap.phase === 'RESOLVING' && snap.locked && this.mode !== 'playing') {
+      this.foeStatus.setText(snap.oppLocked ? 'BOTH LOCKED. RESOLVING...' : 'LOCKED. WAITING FOR OPPONENT...').setColor(snap.oppLocked ? '#58d858' : '#f8d858');
+    } else this.foeStatus.setText('');
 
     // 4) Open our command window.
     if (this.mode === 'idle' && snap.phase === 'PICKING' && !snap.locked) this.openCommand(snap);
@@ -406,9 +411,11 @@ export class BattleScene extends Phaser.Scene {
     const g = this.timerG;
     g.clear();
     if (this.mode !== 'command' && this.mode !== 'moves') { this.timerLabel.setVisible(false); return; }
-    const remainMs = Math.max(0, this.deadline - this.time.now);
+    const sn = this.src.getSnapshot();
+    // duels share the chain's own deadline so both players see the same clock
+    const remainMs = Math.max(0, sn.deadlineMs ? sn.deadlineMs - Date.now() : this.deadline - this.time.now);
     const secs = remainMs / 1000;
-    const total = Math.max(1, this.src.getSnapshot().turnMs / 1000);
+    const total = Math.max(1, sn.turnMs / 1000);
     const w = 240, x = 696, y = 22;
     const col = secs > 15 ? 0x58d858 : secs > 5 ? 0xf8d858 : 0xf85858;
     const pulse = secs < 3 ? 0.55 + 0.45 * Math.abs(Math.sin(this.time.now / 110)) : 1;
