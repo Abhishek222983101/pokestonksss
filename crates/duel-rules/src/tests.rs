@@ -485,11 +485,13 @@ fn max_turns_higher_hp_ratio_wins() {
 
 #[test]
 fn max_turns_compares_ratio_not_absolute_hp() {
-    // side0 has fewer absolute hp but a bigger ratio
-    let mut s = st(0, 1); // max 140 vs 175
+    // side0 has the smaller max hp but the bigger ratio, and fewer absolute hp
+    let mut s = st(0, 1);
+    assert!(s.f[0].max_hp < s.f[1].max_hp);
     s.turn = MAX_TURNS - 1;
-    s.f[0].hp = 120; // 857
-    s.f[1].hp = 140; // 800
+    s.f[0].hp = s.f[0].max_hp - 1; // ~993/1000 at worst
+    s.f[1].hp = s.f[1].max_hp * 9 / 10;
+    assert!(s.f[0].hp < s.f[1].hp, "absolute hp lower");
     resolve_turn(&mut s, [3, 3], &rnd(|_| {}), [0, 0]);
     assert_eq!(s.winner, 0);
 }

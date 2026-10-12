@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useSyncExternalStore } from 'react';
 import { PROGRAM_ID, accountLink, arenaPda, tierName, trainerPda } from '@pokestonksss/sdk';
 import { getClient } from '../../lib/chain/config';
 import { guestKeypair, guestSigner } from '../../lib/chain/guest';
@@ -14,6 +14,7 @@ export default function JudgePage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [running, setRunning] = useState(false);
   const boot = useChain((s) => s.boot);
+  const mine = useSyncExternalStore(() => () => {}, () => arenaPda(guestKeypair().publicKey).toBase58(), () => '');
 
   const push = useCallback((r: Row) => setRows((x) => [...x, r]), []);
 
@@ -58,7 +59,7 @@ export default function JudgePage() {
         <dl className="grid grid-cols-[8rem_1fr] gap-y-1 text-sm break-all">
           <dt className="font-pixel t-8">Program</dt><dd><a className="underline" target="_blank" rel="noreferrer" href={accountLink(PROGRAM_ID.toBase58(), 'base', cfg)}>{PROGRAM_ID.toBase58()}</a></dd>
           <dt className="font-pixel t-8">Rollup</dt><dd>{cfg.erHttp} (validator {cfg.validator.toBase58().slice(0, 8)}…)</dd>
-          <dt className="font-pixel t-8">Your arena</dt><dd>{typeof window === 'undefined' ? '' : arenaPda(guestKeypair().publicKey).toBase58()}</dd>
+          <dt className="font-pixel t-8">Your arena</dt><dd>{mine || '…'}</dd>
         </dl>
       </Panel>
       <Button onClick={run} disabled={running}>{running ? 'Running…' : 'Run self-test'}</Button>

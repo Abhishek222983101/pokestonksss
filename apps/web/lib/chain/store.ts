@@ -33,8 +33,14 @@ export const useChain = create<ChainState>((set, get) => ({
         await ensureReady({
           client, signer,
           drip: async (pk) => {
-            const r = await requestDrip(FAUCET_URL, pk);
-            if (!r.ok) throw new Error(r.error ?? 'faucet unavailable');
+            let last = 'faucet unavailable';
+            for (let i = 0; i < 3; i++) {
+              const r = await requestDrip(FAUCET_URL, pk);
+              if (r.ok) return;
+              last = r.error ?? last;
+              await new Promise((x) => setTimeout(x, 1500 * (i + 1)));
+            }
+            throw new Error(last);
           },
           onEvent: (e) => set((s) => ({ steps: [...s.steps, { step: e.step, at: Date.now(), link: e.link, ms: e.ms }] })),
         });

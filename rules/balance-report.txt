@@ -1,0 +1,23 @@
+Win-rate matrix (row BrokerMon vs column; averaged over both seatings), %
+            Voltfox Ironhorn Prismoth Surgelin Veilwisp Gildcres  Moonpup  Ripplet
+Voltfox        50.0     37.0     62.4     48.9     47.9     41.7     39.9     60.8
+Ironhorn       63.0     50.0     42.6     39.4     59.3     59.1     54.5     41.5
+Prismoth       37.6     57.4     50.0     58.5     40.4     68.7     57.4     53.5
+Surgeling      51.1     60.6     41.5     50.0     60.5     44.6     51.6     43.2
+Veilwisp       52.1     40.7     59.6     39.5     50.0     43.2     35.5     61.3
+Gildcrest      58.3     40.9     31.3     55.4     56.8     50.0     48.3     35.2
+Moonpup        60.1     45.5     42.6     48.4     64.5     51.7     50.0     37.5
+Ripplet        39.2     58.5     46.5     56.8     38.7     64.8     62.5     50.0
+
+Overall win rate (all 128 seatings per species incl. mirrors):
+  Voltfox     48.6%  ok
+  Ironhorn    51.2%  ok
+  Prismoth    52.9%  ok
+  Surgeling   50.4%  ok
+  Veilwisp    47.7%  ok
+  Gildcrest   47.0%  ok
+  Moonpup     50.0%  ok
+  Ripplet     52.1%  ok
+
+Seat-0 win rate 50.2%   worst non-mirror pairing 68.7%   avg turns 5.30   fights 128000
+BALANCE PASS

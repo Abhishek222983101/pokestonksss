@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "e2e:duel": "tsx e2e-duel.ts",
     "judge": "tsx judge-selftest.ts",
-    "loadtest": "tsx loadtest.ts"
+    "loadtest": "tsx loadtest.ts",
+    "e2e:browser": "tsx e2e-browser.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.32.1",
@@ -18,7 +19,8 @@
     "@solana/web3.js": "1.98.4",
     "bs58": "^6.0.0",
     "tweetnacl": "^1.0.3",
-    "@pokestonksss/sdk": "workspace:*"
+    "@pokestonksss/sdk": "workspace:*",
+    "playwright-core": "^1.49.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

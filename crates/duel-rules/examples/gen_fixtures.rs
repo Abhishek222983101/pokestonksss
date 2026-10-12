@@ -113,7 +113,8 @@ fn main() {
     for i in 0..n {
         let (a, b) = (r.below(8) as u8, r.below(8) as u8);
         let mut s = MatchState::new(a, b).unwrap();
-        walk(&mut r, &mut s, r.below(6));
+        let d = r.below(6);
+        walk(&mut r, &mut s, d);
         if s.is_over() {
             s = MatchState::new(a, b).unwrap();
         }

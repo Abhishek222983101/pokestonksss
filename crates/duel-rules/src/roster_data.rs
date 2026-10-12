@@ -7,37 +7,37 @@ pub const NAMES: [&str; ROSTER_LEN] = ["Voltfox", "Ironhorn", "Prismoth", "Surge
 
 pub const ROSTER: [Species; ROSTER_LEN] = [
     Species {
-        id: 0, typ: 0, hp: 144, atk: 100, def: 90, spd: 110, feed: 6,
+        id: 0, typ: 0, hp: 144, atk: 103, def: 90, spd: 105, feed: 6,
         moves: [
-            Move { kind: MoveKind::Strike, typ: 0, power: 48, acc: 100 },
-            Move { kind: MoveKind::Strike, typ: 2, power: 60, acc: 100 },
+            Move { kind: MoveKind::Strike, typ: 0, power: 48, acc: 95 },
+            Move { kind: MoveKind::Strike, typ: 2, power: 63, acc: 90 },
             Move { kind: MoveKind::Guard, typ: 0, power: 0, acc: 100 },
             Move { kind: MoveKind::Charge, typ: 0, power: 0, acc: 100 },
         ],
     },
     Species {
-        id: 1, typ: 1, hp: 170, atk: 87, def: 110, spd: 60, feed: 1,
+        id: 1, typ: 1, hp: 164, atk: 87, def: 113, spd: 60, feed: 1,
         moves: [
-            Move { kind: MoveKind::Strike, typ: 1, power: 48, acc: 100 },
-            Move { kind: MoveKind::Strike, typ: 3, power: 60, acc: 100 },
+            Move { kind: MoveKind::Strike, typ: 1, power: 48, acc: 95 },
+            Move { kind: MoveKind::Strike, typ: 3, power: 63, acc: 90 },
             Move { kind: MoveKind::Guard, typ: 1, power: 0, acc: 100 },
             Move { kind: MoveKind::Charge, typ: 1, power: 0, acc: 100 },
         ],
     },
     Species {
-        id: 2, typ: 2, hp: 149, atk: 108, def: 99, spd: 90, feed: 2,
+        id: 2, typ: 2, hp: 146, atk: 108, def: 99, spd: 90, feed: 2,
         moves: [
-            Move { kind: MoveKind::Strike, typ: 2, power: 48, acc: 100 },
-            Move { kind: MoveKind::Strike, typ: 4, power: 60, acc: 100 },
+            Move { kind: MoveKind::Strike, typ: 2, power: 48, acc: 95 },
+            Move { kind: MoveKind::Strike, typ: 4, power: 63, acc: 90 },
             Move { kind: MoveKind::Guard, typ: 2, power: 0, acc: 100 },
             Move { kind: MoveKind::Charge, typ: 2, power: 0, acc: 100 },
         ],
     },
     Species {
-        id: 3, typ: 3, hp: 168, atk: 89, def: 100, spd: 80, feed: 11,
+        id: 3, typ: 3, hp: 165, atk: 98, def: 100, spd: 80, feed: 11,
         moves: [
-            Move { kind: MoveKind::Strike, typ: 3, power: 48, acc: 100 },
-            Move { kind: MoveKind::Strike, typ: 0, power: 60, acc: 100 },
+            Move { kind: MoveKind::Strike, typ: 3, power: 48, acc: 95 },
+            Move { kind: MoveKind::Strike, typ: 0, power: 63, acc: 90 },
             Move { kind: MoveKind::Guard, typ: 3, power: 0, acc: 100 },
             Move { kind: MoveKind::Charge, typ: 3, power: 0, acc: 100 },
         ],
@@ -45,35 +45,35 @@ pub const ROSTER: [Species; ROSTER_LEN] = [
     Species {
         id: 4, typ: 4, hp: 144, atk: 100, def: 95, spd: 105, feed: 66,
         moves: [
-            Move { kind: MoveKind::Strike, typ: 4, power: 48, acc: 100 },
-            Move { kind: MoveKind::Strike, typ: 1, power: 60, acc: 100 },
+            Move { kind: MoveKind::Strike, typ: 4, power: 48, acc: 95 },
+            Move { kind: MoveKind::Strike, typ: 1, power: 63, acc: 90 },
             Move { kind: MoveKind::Guard, typ: 4, power: 0, acc: 100 },
             Move { kind: MoveKind::Charge, typ: 4, power: 0, acc: 100 },
         ],
     },
     Species {
-        id: 5, typ: 1, hp: 163, atk: 95, def: 102, spd: 70, feed: 15,
+        id: 5, typ: 1, hp: 163, atk: 95, def: 102, spd: 80, feed: 15,
         moves: [
-            Move { kind: MoveKind::Strike, typ: 1, power: 48, acc: 100 },
-            Move { kind: MoveKind::Strike, typ: 3, power: 60, acc: 100 },
+            Move { kind: MoveKind::Strike, typ: 1, power: 48, acc: 95 },
+            Move { kind: MoveKind::Strike, typ: 3, power: 63, acc: 90 },
             Move { kind: MoveKind::Guard, typ: 1, power: 0, acc: 100 },
             Move { kind: MoveKind::Charge, typ: 1, power: 0, acc: 100 },
         ],
     },
     Species {
-        id: 6, typ: 0, hp: 160, atk: 89, def: 95, spd: 110, feed: 13,
+        id: 6, typ: 0, hp: 163, atk: 89, def: 95, spd: 110, feed: 13,
         moves: [
-            Move { kind: MoveKind::Strike, typ: 0, power: 48, acc: 100 },
-            Move { kind: MoveKind::Strike, typ: 2, power: 60, acc: 100 },
+            Move { kind: MoveKind::Strike, typ: 0, power: 48, acc: 95 },
+            Move { kind: MoveKind::Strike, typ: 2, power: 63, acc: 90 },
             Move { kind: MoveKind::Guard, typ: 0, power: 0, acc: 100 },
             Move { kind: MoveKind::Charge, typ: 0, power: 0, acc: 100 },
         ],
     },
     Species {
-        id: 7, typ: 3, hp: 158, atk: 106, def: 95, spd: 85, feed: 14,
+        id: 7, typ: 3, hp: 155, atk: 106, def: 95, spd: 90, feed: 14,
         moves: [
-            Move { kind: MoveKind::Strike, typ: 3, power: 48, acc: 100 },
-            Move { kind: MoveKind::Strike, typ: 0, power: 60, acc: 100 },
+            Move { kind: MoveKind::Strike, typ: 3, power: 48, acc: 95 },
+            Move { kind: MoveKind::Strike, typ: 0, power: 63, acc: 90 },
             Move { kind: MoveKind::Guard, typ: 3, power: 0, acc: 100 },
             Move { kind: MoveKind::Charge, typ: 3, power: 0, acc: 100 },
         ],

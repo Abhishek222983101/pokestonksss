@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useMemo, useState } from 'react';
 import { PublicKey } from '@solana/web3.js';
 import type { ArenaView } from '@pokestonksss/sdk';
 import { getClient } from '../../../lib/chain/config';
@@ -26,16 +26,23 @@ export default function VerifyPage({ params }: { params: Promise<{ host: string 
   if (arena === undefined) return <main className="p-8 font-pixel t-10">Loading…</main>;
   if (!arena) return <main className="p-8"><Panel><p>{err ?? 'No arena found for this address.'}</p></Panel></main>;
 
-  const [a, b] = arena.match.sides.map((s) => s.species);
-  let state = rules.newMatch(a, b);
-  const roster = rules.roster();
-  const rows = arena.log.map((e, i) => {
-    const rnd = new Uint8Array(32); rnd.set(e.rnd);
-    const res = rules.resolveTurn(state, e.picks as [Slot, Slot], rnd, e.mood as Mood[] as [Mood, Mood]);
-    state = res.state;
-    return { i, picks: e.picks, mood: e.mood, rnd: e.rnd.map((x) => x.toString(16).padStart(2, '0')).join(''), hp: state.fighters.map((f) => f.hp) };
-  });
-  const ok = state.fighters[0].hp === arena.match.sides[0].hp && state.fighters[1].hp === arena.match.sides[1].hp && state.turn === arena.match.turn;
+  return <Replay arena={arena} host={host} />;
+}
+
+function Replay({ arena, host }: { arena: ArenaView; host: string }) {
+  const { a, b, rows, ok, roster } = useMemo(() => {
+    const [a, b] = arena.match.sides.map((s) => s.species);
+    const roster = rules.roster();
+    const init = { state: rules.newMatch(a, b), rows: [] as Array<{ i: number; picks: number[]; mood: number[]; rnd: string; hp: number[] }> };
+    const done = arena.log.reduce((acc, e, i) => {
+      const rnd = new Uint8Array(32); rnd.set(e.rnd);
+      const res = rules.resolveTurn(acc.state, e.picks as [Slot, Slot], rnd, e.mood as Mood[] as [Mood, Mood]);
+      return { state: res.state, rows: [...acc.rows, { i, picks: e.picks, mood: e.mood, rnd: e.rnd.map((x) => x.toString(16).padStart(2, '0')).join(''), hp: res.state.fighters.map((f) => f.hp) }] };
+    }, init);
+    const { state, rows } = done;
+    const ok = state.fighters[0].hp === arena.match.sides[0].hp && state.fighters[1].hp === arena.match.sides[1].hp && state.turn === arena.match.turn;
+    return { a, b, rows, ok, roster };
+  }, [arena]);
   return (
     <main className="mx-auto max-w-3xl p-4 sm:p-8">
       <h1 className="font-pixel t-16 text-navy mb-2">Verify match</h1>

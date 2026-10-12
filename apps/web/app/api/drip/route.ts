@@ -53,6 +53,8 @@ export async function POST(req: Request) {
     hits.push(now); byIp.set(ip, hits); byKey.set(key, now);
     return json({ ok: true, sig, sol: DRIP / LAMPORTS_PER_SOL });
   } catch (e) {
+    // A slow confirmation can still have landed: report success if the recipient was funded.
+    try { if ((await conn.getBalance(pubkey)) >= DRIP * 0.66) { byKey.set(key, now); return json({ ok: true, late: true }); } } catch { /* fall through */ }
     return json({ error: "faucet transfer failed: " + String((e as Error).message).slice(0, 120) }, 502);
   }
 }

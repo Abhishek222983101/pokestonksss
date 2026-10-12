@@ -144,6 +144,9 @@ importers:
       bs58:
         specifier: ^6.0.0
         version: 6.0.0
+      playwright-core:
+        specifier: ^1.49.0
+        version: 1.64.0
       tweetnacl:
         specifier: ^1.0.3
         version: 1.0.3
