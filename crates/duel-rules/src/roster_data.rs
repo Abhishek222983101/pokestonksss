@@ -7,7 +7,7 @@ pub const NAMES: [&str; ROSTER_LEN] = ["Voltfox", "Ironhorn", "Prismoth", "Surge
 
 pub const ROSTER: [Species; ROSTER_LEN] = [
     Species {
-        id: 0, typ: 0, hp: 150, atk: 100, def: 90, spd: 110, feed: 6,
+        id: 0, typ: 0, hp: 144, atk: 100, def: 90, spd: 110, feed: 6,
         moves: [
             Move { kind: MoveKind::Strike, typ: 0, power: 48, acc: 100 },
             Move { kind: MoveKind::Strike, typ: 2, power: 60, acc: 100 },
@@ -25,7 +25,7 @@ pub const ROSTER: [Species; ROSTER_LEN] = [
         ],
     },
     Species {
-        id: 2, typ: 2, hp: 149, atk: 108, def: 93, spd: 90, feed: 2,
+        id: 2, typ: 2, hp: 149, atk: 108, def: 99, spd: 90, feed: 2,
         moves: [
             Move { kind: MoveKind::Strike, typ: 2, power: 48, acc: 100 },
             Move { kind: MoveKind::Strike, typ: 4, power: 60, acc: 100 },
@@ -34,7 +34,7 @@ pub const ROSTER: [Species; ROSTER_LEN] = [
         ],
     },
     Species {
-        id: 3, typ: 3, hp: 165, atk: 95, def: 100, spd: 80, feed: 11,
+        id: 3, typ: 3, hp: 168, atk: 89, def: 100, spd: 80, feed: 11,
         moves: [
             Move { kind: MoveKind::Strike, typ: 3, power: 48, acc: 100 },
             Move { kind: MoveKind::Strike, typ: 0, power: 60, acc: 100 },
@@ -43,7 +43,7 @@ pub const ROSTER: [Species; ROSTER_LEN] = [
         ],
     },
     Species {
-        id: 4, typ: 4, hp: 141, atk: 100, def: 95, spd: 105, feed: 66,
+        id: 4, typ: 4, hp: 144, atk: 100, def: 95, spd: 105, feed: 66,
         moves: [
             Move { kind: MoveKind::Strike, typ: 4, power: 48, acc: 100 },
             Move { kind: MoveKind::Strike, typ: 1, power: 60, acc: 100 },
@@ -70,7 +70,7 @@ pub const ROSTER: [Species; ROSTER_LEN] = [
         ],
     },
     Species {
-        id: 7, typ: 3, hp: 155, atk: 106, def: 95, spd: 85, feed: 14,
+        id: 7, typ: 3, hp: 158, atk: 106, def: 95, spd: 85, feed: 14,
         moves: [
             Move { kind: MoveKind::Strike, typ: 3, power: 48, acc: 100 },
             Move { kind: MoveKind::Strike, typ: 0, power: 60, acc: 100 },

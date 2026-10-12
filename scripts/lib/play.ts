@@ -1,5 +1,6 @@
 /** Shared helpers for devnet scripts built on the SDK. */
 import { Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { fundFromDeployer } from "./fund";
 import { GameClient, devnetConfig, ensureReady, keypairSigner, type TxSigner, type OnboardEvent } from "@pokestonksss/sdk";
 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -9,6 +10,7 @@ export function makeClient(region: "as" | "eu" | "us" = (process.env.REGION as "
 }
 
 export async function airdrop(client: GameClient, pk: PublicKey, sol = 1): Promise<void> {
+  try { if (await fundFromDeployer(client.base, pk, Math.round(Math.min(sol, 0.05) * LAMPORTS_PER_SOL))) return; } catch { /* fall through to public airdrop */ }
   for (let i = 0; i < 6; i++) {
     try {
       const sig = await client.base.requestAirdrop(pk, sol * LAMPORTS_PER_SOL);

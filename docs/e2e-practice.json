@@ -1,0 +1,70 @@
+{
+  "at": "2026-10-12T18:35:11.893Z",
+  "onboard": {
+    "totalMs": 2449,
+    "steps": [
+      "funding",
+      "creating",
+      "delegating",
+      "cloning",
+      "ready"
+    ]
+  },
+  "start_practice": {
+    "ms": 262,
+    "link": "https://explorer.solana.com/tx/5vpu9FfmUoFxe2Bngjz6MR7Am4qop16JpmkNJBPSWsm5rJN9KH1G7JcWCWFMFRFBWTuxzaGYNrtFgYB7cvb3DXDP?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app"
+  },
+  "lock_ms": {
+    "n": 5,
+    "p50": 269,
+    "p95": 334,
+    "max": 334
+  },
+  "lock_to_resolved_ms": {
+    "n": 5,
+    "p50": 74,
+    "p95": 76,
+    "max": 76
+  },
+  "battle": {
+    "turns": 5,
+    "finished": true,
+    "winner": 1,
+    "snap": [
+      "10748794107",
+      "8238143302930"
+    ],
+    "moods": [
+      "0/0",
+      "0/0",
+      "0/0",
+      "0/0",
+      "0/0"
+    ],
+    "hp": [
+      0,
+      96
+    ]
+  },
+  "commit": {
+    "link": "https://explorer.solana.com/tx/4SgwaJL7xcSg3t268yryapr5Za9qUu9x4epVtaUANYBgfg1noDvKmPznN9W3d67sscEN5ysgxKYEbiFCEY5wdkQA?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app",
+    "ms": 218,
+    "baseTrainer": {
+      "rating": 988,
+      "w": 0,
+      "l": 1,
+      "battles": 1
+    },
+    "erTrainer": {
+      "rating": 988,
+      "battles": 1,
+      "unsaved": 0,
+      "commits": 1
+    }
+  },
+  "G1a_unfunded_guest": {
+    "pass": true,
+    "balanceLamports": 0,
+    "turns": 7
+  }
+}

@@ -5,6 +5,7 @@
   "scripts": {
     "p1": "tsx p1-devnet.ts",
     "e2e:practice": "tsx e2e-practice.ts",
+    "fund": "tsx fund.ts",
     "typecheck": "tsc --noEmit",
     "e2e:duel": "tsx e2e-duel.ts",
     "judge": "tsx judge-selftest.ts",

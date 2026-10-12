@@ -4,3 +4,8 @@
 - [x] P3.1-3.8 program `pokestonksss` (id FRxAb7Nw1GFyLkV7KN7fitTztiZuJ1y1oNEmcW3mHM1M) compiles: 393 KB .so, IDL emitted, 9 host tests green (oracle live-bytes parse, feed PDAs, settle, commitment, log cap, sizes)
 - [ ] P3.10 devnet e2e: needs user to run key import + `scripts/deploy-devnet.sh pokestonksss`, then `pnpm --filter scripts e2e:practice`
 - Decision: skipped separate P1 spike deployment (saves 1.6 SOL); the real program's e2e exercises delegation, ER tx, delegated VRF, oracle snapshot, commit and the unfunded-guest check (G1.a). Crank not used: duel timeouts use permissionless `claim_timeout`.
+- [x] DEPLOYED program FRxAb7Nw1GFyLkV7KN7fitTztiZuJ1y1oNEmcW3mHM1M on devnet (tx 4H28XEKp…, 392,608 B, rent ≈2.0 SOL, authority C7qNkV7Y…)
+- [x] G1/G2 e2e-practice on real ER (Asia): onboard+delegate 1 tx, 1.75–2.4 s total; start_practice 262 ms; lock_pick p50 269 ms; VRF→resolved p50 74 ms; oracle snapshot taken; commit_trainer → base Trainer matches; **unfunded (0 lamports) guest played a full battle** (G1.a PASS). Evidence: docs/e2e-practice.json
+- [x] P4 e2e-duel: sealed commit-reveal duel completes (10 turns, ~850 ms/turn incl. 4 txs + VRF); ratings zero-sum (988/1012); 6 negative tests rejected (wrong token, self join, double join, early claim_timeout, wrong salt, spectator commit)
+- [x] loadtest 10 guests × 2 battles: 20 battles, 116 turns, 0 errors; start p50 252 ms, lock p50 229 ms, resolve p50 73 ms (p95 352 ms)
+- Crank not used: duel timeouts use permissionless claim_timeout (client-triggered). Session keys: not used in v1 (guests sign directly).

@@ -1,0 +1,44 @@
+{
+  "at": "2026-10-12T18:35:33.332Z",
+  "onboard_ms": {
+    "host": 2847,
+    "guest": 3363
+  },
+  "open_duel": {
+    "ms": 369,
+    "link": "https://explorer.solana.com/tx/W8dixLzoTPyy4dk8E5Bgedu2L48z3cnWMUd4x9eSN4CjD19FzgNxcnXHMnYVdHa83YAzuCURpKBdrGmtwR4gpUD?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app"
+  },
+  "NEG_wrong_token": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6005}]}",
+  "NEG_self_join": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6010}]}",
+  "join_duel": {
+    "ms": 356,
+    "link": "https://explorer.solana.com/tx/2uGNG4MthryLKAY9KJQ8w847xPpLoSFoXhsaAUqfEnBDPhrDEsRsPgT3E2nog3YGbyJZ4Z11tFgZhBrpn9bb649g?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app"
+  },
+  "NEG_double_join": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6001}]}",
+  "NEG_claim_timeout_early": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6008}]}",
+  "NEG_reveal_wrong_salt": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6007}]}",
+  "NEG_spectator_commit": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6001}]}",
+  "turn_ms": {
+    "n": 10,
+    "p50": 847,
+    "p95": 1565,
+    "max": 1565
+  },
+  "result": {
+    "finished": true,
+    "winner": 1,
+    "turns": 10
+  },
+  "trainers": {
+    "host": {
+      "rating": 988,
+      "w": 0,
+      "l": 1
+    },
+    "guest": {
+      "rating": 1012,
+      "w": 1,
+      "l": 0
+    }
+  }
+}
