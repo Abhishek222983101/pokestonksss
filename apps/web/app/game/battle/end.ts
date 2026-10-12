@@ -29,7 +29,7 @@ export class EndOverlay {
     const dim = scene.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.72).setDepth(100).setAlpha(0);
     scene.tweens.add({ targets: dim, alpha: 0.72, duration: 300 });
     const panel = scene.add.graphics().setDepth(101);
-    drawFrame(panel, W / 2 - 330, 100, 660, 500, { fill: C.navy, border: won ? C.gold : C.grayDark, borderW: 5, inner: C.white });
+    drawFrame(panel, W / 2 - 330, 90, 660, 530, { fill: C.navy, border: won ? C.gold : C.grayDark, borderW: 5, inner: C.white });
     const title = txt(scene, W / 2, 172, won ? 'YOU WIN!' : 'LIQUIDATED', won ? 38 : 34, won ? '#ffd23c' : '#f85858', { stroke: '#181818', strokeThickness: 8 }).setOrigin(0.5).setDepth(102);
     scene.tweens.add({ targets: title, scale: { from: 0.2, to: 1 }, duration: 320, ease: 'Back.easeOut' });
     if (won) scene.tweens.add({ targets: title, scale: 1.06, duration: 520, yoyo: true, repeat: -1, delay: 320, ease: 'Sine.easeInOut' });
@@ -91,11 +91,11 @@ export class EndOverlay {
         this.objs.push(up);
       }
     }
-    this.badge = txt(scene, W / 2, 492, '', 11, '#ffd23c', { stroke: '#181818', strokeThickness: 3 }).setOrigin(0.5).setDepth(104);
-    this.status = txt(scene, W / 2, 516, 'Practice match. Your rating is saved on this device.', 9, '#a8b8f8').setOrigin(0.5, 0).setDepth(102);
+    this.badge = txt(scene, W / 2, 492, '', 10, '#ffd23c', { stroke: '#181818', strokeThickness: 3 }).setOrigin(0.5, 0).setDepth(104);
+    this.status = txt(scene, W / 2, 534, 'Practice match. Your rating is saved on this device.', 9, '#a8b8f8').setOrigin(0.5, 0).setDepth(102);
     this.objs.push(this.badge, this.status);
 
-    this.button('CONTINUE', W / 2 - 110, 538, 220, () => o.onContinue());
+    this.button('CONTINUE', W / 2 - 110, 556, 220, () => o.onContinue());
 
     audio.bgm(won ? 'victory' : 'defeat');
     audio.sfx(won ? 'win' : 'lose');
@@ -112,7 +112,7 @@ export class EndOverlay {
     const parts: string[] = [];
     if (trophies.length) parts.push(`CAPTURED ${trophies.map((n) => n.replace(' Trophy', '')).join(', ')}`);
     if (rest.length) parts.push(`BADGE ${rest.join(', ')}`);
-    this.badge.setText(`${parts.join('  +  ').toUpperCase()}  (minted to your wallet)`);
+    this.badge.setText(`${parts.join('\n').toUpperCase()}`).setLineSpacing(4).setFontSize(10).setColor('#ffd23c');
     this.scene.tweens.add({ targets: this.badge, scale: { from: 0.6, to: 1 }, duration: 320, ease: 'Back.easeOut' });
     audio.sfx('levelup');
   }
