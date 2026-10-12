@@ -52,7 +52,7 @@ export class ChainDuelSource implements BattleSource {
     const roster = rules.roster();
     this.opponentName = `Friend ${opponent.toBase58().slice(0, 4)}…`;
     this.snap = {
-      phase: 'RESOLVING', champions: [roster[me], roster[foe]], opponent: { label: this.opponentName, isBot: false },
+      onChain: true, phase: 'RESOLVING', champions: [roster[me], roster[foe]], opponent: { label: this.opponentName, isBot: false },
       state: rules.newMatch(me, foe), mood: [0, 0], movePct: [0, 0], locked: true, turns: [], result: null, turnMs: TURN_MS,
     };
   }

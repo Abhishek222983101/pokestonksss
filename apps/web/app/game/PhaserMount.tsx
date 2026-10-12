@@ -103,6 +103,17 @@ export default function PhaserMount({ routeId, speciesId, routeSeed, duelSource,
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 50, background: '#0b1030', touchAction: 'none' }}>
       <div ref={host} style={{ position: 'absolute', inset: 0 }} />
+      {!duelSource && (
+        <button
+          type="button"
+          onClick={() => exitRef.current()}
+          className="btn btn-sm"
+          style={{ position: 'absolute', right: 8, top: 72, zIndex: 3 }}
+          aria-label="Back to the map"
+        >
+          ← Map
+        </button>
+      )}
       {rotateHint && (
         <p
           role="status"

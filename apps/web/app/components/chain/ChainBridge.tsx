@@ -8,7 +8,7 @@ import { LocalBattleSource } from '../../../lib/localBattleSource';
 import { setBattleSourceFactory } from '../../game/flow/encounterFlow';
 import { EventBus } from '../../game/events';
 import OnboardingOverlay from './OnboardingOverlay';
-import ProofStrip from './ProofStrip';
+import ProofDock from './ProofDock';
 import DuelHost from './DuelHost';
 
 /**
@@ -28,7 +28,9 @@ export default function ChainBridge() {
     if (status !== 'ready') return;
     setBattleSourceFactory(async (p, f) => {
       try {
-        const s = new ChainBattleSource(p, f, 1);
+        const r = useChain.getState().trainer?.rating ?? 1000;
+        const tier = r < 1050 ? 0 : r < 1150 ? 1 : 2; // beginners meet a Rookie House Agent; it gets sharper as you climb
+        const s = new ChainBattleSource(p, f, tier);
         await s.ready();
         return s;
       } catch (e) {
@@ -49,11 +51,7 @@ export default function ChainBridge() {
     <>
       {guest && status !== 'ready' && <OnboardingOverlay />}
       <DuelHost />
-      {inBattle && status === 'ready' && (
-        <div className="pointer-events-none fixed left-2 top-1 z-40 max-w-[calc(100vw-1rem)]">
-          <div className="pointer-events-auto panel panel-dialog on-navy !m-0 !py-1 !px-2 text-cream"><ProofStrip compact /></div>
-        </div>
-      )}
+      {inBattle && status === 'ready' && <ProofDock />}
     </>
   );
 }

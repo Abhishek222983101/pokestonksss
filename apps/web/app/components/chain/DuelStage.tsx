@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { PublicKey } from '@solana/web3.js';
 import { ChainDuelSource, type DuelRole } from '../../../lib/chain/ChainDuelSource';
 import { brokerByNum } from '../../../lib/brokermon';
-import ProofStrip from './ProofStrip';
+import ProofDock from './ProofDock';
 
 const PhaserMount = dynamic(() => import('../../game/PhaserMount'), { ssr: false });
 
@@ -30,9 +30,7 @@ export default function DuelStage({ role, host, hostSpecies, guestSpecies, oppon
   return (
     <>
       <PhaserMount routeId={mine.routeId} speciesId={mine.id} duelSource={source} onExit={onExit} />
-      <div className="pointer-events-none fixed left-2 top-1 z-[70] max-w-[calc(100vw-1rem)]">
-        <div className="pointer-events-auto panel panel-dialog on-navy !m-0 !py-1 !px-2 text-cream"><ProofStrip compact sealedMode="sealed commit-reveal" /></div>
-      </div>
+      <ProofDock sealedMode="sealed commit-reveal" />
     </>
   );
 }

@@ -64,7 +64,7 @@ export class EndOverlay {
   }
 
   /** P7 hook: shows the "Saved to Solana" proof line once the rating is committed. */
-  setSaved(text: string) { this.status.setText(text).setColor('#58d858'); }
+  setSaved(text: string, color = '#58d858') { this.status.setText(text).setColor(color); }
 
   private button(label: string, x: number, y: number, w: number, cb: () => void) {
     const h = 56;

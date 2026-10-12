@@ -29,6 +29,7 @@ export class ChainBattleSource implements BattleSource {
   constructor(private player: number, private foe: number, private tier = 1) {
     const roster = rules.roster();
     this.snap = {
+      onChain: true,
       phase: 'RESOLVING',
       champions: [roster[player], roster[foe]],
       opponent: { label: 'House Agent', isBot: true },

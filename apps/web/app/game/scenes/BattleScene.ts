@@ -452,6 +452,15 @@ export class BattleScene extends Phaser.Scene {
       ratingBefore: res.ratingBefore, ratingAfter: res.ratingAfter,
       onContinue: () => void this.close(),
     });
+    if (snap.onChain) {
+      this.overlay.setSaved('Result written on Solana. Saving your rating…', '#f8d858');
+      let tries = 0;
+      const poll = this.time.addEvent({ delay: 600, loop: true, callback: () => {
+        const r = this.src.getSnapshot().result;
+        if (r?.signature) { this.overlay?.setSaved('Saved to Solana ✓  Open "Proof" to verify every transaction', '#58d858'); poll.remove(); }
+        else if (++tries > 12) { this.overlay?.setSaved('Rating is live on the rollup (saved to Solana in batches)', '#58d858'); poll.remove(); }
+      } });
+    }
   }
 
   private async close() {

@@ -11,6 +11,7 @@ import { useSessionStore } from '../../stores/sessionStore';
 import OnboardingOverlay from '../../components/chain/OnboardingOverlay';
 import DuelStage from '../../components/chain/DuelStage';
 import { Button, Panel } from '../../components/ui';
+import { Portrait } from '../../components/Portrait';
 
 /** Invite landing page: guest identity is created automatically, then one tap to join. */
 export default function DuelInvitePage({ params }: { params: Promise<{ host: string }> }) {
@@ -57,10 +58,19 @@ export default function DuelInvitePage({ params }: { params: Promise<{ host: str
       <p className="mb-4 text-sm">A friend invited you to a sealed duel on MagicBlock devnet. No wallet needed. Pick your BrokerMon and join.</p>
       <Panel className="mb-4">
         <div role="radiogroup" aria-label="Choose your BrokerMon" className="grid grid-cols-4 gap-2">
-          {BROKERMON.map((b) => (
-            <button key={b.id} role="radio" aria-checked={mine === b.num} onClick={() => setMine(b.num)}
-              className={`panel panel-flat !m-0 !p-2 font-pixel t-8 ${mine === b.num ? 'text-navy' : 'text-slate-soft'}`}>{b.ticker}<br />{b.name}</button>
-          ))}
+          {BROKERMON.map((b) => {
+            const on = mine === b.num;
+            return (
+              <button key={b.id} role="radio" aria-checked={on} onClick={() => setMine(b.num)}
+                className={`panel !m-0 !p-2 flex flex-col items-center gap-1 font-pixel t-8 ${on ? 'panel-dialog on-navy text-yellow' : 'panel-flat text-ink'}`}
+                style={on ? { outline: '3px solid #d8a830', outlineOffset: 2 } : undefined}>
+                <Portrait speciesId={b.id} size={48} title={b.name} />
+                {b.ticker}
+                <span className="text-[10px] font-body">{b.name}</span>
+                {on && <span aria-hidden="true">▲ you</span>}
+              </button>
+            );
+          })}
         </div>
       </Panel>
       {err && <p role="alert" className="mb-2 text-sm text-red-deep">{err}</p>}

@@ -22,6 +22,8 @@ export interface BattleResult {
 export type BattlePhase = 'PICKING' | 'RESOLVING' | 'FINISHED';
 
 export interface BattleSnapshot {
+  /** True when this battle runs on the Ephemeral Rollup (shows proof/saved lines). */
+  onChain?: boolean;
   phase: BattlePhase;
   /** Champions for side 0 (always the local player) and side 1. */
   champions: [Champion, Champion];

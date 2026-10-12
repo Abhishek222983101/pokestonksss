@@ -3,6 +3,10 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useSessionStore } from '../stores/sessionStore';
 import { loadProfile, type Profile } from '../../lib/profile';
+import { useChain } from '../../lib/chain/store';
+import { getClient } from '../../lib/chain/config';
+import { accountLink, trainerPda } from '@pokestonksss/sdk';
+import { guestKeypair } from '../../lib/chain/guest';
 import { rankOf } from '../../lib/rank';
 import { getBroker } from '../../lib/brokermon';
 import { audio } from '../game/audio';
@@ -30,7 +34,11 @@ export default function Hud() {
   const setStage = useSessionStore((s) => s.setStage);
   const signOut = useSessionStore((s) => s.signOut);
   const muted = useMuted();
-  const [profile, setProfile] = useState<Profile>({ rating: 1000, wins: 0, losses: 0 });
+  const [local, setProfile] = useState<Profile>({ rating: 1000, wins: 0, losses: 0 });
+  const trainer = useChain((s) => s.trainer);
+  const refreshTrainer = useChain((s) => s.refreshTrainer);
+  // On-chain Trainer is the source of truth once the rollup account exists; local profile only before that.
+  const profile: Profile = trainer ? { rating: trainer.rating, wins: trainer.wins, losses: trainer.losses } : local;
   // Hidden during a battle: it would cover the turn timer.
   const [inBattle, setInBattle] = useState(false);
 
@@ -39,11 +47,11 @@ export default function Hud() {
     refresh();
     const offs = [
       EventBus.on('battle:start', () => setInBattle(true)),
-      EventBus.on('battle:closed', () => { setInBattle(false); refresh(); }),
+      EventBus.on('battle:closed', () => { setInBattle(false); refresh(); void refreshTrainer(); }),
       EventBus.on('game:exit', () => setInBattle(false)),
     ];
     return () => offs.forEach((off) => off());
-  }, []);
+  }, [refreshTrainer]);
 
   if (inBattle) return null;
   const mine = speciesId ? getBroker(speciesId) : null;
@@ -59,12 +67,17 @@ export default function Hud() {
             {mine && <Portrait speciesId={mine.id} size={32} title={mine.name} />}
             <div className="min-w-0">
               <p className="flex items-center gap-1">
-                <span className="chip chip-plain">Guest</span>
+                <span className="chip chip-plain">{trainer ? 'On-chain' : 'Guest'}</span>
                 <span className="font-pixel t-8">{rankOf(profile.rating)}</span>
               </p>
               <p className="mt-1 text-[14px] leading-tight text-slate">
                 <span className="font-pixel t-10 text-ink tabular-nums">{profile.rating}</span> rating · {profile.wins}W {profile.losses}L
               </p>
+              {trainer && (
+                <a className="mt-1 block text-[12px] text-navy underline" target="_blank" rel="noreferrer" href={accountLink(trainerPda(guestKeypair().publicKey).toBase58(), 'er', getClient().cfg)}>
+                  your Trainer on Solana ↗
+                </a>
+              )}
             </div>
           </div>
         </Panel>
