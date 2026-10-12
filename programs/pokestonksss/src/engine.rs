@@ -124,6 +124,13 @@ mod tests {
     }
 
     #[test]
+    fn commitment_known_answer_matches_sdk() {
+        let h = commitment(1, &[7u8; 32], &Pubkey::new_from_array([1u8; 32]), 3, &Pubkey::new_from_array([2u8; 32]));
+        let hex: String = h.iter().map(|b| format!("{:02x}", b)).collect();
+        assert_eq!(hex, "ef7f7f129e62d7d4d84eeb28ea89ad29b136d82605edbd9584b5ce521dc186c0");
+    }
+
+    #[test]
     fn log_is_capped_and_replayable() {
         let mut a = arena(MODE_PRACTICE, NO_WINNER);
         for i in 0..20u8 {

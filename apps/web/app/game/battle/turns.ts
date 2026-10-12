@@ -10,6 +10,8 @@ export interface TurnCtx {
   scene: Phaser.Scene;
   combatants: Record<Side, Combatant>;
   champions: [Champion, Champion];
+  /** Price move since the bell per side, for the mood chip. */
+  movePct: [number, number];
   dialog: DialogBox;
 }
 
@@ -34,7 +36,7 @@ async function playEvent(ctx: TurnCtx, ev: TurnEvent): Promise<void> {
 
   if (ev.kind === 'mood') {
     const c = ctx.combatants[ev.side];
-    c.plate.setMood(ev.mood > 0 ? 1.1 : 0.9, ev.mood > 0 ? 10 : -10);
+    c.plate.setMood(ev.mood > 0 ? 1.1 : 0.9, ctx.movePct[ev.side]);
     return;
   }
 

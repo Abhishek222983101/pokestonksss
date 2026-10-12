@@ -115,7 +115,7 @@ export class MoveMenu {
       const cx = x0 + (i % 2) * (w + gap), cy = y0 + Math.floor(i / 2) * (h + gap);
       const g = this.scene.add.graphics().setDepth(45);
       const t = txt(this.scene, cx + 40, cy + 12, move.name.toUpperCase(), move.name.length > 13 ? 10 : 12, '#181818').setDepth(46);
-      const sub = txt(this.scene, cx + 40, cy + 32, KIND_LABEL[move.kind], 8, '#484878').setDepth(46);
+      const sub = txt(this.scene, cx + 40, cy + 32, move.kind === 'strike' ? 'PUMP' : '', 8, '#484878').setDepth(46);
       const side = txt(this.scene, cx + w - 14, cy + 32, move.kind === 'strike' ? `PWR ${move.power}` : KIND_SUB[move.kind], 8, '#484878').setOrigin(1, 0).setDepth(46);
       const dotCol = move.kind === 'strike' ? (TYPE_COLOR[typeName(move.type)] ?? C.gray) : KIND_COLOR[move.kind];
       const dot = this.scene.add.circle(cx + 20, cy + h / 2, 9, dotCol).setDepth(46).setStrokeStyle(2, C.ink);
@@ -126,9 +126,10 @@ export class MoveMenu {
       this.objs.push(g, t, sub, side, dot, zone);
     });
 
-    const back = txt(this.scene, 940, 520, '◀ BACK', 10, '#f8d858').setOrigin(1, 0).setDepth(46).setInteractive({ useHandCursor: true });
-    back.on('pointerdown', () => { audio.sfx('menu_back'); this.onBack(); });
-    this.objs.push(back);
+    const back = txt(this.scene, 940, 604, '◀ BACK', 10, '#f8d858').setOrigin(1, 0.5).setDepth(46);
+    const backZone = this.scene.add.zone(880, 604, 150, 44).setDepth(47).setInteractive({ useHandCursor: true });
+    backZone.on('pointerdown', () => { audio.sfx('menu_back'); this.onBack(); });
+    this.objs.push(back, backZone);
 
     this.cursorT = txt(this.scene, 0, 0, '▶', 14, '#d8a830').setDepth(46).setOrigin(0.5);
     this.scene.tweens.add({ targets: this.cursorT, alpha: 0.3, duration: 380, yoyo: true, repeat: -1 });
@@ -189,7 +190,7 @@ export class MoveMenu {
       const pv = this.preview(m.slot);
       add(txt(this.scene, x, y + 2, `POWER ${m.power}`, 10, '#ffffff').setDepth(47));
       add(txt(this.scene, x + 150, y + 2, `ACC ${m.acc}`, 10, '#ffffff').setDepth(47));
-      const mult = effectiveness(m.type, this.foeType);
+      const mult = effectiveness(m.type, this.foeType) / 100;
       const label = mult > 1 ? 'SUPER EFFECTIVE x2' : mult < 1 ? 'RESISTED x0.5' : 'NEUTRAL';
       const col = mult > 1 ? '#58d858' : mult < 1 ? '#f88858' : '#c8c8d8';
       add(txt(this.scene, x, y + 28, label, 9, col).setDepth(47));

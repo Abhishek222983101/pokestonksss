@@ -13,14 +13,14 @@ const lever = (): MoveDef => ({ slot: 3, name: 'Leverage', kind: 'charge', type:
 
 // Types: 0 SPEED 1 ARMOR 2 ARCANE 3 TIDE 4 SHADE
 const ROSTER: Champion[] = [
-  { id: 0, name: 'Solarc', asset: 'SOL', type: 0, hp: 150, atk: 86, def: 68, spd: 112, moves: [mv(0, 'Parallel Rush', 0, 62, 95), mv(1, 'Hash Burst', 2, 55, 100), hedge(), lever()] },
-  { id: 1, name: 'Bitrock', asset: 'BTC', type: 1, hp: 178, atk: 78, def: 98, spd: 58, moves: [mv(0, 'Halving Slam', 1, 64, 92), mv(1, 'Cold Wallet', 4, 55, 100), hedge(), lever()] },
-  { id: 2, name: 'Etherion', asset: 'ETH', type: 2, hp: 158, atk: 90, def: 74, spd: 84, moves: [mv(0, 'Gas Storm', 2, 62, 95), mv(1, 'Merge Wave', 3, 55, 100), hedge(), lever()] },
-  { id: 3, name: 'Suiflow', asset: 'SUI', type: 3, hp: 152, atk: 82, def: 72, spd: 96, moves: [mv(0, 'Move Tide', 3, 60, 96), mv(1, 'Object Dash', 0, 56, 100), hedge(), lever()] },
-  { id: 4, name: 'Zecshade', asset: 'ZEC', type: 4, hp: 154, atk: 88, def: 70, spd: 88, moves: [mv(0, 'Shielded Strike', 4, 62, 94), mv(1, 'Zero Proof', 1, 55, 100), hedge(), lever()] },
-  { id: 5, name: 'Bnbull', asset: 'BNB', type: 1, hp: 170, atk: 80, def: 90, spd: 66, moves: [mv(0, 'Burn Charge', 1, 62, 94), mv(1, 'Chain Surge', 3, 56, 100), hedge(), lever()] },
-  { id: 6, name: 'Dogeon', asset: 'DOGE', type: 0, hp: 160, atk: 84, def: 66, spd: 100, moves: [mv(0, 'Much Wow', 0, 60, 96), mv(1, 'To The Moon', 4, 56, 100), hedge(), lever()] },
-  { id: 7, name: 'Ripplet', asset: 'XRP', type: 3, hp: 164, atk: 76, def: 82, spd: 78, moves: [mv(0, 'Ledger Wave', 3, 60, 96), mv(1, 'Escrow Wall', 2, 56, 100), hedge(), lever()] },
+  { id: 0, name: 'Solarc', asset: 'SOL', type: 0, hp: 225, atk: 94, def: 68, spd: 112, moves: [mv(0, 'Parallel Rush', 0, 62, 95), mv(1, 'Hash Burst', 2, 55, 100), hedge(), lever()] },
+  { id: 1, name: 'Bitrock', asset: 'BTC', type: 1, hp: 267, atk: 72, def: 80, spd: 62, moves: [mv(0, 'Halving Slam', 1, 64, 92), mv(1, 'Cold Wallet', 4, 55, 100), hedge(), lever()] },
+  { id: 2, name: 'Etherion', asset: 'ETH', type: 2, hp: 237, atk: 90, def: 74, spd: 84, moves: [mv(0, 'Gas Storm', 2, 62, 95), mv(1, 'Merge Wave', 3, 55, 100), hedge(), lever()] },
+  { id: 3, name: 'Suiflow', asset: 'SUI', type: 3, hp: 228, atk: 90, def: 72, spd: 96, moves: [mv(0, 'Move Tide', 3, 60, 96), mv(1, 'Object Dash', 0, 56, 100), hedge(), lever()] },
+  { id: 4, name: 'Zecshade', asset: 'ZEC', type: 4, hp: 231, atk: 88, def: 70, spd: 88, moves: [mv(0, 'Shielded Strike', 4, 62, 94), mv(1, 'Zero Proof', 1, 55, 100), hedge(), lever()] },
+  { id: 5, name: 'Bnbull', asset: 'BNB', type: 1, hp: 255, atk: 80, def: 90, spd: 66, moves: [mv(0, 'Burn Charge', 1, 62, 94), mv(1, 'Chain Surge', 3, 56, 100), hedge(), lever()] },
+  { id: 6, name: 'Dogeon', asset: 'DOGE', type: 0, hp: 240, atk: 92, def: 66, spd: 100, moves: [mv(0, 'Much Wow', 0, 60, 96), mv(1, 'To The Moon', 4, 56, 100), hedge(), lever()] },
+  { id: 7, name: 'Ripplet', asset: 'XRP', type: 3, hp: 246, atk: 76, def: 82, spd: 78, moves: [mv(0, 'Ledger Wave', 3, 60, 96), mv(1, 'Escrow Wall', 2, 56, 100), hedge(), lever()] },
 ];
 
 const fighter = (champ: number): FighterState => {

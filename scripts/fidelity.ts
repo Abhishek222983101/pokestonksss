@@ -72,9 +72,7 @@ async function run(target: 'live' | 'local', form: keyof typeof VIEWPORTS) {
     await sleep(5500); // camera pull-in + pixel field dissolve + pins
     await shot(page, '3-globe');
 
-    const pin = page.locator('button.pin:not(.pin-cluster)').first();
-    await pin.click({ timeout: 20_000 });
-    await sleep(2200);
+    await pickRoute(page);
     await shot(page, '3b-globe-sheet');
     await click(page, /enter route/i);
     await sleep(target === 'live' ? 9000 : 8000);
@@ -105,18 +103,42 @@ async function run(target: 'live' | 'local', form: keyof typeof VIEWPORTS) {
   }
 }
 
-/** Live site only: random-walk the route until the encounter starts (the React HUD hides during battles). */
-async function walkUntilBattle(page: Page) {
-  const keys = ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft'];
-  const started = Date.now();
-  while (Date.now() - started < 240_000) {
-    const k = keys[Math.floor(Math.random() * 4)];
-    await page.keyboard.down(k);
-    await sleep(500 + Math.random() * 900);
-    await page.keyboard.up(k);
-    if ((await page.locator('aside[aria-label="Wallet and controls"]').count()) === 0) { console.log('  encounter started'); return; }
+/** Click a pin (clusters zoom in first) until the route sheet with "Enter route" is open. */
+async function pickRoute(page: Page) {
+  for (let i = 0; i < 6; i++) {
+    const single = page.locator('button.pin:not(.pin-cluster)');
+    const pin = (await single.count()) > 0 ? single.first() : page.locator('button.pin').first();
+    await pin.click({ timeout: 20_000, force: true });
+    await sleep(2200);
+    if (await page.getByRole('button', { name: /enter route/i }).isVisible().catch(() => false)) return;
   }
-  throw new Error('no encounter within 4 min');
+  throw new Error('could not open a route sheet');
+}
+
+/**
+ * Live site only: sweep the route in a lawnmower pattern until the encounter starts (the React HUD hides
+ * during battles; there is no debug hook on the deployed build). Keys are held ~260ms per tile.
+ */
+async function walkUntilBattle(page: Page) {
+  const hudGone = async () => (await page.locator('aside[aria-label="Wallet and controls"]').count()) === 0;
+  const hold = async (key: string, tiles: number) => {
+    await page.keyboard.down(key);
+    await sleep(tiles * 260);
+    await page.keyboard.up(key);
+  };
+  const started = Date.now();
+  await hold('ArrowDown', 4);
+  let dir = 'ArrowRight';
+  while (Date.now() - started < 300_000) {
+    for (let i = 0; i < 8; i++) {
+      await hold(dir, 1);
+      if (await hudGone()) { console.log('  encounter started'); return; }
+    }
+    dir = dir === 'ArrowRight' ? 'ArrowLeft' : 'ArrowRight';
+    await hold(Math.random() < 0.8 ? 'ArrowDown' : 'ArrowUp', 2);
+    if (await hudGone()) { console.log('  encounter started'); return; }
+  }
+  throw new Error('no encounter within 5 min');
 }
 
 for (const target of ['live', 'local'] as const) {

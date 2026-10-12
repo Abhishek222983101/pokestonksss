@@ -37,7 +37,7 @@ export class MonPlate {
     this.typeT = txt(scene, 0, 0, '', 8, '#181818').setOrigin(0.5);
     this.tickerChip = scene.add.graphics();
     this.tickerT = txt(scene, 0, 0, '', 8, '#ffffff').setOrigin(0.5);
-    this.moodT = txt(scene, w - 18, h - 16, '', 8, '#2f8a34').setOrigin(1, 1);
+    this.moodT = txt(scene, w - 18, h - 6, '', 8, '#2f8a34').setOrigin(1, 1);
     this.stageT = txt(scene, w - 18, 40, '', 8, '#484878').setOrigin(1, 0);
 
     const hpLabel = txt(scene, 18, ally ? 60 : 56, 'MRG', 10, '#c8502c');
