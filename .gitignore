@@ -1,0 +1,17 @@
+node_modules
+.next
+out
+.env
+.env.*
+!.env.example
+*.keypair.json
+**/keypair*.json
+.vercel
+# anchor / solana
+target
+.anchor
+test-ledger
+programs/**/target
+deploy-keys
+*.so
+.DS_Store

@@ -1,0 +1,10 @@
+{
+  "name": "worlds-fair-monorepo",
+  "private": true,
+  "packageManager": "pnpm@10.16.0",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build"
+  }
+}
