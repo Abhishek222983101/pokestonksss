@@ -2,10 +2,14 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { ROUTES } from './routes';
+import { FEEDS } from '@pokestonksss/sdk';
+import { getClient } from './chain/config';
+import { parsePriceUsd } from './chain/oracle';
 
 /**
- * SIMULATED price feed for the offline build (P7 swaps this for the MagicBlock oracle). Deterministic random
- * walk per asset so the UI shows a live-looking price and arrow without any network.
+ * REAL prices from MagicBlock's on-rollup pricing oracle (Pyth Lazer feeds), read every 3 s from the ER.
+ * `change` = % move since this page was opened. The BASE values below are only placeholders for the first ~1 s
+ * (and when the rollup is unreachable the last real value is kept).
  */
 const BASE: Record<string, number> = { sol: 168.4, btc: 96200, eth: 3480, sui: 3.72, zec: 62.1, bnb: 612, doge: 0.186, xrp: 2.41 };
 
@@ -19,14 +23,23 @@ function seedState() {
   for (const r of ROUTES) if (!state[r.id]) state[r.id] = { price: BASE[r.id], change: 0 };
 }
 
-function step() {
-  for (const r of ROUTES) {
-    const s = state[r.id];
-    const drift = (Math.random() - 0.5) * 0.0036;
-    const price = s.price * (1 + drift);
-    state[r.id] = { price, change: Math.max(-6, Math.min(6, s.change * 0.97 + drift * 100)) };
-  }
-  listeners.forEach((l) => l());
+const first: Record<string, number> = {};
+let inflight = false;
+
+async function step() {
+  if (inflight) return;
+  inflight = true;
+  try {
+    const infos = await getClient().er.getMultipleAccountsInfo(FEEDS, 'confirmed');
+    ROUTES.forEach((r, i) => {
+      const info = infos[i];
+      const p = info ? parsePriceUsd(info.data) : null;
+      if (!p) return;
+      first[r.id] ??= p.usd;
+      state[r.id] = { price: p.usd, change: ((p.usd - first[r.id]) / first[r.id]) * 100 };
+    });
+    listeners.forEach((l) => l());
+  } catch { /* keep last values */ } finally { inflight = false; }
 }
 
 export function getPrice(id: string): PriceTick {
@@ -41,7 +54,7 @@ export function usePrices(): Record<string, PriceTick> {
     seedState();
     const l = () => force((n) => n + 1);
     listeners.add(l);
-    if (!timer) timer = setInterval(step, 2500);
+    if (!timer) { void step(); timer = setInterval(() => void step(), 3000); }
     return () => {
       listeners.delete(l);
       if (listeners.size === 0 && timer) { clearInterval(timer); timer = null; }
