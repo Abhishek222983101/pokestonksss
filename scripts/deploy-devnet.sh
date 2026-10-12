@@ -6,9 +6,10 @@ set -euo pipefail
 NAME="${1:?crate name, e.g. er-vrf or pokestonksss}"
 SNAKE="${NAME//-/_}"
 KP="${DEPLOYER_KEYPAIR:-$HOME/.config/solana/blitz-deployer.json}"
+[ -f "$KP" ] || KP="$HOME/.config/solana/pokestonksss-deployer.json"
 RPC="${DEPLOY_RPC:-https://rpc.magicblock.app/devnet}"
 cd "$(dirname "$0")/.."
-[ -f "$KP" ] || { echo "Missing $KP — run: ~/bin/blitz-key-finish.sh"; exit 1; }
+[ -f "$KP" ] || { echo "Missing $KP — run ~/bin/blitz-key-finish.sh, or fund the helper wallet"; exit 1; }
 echo "Deployer: $(solana address -k "$KP")  balance: $(solana balance -k "$KP" -u "$RPC")"
 anchor build -p "$NAME"
 SO="target/deploy/$SNAKE.so"; PID="target/deploy/$SNAKE-keypair.json"
