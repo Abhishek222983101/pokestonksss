@@ -1,12 +1,13 @@
 import { PublicKey } from '@solana/web3.js';
-import { GameClient, PHASE, arenaPda, type ArenaView } from '@pokestonksss/sdk';
+import { GameClient, PHASE, arenaPda, levelForXp, type ArenaView } from '@pokestonksss/sdk';
 import type { BattleResult, BattleSnapshot, BattleSource, TurnRecord } from '../battleSource';
 import { rules, type MatchState, type Mood, type Side, type Slot, type TurnEvent } from '../rules';
 import { getClient } from './config';
-import { guestKeypair, guestSigner } from './guest';
+import { ownerKey, activeSigner } from './guest';
 import { moodOf, watchPrice } from './oracle';
 import { useProof } from './proof';
 import { friendly, useChain } from './store';
+import { useRewards } from './rewards';
 
 const TURN_MS = 30_000;
 const flip = (s: Side): Side => (s === 0 ? 1 : 0);
@@ -39,6 +40,7 @@ export class ChainDuelSource implements BattleSource {
   private ended = false;
   private busy = false;
   private ratingBefore = 1000;
+  private xpBefore = 0;
   private hostKey: PublicKey;
   private opponentName: string;
   private timeoutTimer: ReturnType<typeof setInterval> | null = null;
@@ -61,8 +63,8 @@ export class ChainDuelSource implements BattleSource {
   async attach() {
     const client = getClient();
     useProof.getState().reset();
-    const t = await client.getTrainer(guestKeypair().publicKey);
-    if (t) this.ratingBefore = t.rating;
+    const t = await client.getTrainer(ownerKey());
+    if (t) { this.ratingBefore = t.rating; this.xpBefore = t.xp[this.mySpecies()] ?? 0; }
     this.stops.push(client.watchArena(this.hostKey, (a) => this.onArena(a)));
     const myIdx = this.role === 'host' ? 0 : 1;
     this.stops.push(watchPrice(client.er, this.mySpecies(), (p) => { this.nowRaw[myIdx] = p.raw; this.refreshMood(); }));
@@ -70,6 +72,12 @@ export class ChainDuelSource implements BattleSource {
     const a = await client.getArena(this.hostKey);
     if (a) this.onArena(a);
     this.timeoutTimer = setInterval(() => void this.maybeClaimTimeout(), 2500);
+    this.armCrank();
+  }
+
+  /** Arms the MagicBlock crank sweep that settles this duel if either side walks away. Best effort, never blocks play. */
+  private armCrank() {
+    getClient().armTimer(activeSigner(), this.hostKey).then((r) => useProof.getState().set({ crank: { label: 'arm_timer (crank)', sig: r.sig, link: r.link, ms: r.ms } })).catch(() => undefined);
   }
 
   private mySpecies() { return this.role === 'host' ? this.hostSpecies : this.guestSpecies; }
@@ -91,7 +99,7 @@ export class ChainDuelSource implements BattleSource {
   }
 
   private replay(a: ArenaView): { turns: TurnRecord[]; state: MatchState } {
-    let state = rules.newMatch(this.hostSpecies, this.guestSpecies);
+    let state = rules.newMatch(this.hostSpecies, this.guestSpecies, a.match.sides[0].level, a.match.sides[1].level);
     const turns: TurnRecord[] = [];
     const guest = this.role === 'guest';
     for (const e of a.log) {
@@ -119,8 +127,8 @@ export class ChainDuelSource implements BattleSource {
     const onChain: MatchState = {
       turn: a.match.turn,
       fighters: [
-        { champ: this.hostSpecies, hp: f[0].hp, maxHp: f[0].maxHp, charged: f[0].charged, lastGuard: f[0].lastGuard, momentum: f[0].momentum },
-        { champ: this.guestSpecies, hp: f[1].hp, maxHp: f[1].maxHp, charged: f[1].charged, lastGuard: f[1].lastGuard, momentum: f[1].momentum },
+        { champ: this.hostSpecies, hp: f[0].hp, maxHp: f[0].maxHp, charged: f[0].charged, lastGuard: f[0].lastGuard, momentum: f[0].momentum, level: f[0].level },
+        { champ: this.guestSpecies, hp: f[1].hp, maxHp: f[1].maxHp, charged: f[1].charged, lastGuard: f[1].lastGuard, momentum: f[1].momentum, level: f[1].level },
       ],
     };
     const finished = a.phase === PHASE.FINISHED;
@@ -143,15 +151,16 @@ export class ChainDuelSource implements BattleSource {
     const a = this.arena;
     if (!a || a.phase !== PHASE.PICKING || this.ended || this.busy) return;
     this.busy = true;
-    const client = getClient(); const signer = guestSigner();
+    const client = getClient(); const signer = activeSigner();
     const salt = crypto.getRandomValues(new Uint8Array(32));
     const turn = a.match.turn;
     try { window.localStorage.setItem(sealKey(this.hostKey.toBase58(), turn), JSON.stringify({ slot, salt: Array.from(salt) })); } catch { /* memory only */ }
     this.emit({ locked: true, phase: 'RESOLVING' });
     try {
-      const hash = GameClient.commitment(slot, salt, arenaPda(this.hostKey), turn, signer.publicKey);
+      const hash = GameClient.commitment(slot, salt, arenaPda(this.hostKey), turn, ownerKey());
       const r = await client.commitPick(signer, this.hostKey, hash);
       useProof.getState().addSealed({ label: `sealed pick turn ${turn + 1}`, sig: r.sig, link: r.link, ms: r.ms });
+      this.armCrank();
     } catch (e) {
       this.emit({ locked: false, phase: 'PICKING' });
       throw new Error(friendly(e));
@@ -167,7 +176,7 @@ export class ChainDuelSource implements BattleSource {
     if (!saved) return;
     this.revealing = true;
     try {
-      const r = await getClient().revealPick(guestSigner(), this.hostKey, saved.slot, Uint8Array.from(saved.salt));
+      const r = await getClient().revealPick(activeSigner(), this.hostKey, saved.slot, Uint8Array.from(saved.salt));
       useProof.getState().addRolled({ label: `reveal turn ${a.match.turn + 1}`, sig: r.sig, link: r.link, ms: r.ms });
     } catch { /* the other side's reveal may have won the race; state will update */ }
     finally { this.revealing = false; }
@@ -178,7 +187,7 @@ export class ChainDuelSource implements BattleSource {
     const a = this.arena;
     if (!a || this.ended || (a.phase !== PHASE.PICKING && a.phase !== PHASE.REVEALING)) return;
     if (a.deadline > 0 && Date.now() / 1000 > a.deadline + 2) {
-      try { await getClient().claimTimeout(guestSigner(), this.hostKey, new PublicKey(a.guest)); } catch { /* already handled */ }
+      try { await getClient().claimTimeout(activeSigner(), this.hostKey, new PublicKey(a.guest)); } catch { /* already handled */ }
     }
   }
 
@@ -193,14 +202,22 @@ export class ChainDuelSource implements BattleSource {
     }
     const mySeat = this.seat();
     const winner: Side = a.winner === mySeat ? 0 : 1;
-    const result: BattleResult = { winner, turns: a.match.turn, ratingBefore: this.ratingBefore, ratingAfter: after };
+    const sp = this.mySpecies();
+    const xpAfter = useChain.getState().trainer?.xp[sp] ?? this.xpBefore;
+    const result: BattleResult = {
+      winner, turns: a.match.turn, ratingBefore: this.ratingBefore, ratingAfter: after,
+      progress: { species: sp, xpBefore: this.xpBefore, xpAfter, levelBefore: levelForXp(this.xpBefore), levelAfter: levelForXp(xpAfter) },
+    };
     this.emit({ result });
     const t = useChain.getState().trainer;
     if (t && t.unsaved > 0 && t.commits < 9 && (t.commits < 6 || t.unsaved >= 3)) {
       try {
-        const r = await getClient().commitTrainer(guestSigner());
+        const r = await getClient().commitTrainer(activeSigner());
         useProof.getState().set({ saved: { label: 'commit_trainer', sig: r.sig, link: r.link, ms: r.ms } });
         this.emit({ result: { ...result, signature: r.sig } });
+        const t2 = await useChain.getState().refreshTrainer();
+        const minted = await useRewards.getState().sync(t2 ?? undefined);
+        if (minted.length) this.emit({ result: { ...result, signature: r.sig, badges: minted } });
       } catch { /* stays delegated, safe */ }
     }
   }
@@ -210,7 +227,7 @@ export class ChainDuelSource implements BattleSource {
     if (this.timeoutTimer) clearInterval(this.timeoutTimer);
     const a = this.arena;
     if (!this.ended && a && (a.phase === PHASE.PICKING || a.phase === PHASE.REVEALING)) {
-      try { await getClient().forfeit(guestSigner(), this.hostKey, new PublicKey(a.guest)); } catch { /* already over */ }
+      try { await getClient().forfeit(activeSigner(), this.hostKey, new PublicKey(a.guest)); } catch { /* already over */ }
     }
     this.ended = true;
   }

@@ -1,10 +1,10 @@
 {
-  "attacker locks a pick in the victim's arena": "rejected: tx 5UjyjWfBqu9EQoHTCuXqthG4R2AyLw3VMb8CQpuAds828EhJRs3ShiDEnDfoEJs8H5EhZQoGNoKhp3bTLZNxGqg",
-  "attacker starts a practice battle on the victim's arena": "rejected: tx 5WAzBZ2TAxpzwnR5t3FZfowE33C7Ke41qbynmidZ38Fe24EdexjzAv8FHqopRdfbXnRCmU5ssP1u19vSjdN1fBV",
-  "attacker commits the victim's trainer": "rejected: tx 5f4vuT5m442E56Agk7EQySxwY1ujLvEf2eTnJCHXjoWky9htTcv7qQMDKjjnrZS8gVqvAmzjuv2mKxnjt5ES8zy",
-  "attacker resets the victim's live arena": "rejected: tx 5KJR9XDa2diFUfhWGMDUiSBN4tvh648SKwdmgGFNxzZzHtwYnJvzEc7iV8zTEzAF2dJr2UWvG1ERy2G5JNHsEpM",
-  "forged VRF callback (fake identity signer)": "rejected: tx 5vVW1dAfcVeBCGpi97j2jKjWq5AKz7EoMiyYfWSxGcPRr1jFKgJSYqhncBQ64GG3FNynYai7UfwzwJvbh75tKft",
-  "attacker forfeits a duel they are not in (practice arena)": "rejected: tx 4GBpXsV714aMRoD2An2kyaL2LXGYY2YfdWiUxoc26qvPx8roxFtygmnDRMnoAVs596qRBv9J7JXhEFBRc1xMPC5",
-  "start_practice with an out-of-range species": "rejected: tx WUYGXa6FcgMpacME2kBenLx4tVTqk1GydK5kVvKEygwHUjVLggjzrzRGJuxcBoiRLRMp4MX5BgYzVwcBm47XV63",
+  "attacker locks a pick in the victim's arena": "rejected: Account `sessionToken` not provided.",
+  "attacker starts a practice battle on the victim's arena": "rejected: Account `sessionToken` not provided.",
+  "attacker commits the victim's trainer": "rejected: Account `sessionToken` not provided.",
+  "attacker resets the victim's live arena": "rejected: Account `sessionToken` not provided.",
+  "forged VRF callback (fake identity signer)": "rejected: tx 4kM4xpq7iRhVUefYch4MMBfPcDYQbwMwoJia2fLVgHrYAPit7pUn2je67HoRhcoPETCqm9cQoTg1CWtHrRMYVkS",
+  "attacker forfeits a duel they are not in (practice arena)": "rejected: tx 2mUtPdAHJLE97qchExKch3am5MDib21pmVPCuSfvVGDrJexdR2KVCDVU7BdEBsaTDuXqVZo1rRBFJpPKuQuxzXA",
+  "start_practice with an out-of-range species": "rejected: Account `sessionToken` not provided.",
   "restart": "ok"
 }

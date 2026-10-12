@@ -66,8 +66,8 @@ export const BADGES: BadgeInfo[] = [
   { id: 2, name: "Collector", how: "Defeat 4 different BrokerMons", rarity: "common" },
   { id: 3, name: "Dolphin", how: "Reach 1050 rating", rarity: "rare" },
   { id: 4, name: "Shark", how: "Reach 1200 rating", rarity: "epic" },
-  { id: 5, name: "Evolved", how: "Evolve a BrokerMon (level 3)", rarity: "rare" },
-  { id: 6, name: "Apex", how: "Evolve a BrokerMon again (level 6)", rarity: "epic" },
+  { id: 5, name: "Evolved", how: "Evolve a BrokerMon (Lv 4)", rarity: "rare" },
+  { id: 6, name: "Apex", how: "Evolve a BrokerMon again (Lv 7)", rarity: "epic" },
   { id: 7, name: "Hot Streak", how: "Hold a 3 win streak", rarity: "rare" },
 ];
 const popcount = (x: number) => { let n = 0; for (let v = x; v; v &= v - 1) n++; return n; };

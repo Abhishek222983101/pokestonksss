@@ -3,7 +3,7 @@ export type { Facing } from './mons';
 export { speciesPortraitDataUrl } from './portraits';
 export { drawTileset, drawTilesetGrid, TILE, TILE_SIZE, TILE_COUNT, ATLAS_COLS, ATLAS_ROWS, blobTile, gid, isTallGrass, isWaterTile } from './tileset';
 export type { TileName, BlobKind } from './tileset';
-export { drawCharacter, drawCharSheet, CHAR_KEYS, CHAR_WALK_MAPPING, CHAR_W, CHAR_H } from './characters';
+export { drawCharacter, drawCharSheet, CHAR_KEYS, AVATAR_KEYS, AVATAR_NAMES, CHAR_WALK_MAPPING, CHAR_W, CHAR_H } from './characters';
 export type { CharKey } from './characters';
 export { drawBattleBg, drawPlatform, BG_W, BG_H, BG_SCALE } from './battle';
 export { registerArt, artSteps } from './register';

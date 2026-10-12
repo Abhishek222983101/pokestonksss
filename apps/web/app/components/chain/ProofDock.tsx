@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { PROGRAM_ID, accountLink, arenaPda, trainerPda, FEEDS } from '@pokestonksss/sdk';
+import { PROGRAM_ID, accountLink, arenaPda, trainerPda, FEEDS, BADGES, badgeMintPda, levelProgress } from '@pokestonksss/sdk';
+import { useChain } from '../../../lib/chain/store';
+import { useRewards } from '../../../lib/chain/rewards';
+import { activeSigner } from '../../../lib/chain/guest';
 import { useProof } from '../../../lib/chain/proof';
 import { getClient } from '../../../lib/chain/config';
-import { guestKeypair } from '../../../lib/chain/guest';
+import { ownerKey } from '../../../lib/chain/guest';
 import ProofStrip from './ProofStrip';
 
 const A = ({ href, children }: { href: string; children: React.ReactNode }) => (
@@ -24,9 +27,13 @@ function Row({ tag, title, why, children }: { tag: string; title: string; why: s
 /** The always-available proof layer: strip + a "Proof" button that opens every verifiable artifact of the current battle. */
 export default function ProofDock({ sealedMode }: { sealedMode?: string }) {
   const [open, setOpen] = useState(false);
-  const { weighed, sealed, rolled, saved, start } = useProof();
+  const { weighed, sealed, rolled, saved, start, crank } = useProof();
+  const identity = useChain((s) => s.identity);
+  const trainer = useChain((s) => s.trainer);
+  const minted = useRewards((s) => s.minted);
+  const claimed = useRewards((s) => s.claimed);
   const cfg = getClient().cfg;
-  const me = guestKeypair().publicKey;
+  const me = ownerKey();
   const usd = (raw: string) => (raw && raw !== '0' ? `$${(Number(raw) / 1e8).toLocaleString(undefined, { maximumFractionDigits: 4 })}` : '—');
   return (
     <div className="pointer-events-none fixed left-2 top-1 z-[70] max-w-[calc(100vw-1rem)]">
@@ -58,6 +65,29 @@ export default function ProofDock({ sealedMode }: { sealedMode?: string }) {
                 <div>Bell: {usd(weighed.snap[0])} / {usd(weighed.snap[1])} · Now: {usd(weighed.now[0])} / {usd(weighed.now[1])} · Mood {weighed.mood.map((m) => (m > 0 ? '▲ bull' : m < 0 ? '▼ bear' : '■ flat')).join(' / ')}</div>
               ) : <div>Waiting for a snapshot…</div>}
               <div>Feed accounts: {FEEDS.slice(0, 3).map((f) => <span key={f.toBase58()} className="mr-1"><A href={accountLink(f.toBase58(), 'er', cfg)}>{f.toBase58().slice(0, 6)}…</A></span>)} …</div>
+            </Row>
+            <Row tag="SESSION" title="MagicBlock session key" why={identity === 'wallet' ? 'Your wallet approved a session key once. It signs your moves, so nothing pops up in the middle of a fight.' : 'Guest mode signs with a key kept in this browser. Connect a wallet to use a wallet-approved session key instead.'}>
+              {identity === 'wallet' ? (() => {
+                const sg = activeSigner();
+                return <div>Session signer <A href={accountLink(sg.publicKey.toBase58(), 'base', cfg)}>{sg.publicKey.toBase58().slice(0, 10)}…</A> · token <A href={accountLink(sg.sessionToken!.toBase58(), 'base', cfg)}>{sg.sessionToken!.toBase58().slice(0, 10)}…</A></div>;
+              })() : <div>Guest key <A href={accountLink(me.toBase58(), 'base', cfg)}>{me.toBase58().slice(0, 10)}…</A></div>}
+            </Row>
+            {crank && (
+              <Row tag="CRANK" title="MagicBlock crank (automatic timeouts)" why="The validator's task scheduler checks this duel every 20 s and settles it if a player walks away.">
+                <div><A href={crank.link}>arm_timer</A> {crank.ms ? `(${crank.ms} ms)` : ''}</div>
+              </Row>
+            )}
+            {trainer && (
+              <Row tag="LEVELS" title="Creature XP lives on your Trainer" why="Wins add XP to the BrokerMon you fought with; levels add +4% stats and evolve at Lv 4 and Lv 7. The same Rust rules compute it on-chain and in your browser.">
+                <div>{trainer.xp.map((x, i) => (x > 0 ? <span key={i} className="mr-2">#{i} Lv {levelProgress(x).level + 1} ({x} xp)</span> : null))}{trainer.xp.every((x) => x === 0) && 'No XP yet. Win a battle.'}</div>
+              </Row>
+            )}
+            <Row tag="BADGES" title="Badge tokens minted to your wallet" why="Real SPL tokens, minted by our program from your saved (committed) Trainer. No claim step.">
+              {claimed.length === 0 && <div>None yet. Win your first battle.</div>}
+              {claimed.map((id) => {
+                const m = minted.find((x) => x.id === id);
+                return <div key={id}>{BADGES[id]?.name} · <A href={accountLink(badgeMintPda(id, cfg.programId).toBase58(), 'base', cfg)}>token</A>{m?.link ? <> · <A href={m.link}>mint tx</A></> : null}</div>;
+              })}
             </Row>
             {sealed.length > 0 && (
               <Row tag="SEALED" title="Hidden simultaneous picks" why="Duel picks are committed as hashes first and revealed after both are in.">

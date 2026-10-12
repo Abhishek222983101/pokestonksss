@@ -989,7 +989,7 @@
     {
       "name": "forfeit",
       "docs": [
-        "Concede a duel."
+        "Concede a duel. `actor` is the conceding player's Trainer (read only); the signer is the wallet or its session key."
       ],
       "discriminator": [
         80,
@@ -1077,6 +1077,38 @@
               }
             ]
           }
+        },
+        {
+          "name": "actor",
+          "docs": [
+            "The conceding player's Trainer (identity only; also appears above as host or guest)."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  97,
+                  105,
+                  110,
+                  101,
+                  114,
+                  50
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "actor.owner",
+                "account": "Trainer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "session_token",
+          "optional": true
         },
         {
           "name": "signer",

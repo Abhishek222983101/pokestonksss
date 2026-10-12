@@ -17,6 +17,10 @@ export interface BattleResult {
   ratingAfter: number;
   /** Chain builds fill this in with the explorer link ("Saved to Solana"). */
   signature?: string;
+  /** XP and level of the creature used, before and after this battle (chain battles). */
+  progress?: { species: number; xpBefore: number; xpAfter: number; levelBefore: number; levelAfter: number };
+  /** Badge ids minted to the player's wallet because of this battle (filled in a few seconds after the result). */
+  badges?: number[];
 }
 
 export type BattlePhase = 'PICKING' | 'RESOLVING' | 'FINISHED';

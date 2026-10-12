@@ -172,7 +172,8 @@ export class GameClient {
   }
   async forfeit(signer: TxSigner, host: PublicKey, guest: PublicKey) {
     const ix = await this.m().forfeit().accounts({
-      arena: arenaPda(host, this.cfg.programId), hostTrainer: trainerPda(host, this.cfg.programId), guestTrainer: trainerPda(guest, this.cfg.programId), signer: signer.publicKey,
+      arena: arenaPda(host, this.cfg.programId), hostTrainer: trainerPda(host, this.cfg.programId), guestTrainer: trainerPda(guest, this.cfg.programId),
+      actor: trainerPda(this.owner(signer), this.cfg.programId), ...this.sess(signer),
     }).instruction();
     return this.er_([ix], signer);
   }
@@ -205,12 +206,14 @@ export class GameClient {
    * (fee payer) and the fresh session key must sign the transaction. `validUntil` is unix seconds, at most 7 days out.
    */
   createSessionIx(authority: PublicKey, sessionSigner: PublicKey, validUntil: number, topUpLamports = 0): TransactionInstruction {
-    const data = Buffer.alloc(8 + 2 + 9 + 9);
-    Buffer.from([223, 233, 108, 7, 65, 194, 235, 38]).copy(data, 0);
+    // plain Uint8Array + DataView: the browser Buffer polyfill has no writeBigInt64LE
+    const data = new Uint8Array(8 + 2 + 9 + 9);
+    const dv = new DataView(data.buffer);
+    data.set([223, 233, 108, 7, 65, 194, 235, 38], 0);
     let o = 8;
     data[o++] = 1; data[o++] = topUpLamports > 0 ? 1 : 0;
-    data[o++] = 1; data.writeBigInt64LE(BigInt(validUntil), o); o += 8;
-    data[o++] = 1; data.writeBigUInt64LE(BigInt(topUpLamports), o); o += 8;
+    data[o++] = 1; dv.setBigInt64(o, BigInt(validUntil), true); o += 8;
+    data[o++] = 1; dv.setBigUint64(o, BigInt(topUpLamports), true); o += 8;
     return new TransactionInstruction({
       programId: SESSION_PROGRAM_ID,
       keys: [
@@ -221,7 +224,7 @@ export class GameClient {
         { pubkey: this.cfg.programId, isSigner: false, isWritable: false },
         { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
       ],
-      data: data.subarray(0, o),
+      data: Buffer.from(data.subarray(0, o)),
     });
   }
   /** True when a usable (existing, program owned) session token is on chain for this pair. */

@@ -16,9 +16,11 @@ const check = (name: string, ok: boolean, d = "") => { console.log(`${ok ? "✓"
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message.slice(0, 160)));
-  await page.goto(BASE, { waitUntil: "domcontentloaded" });
+  await page.goto(BASE + (process.env.DEMO ? "/?demo=1" : ""), { waitUntil: "domcontentloaded" });
   await sleep(3500);
   await shot(page, "1-title");
+  await page.getByRole("button", { name: /^play/i }).first().click();
+  await page.getByRole("radio", { name: /ranger/i }).click();
   await page.getByRole("button", { name: /play as guest/i }).first().click();
   // onboarding overlay must appear and then disappear (guest wristband)
   const sawOverlay = await page.getByText(/getting your wristband/i).first().waitFor({ timeout: 15000 }).then(() => true).catch(() => false);
@@ -65,6 +67,8 @@ const check = (name: string, ok: boolean, d = "") => { console.log(`${ok ? "✓"
   const client = new GameClient(devnetConfig("as"));
   const [t, a] = await Promise.all([client.getTrainer(pk), client.getArena(pk)]);
   check("guest Trainer exists on the rollup", !!t);
+  check("avatar choice (Ranger = 2) is stored on chain", t?.avatar === 2, `avatar ${t?.avatar}`);
+  if (process.env.DEMO) check("demo win gave XP", (t?.xp.reduce((x, y) => x + y, 0) ?? 0) > 0, `xp ${t?.xp.join(",")}`);
   check("a real on-chain battle was played from the UI", !!a && a.log.length > 0, `turns logged ${a?.log.length}, phase ${a?.phase}, trainer battles ${t?.battles}`);
   check("no uncaught page errors", errors.length === 0, errors.slice(0, 3).join(" | "));
   await browser.close();

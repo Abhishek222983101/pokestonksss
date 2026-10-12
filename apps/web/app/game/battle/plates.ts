@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 import { audio } from '../audio';
 import { C, TYPE_COLOR, drawFrame, hex, hpColor, txt } from './ui';
 
-export interface PlateMon { name: string; typeName: string; hp: number; maxHp: number }
+export interface PlateMon { name: string; typeName: string; hp: number; maxHp: number; /** display level (1-based) and evolution stars */ level?: number; stars?: string }
 
 /** The classic name/level/HP plate. One per combatant; the ally plate is larger and shows HP numbers. */
 export class MonPlate {
@@ -58,7 +58,8 @@ export class MonPlate {
 
   setMon(mon: PlateMon, ticker: string, foeTag = 'HOUSE') {
     this.nameT.setText(mon.name.toUpperCase());
-    this.lvT.setText(this.ally ? 'YOU' : foeTag);
+    const lv = mon.level ? ` LV${mon.level}${mon.stars ? ' ' + mon.stars : ''}` : '';
+    this.lvT.setText((this.ally ? 'YOU' : foeTag) + lv);
     this.maxHp = Math.max(1, mon.maxHp);
     this.shown = mon.hp;
     this.drawBar(mon.hp);

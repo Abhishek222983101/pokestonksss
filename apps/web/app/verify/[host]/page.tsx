@@ -33,7 +33,7 @@ function Replay({ arena, host }: { arena: ArenaView; host: string }) {
   const { a, b, rows, ok, roster } = useMemo(() => {
     const [a, b] = arena.match.sides.map((s) => s.species);
     const roster = rules.roster();
-    const init = { state: rules.newMatch(a, b), rows: [] as Array<{ i: number; picks: number[]; mood: number[]; rnd: string; hp: number[] }> };
+    const init = { state: rules.newMatch(a, b, arena.match.sides[0].level, arena.match.sides[1].level), rows: [] as Array<{ i: number; picks: number[]; mood: number[]; rnd: string; hp: number[] }> };
     const done = arena.log.reduce((acc, e, i) => {
       const rnd = new Uint8Array(32); rnd.set(e.rnd);
       const res = rules.resolveTurn(acc.state, e.picks as [Slot, Slot], rnd, e.mood as Mood[] as [Mood, Mood]);
@@ -48,7 +48,7 @@ function Replay({ arena, host }: { arena: ArenaView; host: string }) {
       <h1 className="font-pixel t-16 text-navy mb-2">Verify match</h1>
       <Panel tone={ok ? 'plate' : 'dialog'} className="mb-4">
         <p className="font-pixel t-10">{ok ? '✓ Replay matches the on-chain state' : '✗ Replay does NOT match'}</p>
-        <p className="text-sm mt-1">{roster[a]?.name} vs {roster[b]?.name} · {arena.log.length} turns · winner {arena.winner === 255 ? 'none yet' : `side ${arena.winner}`}</p>
+        <p className="text-sm mt-1">{roster[a]?.name} Lv {arena.match.sides[0].level + 1} vs {roster[b]?.name} Lv {arena.match.sides[1].level + 1} · {arena.log.length} turns · winner {arena.winner === 255 ? 'none yet' : `side ${arena.winner}`}</p>
         <p className="text-xs text-slate mt-1 break-all">arena owner {host}</p>
       </Panel>
       <ol className="space-y-2">

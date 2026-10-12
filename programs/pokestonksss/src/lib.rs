@@ -322,11 +322,13 @@ pub mod pokestonksss {
         Ok(())
     }
 
-    /// Concede a duel.
+    /// Concede a duel. `actor` is the conceding player's Trainer (read only); the signer is the wallet or its session key.
+    #[session_auth_or(ctx.accounts.actor.owner == ctx.accounts.signer.key(), SessionError::InvalidToken)]
     pub fn forfeit(ctx: Context<Forfeit>) -> Result<()> {
+        let who = ctx.accounts.actor.owner;
         let a = &mut ctx.accounts.arena;
         require!(a.mode == MODE_DUEL && matches!(a.phase, PHASE_PICKING | PHASE_REVEALING), GameError::WrongPhase);
-        let seat = a.seat_of(&ctx.accounts.signer.key()).ok_or(GameError::NotAPlayer)?;
+        let seat = a.seat_of(&who).ok_or(GameError::NotAPlayer)?;
         a.winner = 1 - seat as u8;
         finish(a, &mut ctx.accounts.host_trainer, Some(&mut ctx.accounts.guest_trainer))?;
         Ok(())
@@ -728,7 +730,7 @@ pub struct ClaimTimeout<'info> {
     pub oracle_queue: UncheckedAccount<'info>,
 }
 
-#[derive(Accounts)]
+#[derive(Accounts, Session)]
 pub struct Forfeit<'info> {
     #[account(mut, seeds = [ARENA_SEED, arena.host.as_ref()], bump = arena.bump)]
     pub arena: Account<'info, Arena>,
@@ -736,6 +738,11 @@ pub struct Forfeit<'info> {
     pub host_trainer: Account<'info, Trainer>,
     #[account(mut, seeds = [TRAINER_SEED, arena.guest.as_ref()], bump = guest_trainer.bump)]
     pub guest_trainer: Account<'info, Trainer>,
+    /// The conceding player's Trainer (identity only; also appears above as host or guest).
+    #[account(seeds = [TRAINER_SEED, actor.owner.as_ref()], bump = actor.bump)]
+    pub actor: Account<'info, Trainer>,
+    #[session(signer = signer, authority = actor.owner.key())]
+    pub session_token: Option<Account<'info, SessionTokenV2>>,
     #[account(mut)]
     pub signer: Signer<'info>,
 }

@@ -28,11 +28,11 @@ function champions(): Champion[] {
 
 const toW = (s: MatchState): w.MatchState => ({
   turn: s.turn, winner: null,
-  f: s.fighters.map((f) => ({ species: f.champ, hp: f.hp, maxHp: f.maxHp, charged: f.charged, lastGuard: f.lastGuard, momentum: f.momentum })) as [w.FighterState, w.FighterState],
+  f: s.fighters.map((f) => ({ species: f.champ, hp: f.hp, maxHp: f.maxHp, charged: f.charged, lastGuard: f.lastGuard, momentum: f.momentum, level: f.level ?? 0 })) as [w.FighterState, w.FighterState],
 });
 const fromW = (s: w.MatchState): MatchState => ({
   turn: s.turn,
-  fighters: s.f.map((f): FighterState => ({ champ: f.species, hp: f.hp, maxHp: f.maxHp, charged: f.charged, lastGuard: f.lastGuard, momentum: f.momentum })) as [FighterState, FighterState],
+  fighters: s.f.map((f): FighterState => ({ champ: f.species, hp: f.hp, maxHp: f.maxHp, charged: f.charged, lastGuard: f.lastGuard, momentum: f.momentum, level: f.level ?? 0 })) as [FighterState, FighterState],
 });
 
 function resolve(state: MatchState, picks: [Slot, Slot], rnd: Uint8Array, mood: [number, number]): TurnResult {
@@ -55,15 +55,16 @@ function resolve(state: MatchState, picks: [Slot, Slot], rnd: Uint8Array, mood: 
 
 export const rules: RulesApi = {
   roster: champions,
-  newMatch: (a, b) => fromW(w.newMatch(a, b)),
+  newMatch: (a, b, la = 0, lb = 0) => fromW(w.newMatch(a, b, la, lb)),
+  botLevel: (tier, playerLevel) => w.botLevel(tier as w.Tier, playerLevel),
   resolveTurn: resolve,
   botPick: (state, side, rnd) => w.botPick(toW(state), side, rnd, w.TIER.PRO) as Slot,
   previewDamage: (state, side, slot): DamagePreview => {
     const p = w.previewDamage(toW(state), side, slot, 0);
     return p ? { min: p.min, max: p.max, eff: p.eff } : { min: 0, max: 0, eff: 100 };
   },
-  replay: (a: number, b: number, turns: ReplayTurn[]): TurnResult => {
-    let state = rules.newMatch(a, b);
+  replay: (a: number, b: number, turns: ReplayTurn[], la = 0, lb = 0): TurnResult => {
+    let state = rules.newMatch(a, b, la, lb);
     let last: TurnResult = { state, events: [], winner: null };
     for (const t of turns) { last = resolve(state, t.picks, t.rnd, t.mood); state = last.state; }
     return last;

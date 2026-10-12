@@ -1,9 +1,11 @@
 'use client';
 
+import Link from 'next/link';
+
 import { useCallback, useState, useSyncExternalStore } from 'react';
 import { PROGRAM_ID, accountLink, arenaPda, tierName, trainerPda } from '@pokestonksss/sdk';
 import { getClient } from '../../lib/chain/config';
-import { guestKeypair, guestSigner } from '../../lib/chain/guest';
+import { ownerKey, activeSigner } from '../../lib/chain/guest';
 import { useChain } from '../../lib/chain/store';
 import { Button, Panel } from '../components/ui';
 
@@ -14,13 +16,13 @@ export default function JudgePage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [running, setRunning] = useState(false);
   const boot = useChain((s) => s.boot);
-  const mine = useSyncExternalStore(() => () => {}, () => arenaPda(guestKeypair().publicKey).toBase58(), () => '');
+  const mine = useSyncExternalStore(() => () => {}, () => arenaPda(ownerKey()).toBase58(), () => '');
 
   const push = useCallback((r: Row) => setRows((x) => [...x, r]), []);
 
   const run = useCallback(async () => {
     setRows([]); setRunning(true);
-    const client = getClient(); const signer = guestSigner(); const me = guestKeypair().publicKey;
+    const client = getClient(); const signer = activeSigner(); const me = ownerKey();
     try {
       const t0 = performance.now();
       await boot();
@@ -55,7 +57,7 @@ export default function JudgePage() {
     <main className="mx-auto max-w-3xl p-4 sm:p-8">
       <h1 className="font-pixel t-16 text-navy mb-2">Judge self-test</h1>
       <p className="mb-4 text-sm">Plays a real battle on MagicBlock devnet from this browser and lists every proof. No wallet needed. About 30 seconds.</p>
-      <p className="mb-4 text-sm"><b>Want to play it yourself and win?</b> <a className="underline" href="/?demo=1">Open the Judge Demo</a>: the opponent is a Dummy House Agent that only Hedges, so any attack wins. Every move is still a real MagicBlock rollup transaction with VRF, the oracle and a commit.</p>
+      <p className="mb-4 text-sm"><b>Want to play it yourself and win?</b> <Link className="underline" href="/?demo=1">Open the Judge Demo</Link>: the opponent is a Dummy House Agent that never attacks, so any attack wins in a few turns and your first win levels up your BrokerMon and mints a badge token. Every move is still a real MagicBlock rollup transaction with VRF, the oracle and a commit.</p>
       <Panel className="mb-4">
         <dl className="grid grid-cols-[8rem_1fr] gap-y-1 text-sm break-all">
           <dt className="font-pixel t-8">Program</dt><dd><a className="underline" target="_blank" rel="noreferrer" href={accountLink(PROGRAM_ID.toBase58(), 'base', cfg)}>{PROGRAM_ID.toBase58()}</a></dd>

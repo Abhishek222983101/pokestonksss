@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 import { PublicKey } from '@solana/web3.js';
 import { useChain } from '../../../lib/chain/store';
 import { hostDuel } from '../../../lib/chain/duel';
-import { guestKeypair } from '../../../lib/chain/guest';
+import { ownerKey } from '../../../lib/chain/guest';
 import { getBroker } from '../../../lib/brokermon';
 import { useSessionStore } from '../../stores/sessionStore';
 import { Button, Panel, Spinner } from '../ui';
@@ -48,7 +48,7 @@ export default function DuelHost() {
 
   if (status !== 'ready' || stage !== 'globe' || routeId) return null;
   if (guest) {
-    return <DuelStage role="host" host={guestKeypair().publicKey} hostSpecies={num} guestSpecies={guest.species} opponent={new PublicKey(guest.key)} onExit={close} />;
+    return <DuelStage role="host" host={ownerKey()} hostSpecies={num} guestSpecies={guest.species} opponent={new PublicKey(guest.key)} onExit={close} />;
   }
   return (
     <>

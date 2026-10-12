@@ -6,7 +6,7 @@ import { loadProfile, type Profile } from '../../lib/profile';
 import { useChain } from '../../lib/chain/store';
 import { getClient } from '../../lib/chain/config';
 import { accountLink, trainerPda } from '@pokestonksss/sdk';
-import { guestKeypair } from '../../lib/chain/guest';
+import { ownerKey } from '../../lib/chain/guest';
 import { rankOf } from '../../lib/rank';
 import { getBroker } from '../../lib/brokermon';
 import { audio } from '../game/audio';
@@ -15,6 +15,11 @@ import { Icon } from './Icon';
 import { Portrait } from './Portrait';
 import Toasts from './Toasts';
 import { Button, Panel } from './ui';
+import { AvatarFace } from './AvatarFace';
+import StartDialog from './chain/StartDialog';
+import RewardsPanel from './chain/RewardsPanel';
+import { useRewards } from '../../lib/chain/rewards';
+import { levelProgress } from '@pokestonksss/sdk';
 
 function useMuted(): boolean {
   return useSyncExternalStore(
@@ -37,6 +42,10 @@ export default function Hud() {
   const [local, setProfile] = useState<Profile>({ rating: 1000, wins: 0, losses: 0 });
   const trainer = useChain((s) => s.trainer);
   const refreshTrainer = useChain((s) => s.refreshTrainer);
+  const identity = useChain((s) => s.identity);
+  const address = useChain((s) => s.address);
+  const claimedCount = useRewards((s) => s.claimed.length);
+  const [dialog, setDialog] = useState<'wallet' | 'rewards' | null>(null);
   // On-chain Trainer is the source of truth once the rollup account exists; local profile only before that.
   const profile: Profile = trainer ? { rating: trainer.rating, wins: trainer.wins, losses: trainer.losses } : local;
   // Hidden during a battle: it would cover the turn timer.
@@ -64,23 +73,34 @@ export default function Hud() {
       {!playing && (
         <Panel tone="plate" className="pointer-events-auto p-2! short:p-1!">
           <div className="flex items-center gap-2">
+            <AvatarFace avatar={trainer?.avatar ?? 0} size={32} />
             {mine && <Portrait speciesId={mine.id} size={32} title={mine.name} />}
             <div className="min-w-0">
               <p className="flex items-center gap-1">
-                <span className="chip chip-plain">{trainer ? 'On-chain' : 'Guest'}</span>
+                <span className="chip chip-plain" title={address ?? undefined}>{identity === 'wallet' ? `Wallet ${address?.slice(0, 4)}…${address?.slice(-4)}` : trainer ? 'Guest · on-chain' : 'Guest'}</span>
                 <span className="font-pixel t-8">{rankOf(profile.rating)}</span>
               </p>
               <p className="mt-1 text-[14px] leading-tight text-slate">
                 <span className="font-pixel t-10 text-ink tabular-nums">{profile.rating}</span> rating · {profile.wins}W {profile.losses}L
               </p>
               {trainer && (
-                <a className="mt-1 block text-[12px] text-navy underline" target="_blank" rel="noreferrer" href={accountLink(trainerPda(guestKeypair().publicKey).toBase58(), 'er', getClient().cfg)}>
+                <a className="mt-1 block text-[12px] text-navy underline" target="_blank" rel="noreferrer" href={accountLink(trainerPda(ownerKey()).toBase58(), 'er', getClient().cfg)}>
                   your Trainer on Solana ↗
                 </a>
               )}
-              <p className="mt-1 flex gap-1">
-                <a className="btn btn-sm" href="/trainer">Trainer card</a>
+              {trainer && mine && (() => {
+                const lp = levelProgress(trainer.xp[mine.num] ?? 0);
+                return <p className="mt-1 text-[12px] text-slate">{mine.name} Lv {lp.level + 1}{lp.toNext !== null ? ` · ${lp.toNext} xp to next` : ' · max'}</p>;
+              })()}
+              <p className="mt-1 flex flex-wrap gap-1">
+                <button type="button" className="btn btn-sm" onClick={() => setDialog('rewards')}>Rewards{claimedCount ? ` (${claimedCount})` : ''}</button>
+                <a className="btn btn-sm btn-secondary" href="/trainer">Trainer card</a>
                 <a className="btn btn-sm btn-secondary" href="/leaderboard">Ranks</a>
+                {identity === 'guest' ? (
+                  <button type="button" className="btn btn-sm btn-secondary" onClick={() => setDialog('wallet')}>Connect wallet</button>
+                ) : (
+                  <button type="button" className="btn btn-sm btn-quiet" onClick={() => { useChain.getState().useGuest(); }}>Disconnect</button>
+                )}
               </p>
             </div>
           </div>
@@ -133,6 +153,11 @@ export default function Hud() {
       </div>
 
       <Toasts />
+      {dialog && (
+        <div className="pointer-events-auto fixed inset-0 z-50 grid place-items-center bg-navy-deep/70 p-2" onClick={(e) => { if (e.target === e.currentTarget) setDialog(null); }}>
+          {dialog === 'rewards' ? <RewardsPanel onClose={() => setDialog(null)} /> : <StartDialog walletOnly onGuest={() => setDialog(null)} onWallet={() => setDialog(null)} onClose={() => setDialog(null)} />}
+        </div>
+      )}
     </aside>
   );
 }

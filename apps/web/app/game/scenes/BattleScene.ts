@@ -2,6 +2,8 @@ import * as Phaser from 'phaser';
 import type { BattleSnapshot, BattleSource } from '../../../lib/battleSource';
 import { brokerByNum } from '../../../lib/brokermon';
 import { getRoute } from '../../../lib/routes';
+import { evolvedName, stageStars } from '../../../lib/evolution';
+import { BADGES, LEVEL_XP, MAX_LEVEL, evolutionStage } from '@pokestonksss/sdk';
 import { rules, typeName, type Side, type Slot } from '../../../lib/rules';
 import { EventBus } from '../events';
 import { audio } from '../audio';
@@ -35,6 +37,13 @@ const FOE: Side = 1;
  * plays whatever resolved turns the source publishes. It is a small state machine driven by snapshots, so the
  * same scene works against LocalBattleSource (offline) and the chain-backed source (P7).
  */
+/** Share of the current level already earned (0..1) for an XP total. */
+function xpPct(xp: number): number {
+  let l = 0;
+  while (l < LEVEL_XP.length - 1 && xp >= LEVEL_XP[l + 1]) l++;
+  return l >= LEVEL_XP.length - 1 ? 1 : (xp - LEVEL_XP[l]) / (LEVEL_XP[l + 1] - LEVEL_XP[l]);
+}
+
 export class BattleScene extends Phaser.Scene {
   private src!: BattleSource;
   private init0!: BattleInit;
@@ -136,15 +145,31 @@ export class BattleScene extends Phaser.Scene {
     const shadow = this.add.ellipse(pos.x, pos.platY - 10, pos.size * 0.8, pos.size * 0.16, 0x000000, 0.22).setDepth(3);
     const plate = new MonPlate(this, pos.plateX, pos.plateY, pos.plateW, pos.plateH, ally);
     const f = snap.state.fighters[side];
-    plate.setMon({ name: broker.name, typeName: typeName(champ.type), hp: f.hp, maxHp: f.maxHp }, broker.ticker, ally ? undefined : this.foeTag());
+    const level = f.level ?? 0;
+    const shownName = evolvedName(champ.id, level);
+    plate.setMon({ name: shownName, typeName: typeName(champ.type), hp: f.hp, maxHp: f.maxHp, level: level + 1, stars: stageStars(level) }, broker.ticker, ally ? undefined : this.foeTag());
+    this.applyEvolution(sprite, level);
     const c: Combatant = {
-      side, ally, speciesId: broker.id, name: broker.name, typeName: typeName(champ.type),
+      side, ally, speciesId: broker.id, name: shownName, typeName: typeName(champ.type),
       sprite, shadow, plate, baseX: pos.x, baseY: pos.y, baseScale,
     };
     // Start off-screen for the entrance.
     sprite.setX(pos.x + (ally ? -520 : 520)); shadow.setAlpha(0);
     plate.container.setX(pos.plateX + (ally ? 520 : -520));
     return c;
+  }
+
+  /** Evolved forms are bigger and glow: stage 1 silver-blue, stage 2 gold. Falls back to a tint on non-WebGL renderers. */
+  private applyEvolution(sprite: Phaser.GameObjects.Image, level: number) {
+    const stage = level >= 6 ? 2 : level >= 3 ? 1 : 0;
+    if (stage === 0) return;
+    sprite.setScale(sprite.scaleX * (stage === 2 ? 1.16 : 1.08));
+    const color = stage === 2 ? 0xffd23c : 0x78c8ff;
+    try {
+      const fx = (sprite as unknown as { preFX?: { addGlow: (c: number, o: number, i: number, q: boolean, a: number, d: number) => unknown; setPadding: (n: number) => void } }).preFX;
+      if (fx) { fx.setPadding(16); fx.addGlow(color, stage === 2 ? 5 : 3, 0, false, 0.1, 12); return; }
+    } catch { /* WebGL FX unavailable */ }
+    sprite.setTint(stage === 2 ? 0xfff0b0 : 0xd8ecff);
   }
 
   private buildTimer() {
@@ -447,18 +472,29 @@ export class BattleScene extends Phaser.Scene {
       if (loser.sprite.visible) await this.dialog.say(won ? 'The opponent gave up!' : 'You gave up...', { holdMs: 800 });
     }
     await delay(this, 250);
+    const pr = res.progress;
+    const progress = pr && won
+      ? {
+        name: evolvedName(pr.species, pr.levelAfter), fromName: evolvedName(pr.species, pr.levelBefore),
+        levelBefore: pr.levelBefore + 1, levelAfter: pr.levelAfter + 1, xpGain: pr.xpAfter - pr.xpBefore,
+        evolved: evolutionStage(pr.levelAfter) > evolutionStage(pr.levelBefore),
+        pctBefore: xpPct(pr.xpBefore), pctAfter: xpPct(pr.xpAfter), maxed: pr.levelAfter >= MAX_LEVEL,
+      }
+      : undefined;
     this.overlay = new EndOverlay(this, {
       won, turns: res.turns, forfeit, foeLabel: snap.opponent.label,
-      ratingBefore: res.ratingBefore, ratingAfter: res.ratingAfter,
+      ratingBefore: res.ratingBefore, ratingAfter: res.ratingAfter, progress,
       onContinue: () => void this.close(),
     });
     if (snap.onChain) {
       this.overlay.setSaved('Result written on Solana. Saving your rating…', '#f8d858');
-      let tries = 0;
+      let tries = 0, saved = false, badgesShown = false;
       const poll = this.time.addEvent({ delay: 600, loop: true, callback: () => {
         const r = this.src.getSnapshot().result;
-        if (r?.signature) { this.overlay?.setSaved('Saved to Solana ✓  Open "Proof" to verify every transaction', '#58d858'); poll.remove(); }
-        else if (++tries > 12) { this.overlay?.setSaved('Rating is live on the rollup (saved to Solana in batches)', '#58d858'); poll.remove(); }
+        if (r?.signature && !saved) { saved = true; this.overlay?.setSaved('Saved to Solana ✓  Open "Proof" to verify every transaction', '#58d858'); }
+        if (r?.badges?.length && !badgesShown) { badgesShown = true; this.overlay?.setBadges(r.badges.map((id) => BADGES[id]?.name ?? `Badge ${id}`)); }
+        if (!saved && tries === 12) this.overlay?.setSaved('Rating is live on the rollup (saved to Solana in batches)', '#58d858');
+        if (++tries > 36 || (saved && (badgesShown || tries > 18))) poll.remove();
       } });
     }
   }

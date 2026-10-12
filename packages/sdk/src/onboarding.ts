@@ -5,7 +5,7 @@ import { PROGRAM_ID } from "./config";
 import type { TxSigner } from "./tx";
 import { sleep } from "./tx";
 
-export type OnboardStep = "funding" | "creating" | "delegating" | "cloning" | "ready";
+export type OnboardStep = "funding" | "creating" | "session" | "delegating" | "cloning" | "ready";
 export interface OnboardEvent { step: OnboardStep; detail?: string; link?: string; ms?: number }
 
 export interface OnboardDeps {
@@ -13,6 +13,8 @@ export interface OnboardDeps {
   signer: TxSigner;
   /** asks the faucet for devnet SOL (must resolve once the transfer is confirmed) */
   drip: (pubkey: string) => Promise<void>;
+  /** trainer avatar 0..5, stored on the Trainer account when it is created */
+  avatar?: number;
   onEvent?: (e: OnboardEvent) => void;
 }
 
@@ -22,7 +24,7 @@ const DELEGATION_PROGRAM = new PublicKey("DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMAR
  * Idempotent + resumable: inspects chain state and only does the missing steps.
  * Fresh guest ≈ 3–4 s: fund → (create+delegate in one tx) → ER clone.
  */
-export async function ensureReady({ client, signer, drip, onEvent = () => {} }: OnboardDeps): Promise<void> {
+export async function ensureReady({ client, signer, drip, avatar = 0, onEvent = () => {} }: OnboardDeps): Promise<void> {
   const owner = signer.publicKey;
   const T = trainerPda(owner, client.cfg.programId), A = arenaPda(owner, client.cfg.programId);
   const t0 = performance.now();
@@ -41,7 +43,7 @@ export async function ensureReady({ client, signer, drip, onEvent = () => {} }: 
   }
   if (needsCreate) {
     onEvent({ step: "creating" });
-    const rs = await client.onboardAndDelegate(signer);
+    const rs = await client.onboardAndDelegate(signer, avatar);
     onEvent({ step: "delegating", link: rs[rs.length - 1].link, ms: rs[rs.length - 1].ms });
   } else if (baseT && !baseT.owner.equals(DELEGATION_PROGRAM)) {
     onEvent({ step: "delegating" });

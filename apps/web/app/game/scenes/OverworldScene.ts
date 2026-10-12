@@ -7,7 +7,7 @@ import { BROKERMON } from '../../../lib/brokermon';
 import { audio } from '../audio';
 import { EventBus } from '../events';
 import { isMatchActive, runEncounter } from '../flow/encounterFlow';
-import { CHAR_WALK_MAPPING, type CharKey } from '../art/characters';
+import { AVATAR_KEYS, CHAR_WALK_MAPPING, type CharKey } from '../art/characters';
 import { hashStr } from '../art/pixel';
 import { isRouteTheme, type RouteTheme } from '../art/themes';
 import {
@@ -117,7 +117,7 @@ export class OverworldScene extends Phaser.Scene {
     // Encounters are a pure function of (routeSeed, grass step). Offline the seed is random per visit; P7 passes the VRF output.
     this.routeSeed = (reg.get('routeSeed') as number | undefined) ?? newRouteSeed();
     this.grassSteps = 0;
-    this.playerKey = hashStr(this.speciesId) & 1 ? 'player_b' : 'player_a';
+    this.playerKey = AVATAR_KEYS[(reg.get('avatar') as number | undefined) ?? 0] ?? 'player_a';
 
     // Two cameras: the world (zoom 3, drawn first) and the unzoomed main camera that carries the HUD,
     // dialogs, touch pad and anything other modules add to this scene (battle flow, cutscenes).

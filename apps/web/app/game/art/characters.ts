@@ -6,8 +6,11 @@ export const CHAR_H = 24;
 export const CHAR_COLS = 3;
 export const CHAR_ROWS = 4;
 
-export type CharKey = 'player_a' | 'player_b' | 'npc_1' | 'npc_2' | 'npc_3';
-export const CHAR_KEYS: readonly CharKey[] = ['player_a', 'player_b', 'npc_1', 'npc_2', 'npc_3'];
+export type CharKey = 'player_a' | 'player_b' | 'player_c' | 'player_d' | 'player_e' | 'player_f' | 'npc_1' | 'npc_2' | 'npc_3';
+export const CHAR_KEYS: readonly CharKey[] = ['player_a', 'player_b', 'player_c', 'player_d', 'player_e', 'player_f', 'npc_1', 'npc_2', 'npc_3'];
+/** Trainer avatar choice (stored on the Trainer account, 0..5) -> overworld sprite. */
+export const AVATAR_KEYS: readonly CharKey[] = ['player_a', 'player_b', 'player_c', 'player_d', 'player_e', 'player_f'];
+export const AVATAR_NAMES = ['Scout', 'Rookie', 'Ranger', 'Quant', 'Degen', 'Whale Watcher'] as const;
 
 /**
  * Sheet layout (3 columns x 4 rows of 16x24 frames): rows are down, left, right, up;
@@ -54,6 +57,29 @@ const LOOKS: Record<CharKey, Look> = {
     hat: { kind: 'cap', ramp: S('#e8e8f0'), logo: hex('#d04a88') },
     shirt: S('#f4f4ff'), jacket: S('#d04a88'), pants: S('#3a3a6a'), shoes: S('#e05a8a'),
     pack: S('#f0c840'), eye: INK,
+  },
+  player_c: {
+    skin: S('#a8704c'), hair: S('#1c1c24'), hairStyle: 'slick',
+    hat: { kind: 'visor', ramp: S('#18b890') },
+    shirt: S('#f0f6f4'), jacket: S('#12806c'), pants: S('#1e3040'), shoes: S('#d8e8e4'),
+    pack: S('#18b890'), eye: INK,
+  },
+  player_d: {
+    skin: S('#d8a47c'), hair: S('#b83a28'), hairStyle: 'pony',
+    hat: { kind: 'cap', ramp: S('#7a48c8'), logo: hex('#f0d040') },
+    shirt: S('#f4eefa'), jacket: S('#6a38b8'), pants: S('#2a2448'), shoes: S('#c8b8e8'),
+    pack: S('#9a68e0'), eye: INK,
+  },
+  player_e: {
+    skin: S('#f4cfae'), hair: S('#e0b84a'), hairStyle: 'short',
+    shirt: S('#fff4e0'), jacket: S('#e07828'), pants: S('#483a30'), shoes: S('#f0e0c8'),
+    pack: S('#e8a838'), eye: INK,
+  },
+  player_f: {
+    skin: S('#7a4a32'), hair: S('#14141c'), hairStyle: 'none',
+    hat: { kind: 'visor', ramp: S('#38a0e0') },
+    shirt: S('#e8f4fc'), vest: S('#2878b8'), pants: S('#20283c'), shoes: S('#f0f0f8'),
+    pack: S('#5ab8f0'), eye: INK,
   },
   npc_1: {
     skin: S('#d8a07a'), hair: S('#2a2a34'), hairStyle: 'slick',

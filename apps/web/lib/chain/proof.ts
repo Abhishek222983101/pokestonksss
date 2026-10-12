@@ -9,6 +9,8 @@ interface ProofState {
   rolled: Array<Receipt & { rnd?: string }>;
   saved: Receipt | null;
   start: Receipt | null;
+  /** The crank task armed for the current duel. */
+  crank: Receipt | null;
   reset: () => void;
   set: (p: Partial<Omit<ProofState, 'reset' | 'set'>>) => void;
   addRolled: (r: Receipt & { rnd?: string }) => void;
@@ -16,8 +18,8 @@ interface ProofState {
 }
 
 export const useProof = create<ProofState>((set) => ({
-  weighed: null, sealed: [], rolled: [], saved: null, start: null,
-  reset: () => set({ weighed: null, sealed: [], rolled: [], saved: null, start: null }),
+  weighed: null, sealed: [], rolled: [], saved: null, start: null, crank: null,
+  reset: () => set({ weighed: null, sealed: [], rolled: [], saved: null, start: null, crank: null }),
   set: (p) => set(p),
   addRolled: (r) => set((s) => ({ rolled: [...s.rolled, r] })),
   addSealed: (r) => set((s) => ({ sealed: [...s.sealed, r] })),

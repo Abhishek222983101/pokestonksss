@@ -1,44 +1,44 @@
 {
-  "at": "2026-10-12T20:25:19.306Z",
+  "at": "2026-10-12T21:52:39.242Z",
   "onboard_ms": {
-    "host": 4109,
-    "guest": 2992
+    "host": 3938,
+    "guest": 2421
   },
   "open_duel": {
-    "ms": 483,
-    "link": "https://explorer.solana.com/tx/5CpqEYmCzGsSoSXkYejYrqwe6AuY9fqCqMDZXvw1puwBfiTAAaVLoiL5xj7CQLacgCfniLYkGbHhpgiDxfy1keKG?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app"
+    "ms": 240,
+    "link": "https://explorer.solana.com/tx/48sHN61t7h4gzuBxVBL2f4MJgSRNGG3mKs6Lvp1XBwbdQTQyDKNqKd3KvHu2Pb4maMNeZhmAtKQzZbukddyYcU4n?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app"
   },
   "NEG_wrong_token": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6005}]}",
   "NEG_self_join": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6010}]}",
   "join_duel": {
-    "ms": 318,
-    "link": "https://explorer.solana.com/tx/3obVBffF2uuTBaRFH7tiBt8aUvH1TNE8C76JjhrLjVPkiqAzto8EQAPZuRCamrb1HXpny5LPnrs3VZfgkdL8Ueu9?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app"
+    "ms": 226,
+    "link": "https://explorer.solana.com/tx/4S319aKX9JJG7WnqjFGtMMsgnstRdJp3PaX4KpK3cb1FQwHWUNhbhCFL7YC7wdXLhBhxdE5yhWeJPQr61g5jy5Hv?cluster=custom&customUrl=https%3A%2F%2Fdevnet-as.magicblock.app"
   },
   "NEG_double_join": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6001}]}",
   "NEG_claim_timeout_early": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6008}]}",
   "NEG_reveal_wrong_salt": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6007}]}",
   "NEG_spectator_commit": "rejected ✓ transaction failed: {\"InstructionError\":[0,{\"Custom\":6001}]}",
   "turn_ms": {
-    "n": 12,
-    "p50": 813,
-    "p95": 1326,
-    "max": 1326
+    "n": 13,
+    "p50": 846,
+    "p95": 1413,
+    "max": 1413
   },
   "result": {
     "finished": true,
-    "winner": 1,
-    "turns": 12
+    "winner": 0,
+    "turns": 13
   },
   "trainers": {
     "host": {
-      "rating": 988,
-      "w": 0,
-      "l": 1
-    },
-    "guest": {
       "rating": 1012,
       "w": 1,
       "l": 0
+    },
+    "guest": {
+      "rating": 988,
+      "w": 0,
+      "l": 1
     }
   }
 }

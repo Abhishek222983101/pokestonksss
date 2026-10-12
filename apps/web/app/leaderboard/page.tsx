@@ -5,14 +5,14 @@ import Link from 'next/link';
 import { accountLink, handleOf, tierName, trainerPda, type TrainerView } from '@pokestonksss/sdk';
 import { PublicKey } from '@solana/web3.js';
 import { getClient } from '../../lib/chain/config';
-import { guestKeypair } from '../../lib/chain/guest';
+import { ownerKey } from '../../lib/chain/guest';
 import { Panel } from '../components/ui';
 
 /** Live ranking of every Trainer on the rollup (read straight from chain; no indexer or database). */
 export default function LeaderboardPage() {
   const [rows, setRows] = useState<TrainerView[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const me = useSyncExternalStore(() => () => {}, () => guestKeypair().publicKey.toBase58(), () => '');
+  const me = useSyncExternalStore(() => () => {}, () => ownerKey().toBase58(), () => '');
 
   useEffect(() => {
     getClient().listTrainers().then((r) => setRows(r.filter((t) => t.battles > 0)), (e) => setErr(String((e as Error).message)));

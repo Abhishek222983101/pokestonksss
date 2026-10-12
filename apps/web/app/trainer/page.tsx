@@ -4,11 +4,13 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { accountLink, handleOf, tierName, tierProgress, trainerPda } from '@pokestonksss/sdk';
 import { getClient } from '../../lib/chain/config';
-import { guestKeypair, guestSigner } from '../../lib/chain/guest';
+import { ownerKey, activeSigner } from '../../lib/chain/guest';
 import { useChain } from '../../lib/chain/store';
 import { BROKERMON, getBroker } from '../../lib/brokermon';
 import { useSessionStore } from '../stores/sessionStore';
 import { Portrait } from '../components/Portrait';
+import { AvatarFace } from '../components/AvatarFace';
+import RewardsPanel from '../components/chain/RewardsPanel';
 import { Button, Panel } from '../components/ui';
 
 /** Trainer Card + BrokerDex: everything here is read from your on-chain Trainer account. */
@@ -29,11 +31,11 @@ export default function TrainerPage() {
   }
   const tier = tierName(trainer.rating);
   const prog = tierProgress(trainer.rating);
-  const me = guestKeypair().publicKey;
+  const me = ownerKey();
   const cfg = getClient().cfg;
   const save = async () => {
     setSaving(true); setMsg(null);
-    try { const r = await getClient().commitTrainer(guestSigner()); setLink(r.link); await refresh(); setMsg('Saved to Solana ✓'); }
+    try { const r = await getClient().commitTrainer(activeSigner()); setLink(r.link); await refresh(); setMsg('Saved to Solana ✓'); }
     catch (e) { setMsg(String((e as Error).message).slice(0, 120)); }
     setSaving(false);
   };
@@ -42,6 +44,7 @@ export default function TrainerPage() {
       <nav className="mb-3 flex gap-2"><Link className="btn btn-sm" href="/">← Game</Link><Link className="btn btn-sm btn-secondary" href="/leaderboard">Leaderboard</Link></nav>
       <Panel tone="dialog" className="on-navy mb-4 text-cream">
         <div className="flex items-center gap-3">
+          <AvatarFace avatar={trainer.avatar} size={48} />
           <Portrait speciesId={getBroker(speciesId ?? 'sol').id} size={64} />
           <div>
             <h1 className="font-pixel t-14 text-yellow">{handleOf(trainer.owner, tier)}</h1>
@@ -58,6 +61,8 @@ export default function TrainerPage() {
           ))}
         </dl>
       </Panel>
+
+      <div className="mb-4"><RewardsPanel /></div>
 
       <Panel className="mb-4">
         <h2 className="font-pixel t-10 mb-2">BrokerDex · {BROKERMON.filter((b) => trainer.dex & (1 << b.num)).length}/8 defeated</h2>

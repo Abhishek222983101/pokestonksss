@@ -48,6 +48,8 @@ export interface FighterState {
   lastGuard: boolean;
   /** Momentum level 0..3: +10% strike damage per level, built by out-reading the opponent. */
   momentum: number;
+  /** Creature level 0..9 (+4% hp/atk/def per level); evolves at 3 and 6. */
+  level: number;
 }
 
 export interface MatchState {
@@ -77,12 +79,14 @@ export interface ReplayTurn { picks: [Slot, Slot]; rnd: Uint8Array; mood: [Mood,
 
 export interface RulesApi {
   roster(): Champion[];
-  newMatch(a: number, b: number): MatchState;
+  newMatch(a: number, b: number, la?: number, lb?: number): MatchState;
   resolveTurn(state: MatchState, picks: [Slot, Slot], rnd: Uint8Array, mood: [Mood, Mood]): TurnResult;
   /** House Agent pick for `side`. Reads only public state; never the opponent's pick. */
   botPick(state: MatchState, side: Side, rnd: Uint8Array): Slot;
   previewDamage(state: MatchState, side: Side, slot: Slot): DamagePreview;
-  replay(a: number, b: number, turns: ReplayTurn[]): TurnResult;
+  replay(a: number, b: number, turns: ReplayTurn[], la?: number, lb?: number): TurnResult;
+  /** House Agent creature level for a tier (0 Rookie .. 4 Dummy) and the player's level. */
+  botLevel(tier: number, playerLevel: number): number;
   /** Integer Elo, K=24. Returns the new rating. */
   elo(rating: number, opponent: number, won: boolean): number;
 }

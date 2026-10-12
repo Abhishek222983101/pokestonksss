@@ -1,5 +1,6 @@
 'use client';
 
+import { useChain } from '../../lib/chain/store';
 import { useEffect, useRef, useState } from 'react';
 import type Phaser from 'phaser';
 
@@ -80,6 +81,7 @@ export default function PhaserMount({ routeId, speciesId, routeSeed, duelSource,
           preBoot: (g) => {
             g.registry.set('routeId', routeId);
             g.registry.set('speciesId', speciesId);
+            g.registry.set('avatar', useChain.getState().trainer?.avatar ?? 0);
             if (seedRef.current !== undefined) g.registry.set('routeSeed', seedRef.current);
             if (duelRef.current) g.registry.set('duelSource', duelRef.current);
             g.registry.set('onExit', () => exitRef.current());

@@ -1,10 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useRef, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useSessionStore } from '../stores/sessionStore';
 import { audio } from '../game/audio';
 import { Logotype } from './Logotype';
 import { Panel } from './ui';
+import StartDialog from './chain/StartDialog';
+import { useChain } from '../../lib/chain/store';
+import { walletSession } from '../../lib/chain/guest';
 
 interface Props {
   /** Persisted choices have been read; safe to decide where "Continue" goes. */
@@ -21,6 +24,8 @@ export default function Title({ ready, onContinue }: Props) {
   const playAsGuest = useSessionStore((s) => s.playAsGuest);
   const signOut = useSessionStore((s) => s.signOut);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [setup, setSetup] = useState(false);
+  const wallet = guest && typeof window !== 'undefined' ? walletSession() : null;
 
   // Keyboard players land on the first choice.
   useEffect(() => {
@@ -39,11 +44,6 @@ export default function Title({ ready, onContinue }: Props) {
     e.preventDefault();
   }, []);
 
-  const startGuest = () => {
-    audio.sfx('menu_select');
-    playAsGuest();
-    onContinue();
-  };
   const proceed = () => {
     audio.sfx('menu_select');
     onContinue();
@@ -60,6 +60,13 @@ export default function Title({ ready, onContinue }: Props) {
         </h1>
       </header>
 
+      {setup && !guest ? (
+        <StartDialog
+          onGuest={() => { playAsGuest(); onContinue(); }}
+          onWallet={() => { playAsGuest(); onContinue(); }}
+          onClose={() => setSetup(false)}
+        />
+      ) : (
       <Panel tone="dialog" className="pointer-events-auto w-[min(100%_-_1rem,28rem)] short:w-[min(52vw,26rem)] short:py-2!" aria-label="Start menu">
         <p className="text-[17px] leading-snug short:text-[15px]">
           Pick a BrokerMon, battle other players, and climb from Shrimp to Whale on Solana devnet.
@@ -71,7 +78,7 @@ export default function Title({ ready, onContinue }: Props) {
               <button type="button" className="menu-item" onClick={proceed} disabled={!ready}>
                 <span>
                   Continue
-                  <small>Guest trainer on this device</small>
+                  <small>{wallet ? `Wallet ${wallet.wallet.slice(0, 4)}…${wallet.wallet.slice(-4)}${wallet.walletName ? ` (${wallet.walletName})` : ''}` : 'Guest trainer on this device'}</small>
                 </span>
               </button>
               <button
@@ -79,27 +86,20 @@ export default function Title({ ready, onContinue }: Props) {
                 className="menu-item"
                 onClick={() => {
                   audio.sfx('menu_back');
+                  useChain.getState().useGuest();
                   signOut();
                 }}
               >
-                <span>Start over</span>
+                <span>Start over<small>Pick another trainer or wallet</small></span>
               </button>
             </>
           ) : (
-            <>
-              <button type="button" className="menu-item" onClick={startGuest} disabled={!ready}>
-                <span>
-                  Play as guest
-                  <small>Instant. No wallet, no popups, free devnet SOL.</small>
-                </span>
-              </button>
-              <button type="button" className="menu-item cursor-not-allowed!" disabled aria-disabled="true">
-                <span>
-                  Connect wallet
-                  <small>Coming soon. Guests can link a wallet later to keep their ribbons.</small>
-                </span>
-              </button>
-            </>
+            <button type="button" className="menu-item" onClick={() => { audio.sfx('menu_select'); setSetup(true); }} disabled={!ready}>
+              <span>
+                Play
+                <small>Guest in one click, or connect a Solana wallet to earn badge tokens.</small>
+              </span>
+            </button>
           )}
         </div>
 
@@ -111,6 +111,7 @@ export default function Title({ ready, onContinue }: Props) {
           Test network only. Nothing here has cash value.
         </p>
       </Panel>
+      )}
     </section>
   );
 }

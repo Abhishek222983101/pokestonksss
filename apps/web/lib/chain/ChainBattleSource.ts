@@ -1,12 +1,13 @@
 import { PublicKey } from '@solana/web3.js';
-import { PHASE, txLink, type ArenaView } from '@pokestonksss/sdk';
+import { PHASE, levelForXp, txLink, type ArenaView } from '@pokestonksss/sdk';
 import type { BattleResult, BattleSnapshot, BattleSource, TurnRecord } from '../battleSource';
 import { rules, type MatchState, type Mood, type Slot } from '../rules';
 import { getClient } from './config';
-import { guestKeypair, guestSigner } from './guest';
+import { ownerKey, activeSigner } from './guest';
 import { moodOf, watchPrice } from './oracle';
 import { useProof } from './proof';
 import { friendly, useChain } from './store';
+import { useRewards } from './rewards';
 
 const TURN_MS = 30_000;
 const hex = (a: ArrayLike<number>) => Array.from(a, (b) => b.toString(16).padStart(2, '0')).join('');
@@ -21,6 +22,7 @@ export class ChainBattleSource implements BattleSource {
   private localLocked = false;
   private lockedAtLog = 0;
   private ratingBefore = 1000;
+  private xpBefore = 0;
   private ended = false;
   private starting: Promise<void>;
   /** True if replaying the stored log reproduces the on-chain state (the Verify page's check). */
@@ -28,12 +30,15 @@ export class ChainBattleSource implements BattleSource {
 
   constructor(private player: number, private foe: number, private tier = 1) {
     const roster = rules.roster();
+    const xp = useChain.getState().trainer?.xp ?? [];
+    const myLevel = levelForXp(xp[player] ?? 0);
+    this.xpBefore = xp[player] ?? 0;
     this.snap = {
       onChain: true,
       phase: 'RESOLVING',
       champions: [roster[player], roster[foe]],
       opponent: { label: 'House Agent', isBot: true },
-      state: rules.newMatch(player, foe),
+      state: rules.newMatch(player, foe, myLevel, rules.botLevel(tier, myLevel)),
       mood: [0, 0], movePct: [0, 0], locked: true, turns: [], result: null, turnMs: TURN_MS,
     };
     this.starting = this.start();
@@ -44,17 +49,17 @@ export class ChainBattleSource implements BattleSource {
 
   private async start() {
     const client = getClient();
-    const signer = guestSigner();
+    const signer = activeSigner();
     useProof.getState().reset();
     try {
-      const t = await client.getTrainer(guestKeypair().publicKey);
+      const t = await client.getTrainer(ownerKey());
       if (t) this.ratingBefore = t.rating;
       const r = await client.startPractice(signer, this.player, this.foe, this.tier);
       useProof.getState().set({ start: { label: 'start_practice', sig: r.sig, link: r.link, ms: r.ms } });
-      this.stops.push(client.watchArena(guestKeypair().publicKey, (a) => this.onArena(a)));
+      this.stops.push(client.watchArena(ownerKey(), (a) => this.onArena(a)));
       this.stops.push(watchPrice(client.er, this.player, (p) => { this.nowRaw[0] = p.raw; this.refreshMood(); }));
       this.stops.push(watchPrice(client.er, this.foe, (p) => { this.nowRaw[1] = p.raw; this.refreshMood(); }));
-      const a = await client.getArena(guestKeypair().publicKey);
+      const a = await client.getArena(ownerKey());
       if (a) this.onArena(a);
     } catch (e) {
       this.ended = true;
@@ -88,7 +93,7 @@ export class ChainBattleSource implements BattleSource {
 
   /** Rebuild every resolved turn by replaying the on-chain log through the shared rules. */
   private replay(a: ArenaView): { turns: TurnRecord[]; state: MatchState } {
-    let state = rules.newMatch(this.player, this.foe);
+    let state = rules.newMatch(this.player, this.foe, a.match.sides[0].level, a.match.sides[1].level);
     const turns: TurnRecord[] = [];
     for (const e of a.log) {
       const rnd = new Uint8Array(32);
@@ -117,8 +122,8 @@ export class ChainBattleSource implements BattleSource {
     const resolving = a.vrfPending || a.phase === PHASE.ROLLING || this.localLocked;
     this.emit({
       state: { turn: a.match.turn, fighters: [
-        { champ: this.player, hp: f[0].hp, maxHp: f[0].maxHp, charged: f[0].charged, lastGuard: f[0].lastGuard, momentum: f[0].momentum },
-        { champ: this.foe, hp: f[1].hp, maxHp: f[1].maxHp, charged: f[1].charged, lastGuard: f[1].lastGuard, momentum: f[1].momentum },
+        { champ: this.player, hp: f[0].hp, maxHp: f[0].maxHp, charged: f[0].charged, lastGuard: f[0].lastGuard, momentum: f[0].momentum, level: f[0].level },
+        { champ: this.foe, hp: f[1].hp, maxHp: f[1].maxHp, charged: f[1].charged, lastGuard: f[1].lastGuard, momentum: f[1].momentum, level: f[1].level },
       ] },
       turns,
       phase: finished ? 'FINISHED' : resolving ? 'RESOLVING' : 'PICKING',
@@ -135,7 +140,7 @@ export class ChainBattleSource implements BattleSource {
     this.lockedAtLog = this.arena?.log.length ?? 0;
     this.emit({ locked: true, phase: 'RESOLVING' });
     try {
-      const r = await getClient().lockPick(guestSigner(), slot);
+      const r = await getClient().lockPick(activeSigner(), slot);
       useProof.getState().addRolled({ label: `lock_pick turn ${this.snap.state.turn + 1}`, sig: r.sig, link: r.link, ms: r.ms });
     } catch (e) {
       this.localLocked = false;
@@ -153,7 +158,11 @@ export class ChainBattleSource implements BattleSource {
       if (t && (t.battles > 0)) { after = t.rating; if (t.rating !== this.ratingBefore || i > 1) break; }
       await new Promise((r) => setTimeout(r, 400));
     }
-    const result: BattleResult = { winner: a.winner === 1 ? 1 : 0, turns: a.match.turn, ratingBefore: this.ratingBefore, ratingAfter: after };
+    const xpAfter = useChain.getState().trainer?.xp[this.player] ?? this.xpBefore;
+    const result: BattleResult = {
+      winner: a.winner === 1 ? 1 : 0, turns: a.match.turn, ratingBefore: this.ratingBefore, ratingAfter: after,
+      progress: { species: this.player, xpBefore: this.xpBefore, xpAfter, levelBefore: levelForXp(this.xpBefore), levelAfter: levelForXp(xpAfter) },
+    };
     this.emit({ result });
     void this.autoSave();
   }
@@ -164,10 +173,13 @@ export class ChainBattleSource implements BattleSource {
     if (!t || t.unsaved === 0) return;
     if (t.commits >= 9 || (t.commits >= 6 && t.unsaved < 3)) return;
     try {
-      const r = await getClient().commitTrainer(guestSigner());
+      const r = await getClient().commitTrainer(activeSigner());
       useProof.getState().set({ saved: { label: 'commit_trainer', sig: r.sig, link: r.link, ms: r.ms } });
       this.emit({ result: this.snap.result ? { ...this.snap.result, signature: r.sig } : null });
-      await useChain.getState().refreshTrainer();
+      const t2 = await useChain.getState().refreshTrainer();
+      // progress is now on Solana: mint any badges it earned (relayed, no popup)
+      const minted = await useRewards.getState().sync(t2 ?? undefined);
+      if (minted.length) this.emit({ result: this.snap.result ? { ...this.snap.result, badges: minted } : null });
     } catch { /* best effort: the Trainer stays safely delegated */ }
   }
 
@@ -182,5 +194,5 @@ export class ChainBattleSource implements BattleSource {
   dispose() { this.stops.forEach((s) => s()); this.stops = []; }
 
   explorer(sig: string) { return txLink(sig, 'er', getClient().cfg); }
-  host(): PublicKey { return guestKeypair().publicKey; }
+  host(): PublicKey { return ownerKey(); }
 }
