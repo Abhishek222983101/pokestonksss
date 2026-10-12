@@ -5,7 +5,10 @@
   "scripts": {
     "p1": "tsx p1-devnet.ts",
     "e2e:practice": "tsx e2e-practice.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "e2e:duel": "tsx e2e-duel.ts",
+    "judge": "tsx judge-selftest.ts",
+    "loadtest": "tsx loadtest.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.32.1",
@@ -13,7 +16,12 @@
     "@magicblock-labs/gum-sdk": "3.0.10",
     "@solana/web3.js": "1.98.4",
     "bs58": "^6.0.0",
-    "tweetnacl": "^1.0.3"
+    "tweetnacl": "^1.0.3",
+    "@pokestonksss/sdk": "workspace:*"
   },
-  "devDependencies": { "@types/node": "^22.10.0", "tsx": "^4.19.0", "typescript": "^5.7.0" }
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
 }
