@@ -7,18 +7,19 @@ import type { Map as MapLibreMap } from 'maplibre-gl';
 import PixelBlast from './PixelBlast';
 import MarketPins from './MarketPins';
 import MarketSheet from './MarketSheet';
-import { Panel, Spinner } from './ui';
-import { useSpawns } from './useSpawns';
+import { Panel, Spinner, TYPE_COLOR } from './ui';
+import { getBroker } from '../../lib/brokermon';
+import { arrow, formatPrice } from '../../lib/market';
+import { useRouteFeatures } from './useRoutes';
 import { useSessionStore } from '../stores/sessionStore';
-import { useIdentity } from '../web3/identity';
-import { EventBus } from '../game/net/events';
+import { EventBus } from '../game/events';
 import { audio } from '../game/audio';
 
 // Phaser only ever loads in the browser, from this Client Component.
 const PhaserMount = dynamic(() => import('../game/PhaserMount'), { ssr: false });
 
 const STYLE = 'https://tiles.openfreemap.org/styles/bright';
-const GLOBE_CENTER: [number, number] = [-98, 38.5];
+const GLOBE_CENTER: [number, number] = [14, 24];
 /** Space-view field colour, matches the sky-pale page background. */
 const FIELD_COLOR = '#94C6FC';
 
@@ -32,7 +33,7 @@ function cameraViews(el: HTMLElement) {
   const d = Math.min(el.clientWidth || 360, el.clientHeight || 640);
   // globe diameter in px = 512 * 2^zoom / PI
   const planet = clamp(Math.log2((d * 0.72) / 163), 0.4, 2.4);
-  return { planet, region: clamp(planet + 1.7, 2.3, 4.4) };
+  return { planet, region: clamp(planet + 0.55, 0.9, 3.2) };
 }
 
 type MapLibre = typeof import('maplibre-gl');
@@ -43,11 +44,10 @@ const PULL_PIXEL_SIZES = [4, 6, 8, 12, 16, 24];
 export default function Globe() {
   const stage = useSessionStore((s) => s.stage);
   const speciesId = useSessionStore((s) => s.speciesId);
-  const playingMarketId = useSessionStore((s) => s.marketId);
+  const playingRouteId = useSessionStore((s) => s.routeId);
   const setStage = useSessionStore((s) => s.setStage);
   const enterRoute = useSessionStore((s) => s.enterRoute);
   const exitRoute = useSessionStore((s) => s.exitRoute);
-  const { address } = useIdentity();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const spinning = useRef(false);
@@ -59,8 +59,8 @@ export default function Globe() {
   const [pull, setPull] = useState(0);
 
   const onGlobe = stage === 'globe';
-  const playing = playingMarketId !== null;
-  const { spawns } = useSpawns(onGlobe);
+  const playing = playingRouteId !== null;
+  const features = useRouteFeatures();
 
   /* ---- create the map once (lazy, so the title paints over the pixel field before MapLibre arrives) */
   useEffect(() => {
@@ -140,14 +140,14 @@ export default function Globe() {
           el.clientHeight < 500
             ? { top: 0, bottom: 0, left: 0, right: Math.round(Math.min(300, el.clientWidth * 0.34)) }
             : el.clientWidth < 640
-              ? { top: Math.round(Math.min(280, el.clientHeight * 0.3)), bottom: 0, left: 0, right: 0 }
-              : { top: 0, bottom: 0, left: 0, right: 0 },
+              ? { top: Math.round(Math.min(150, el.clientHeight * 0.18)), bottom: Math.round(el.clientHeight * 0.14), left: 0, right: 0 }
+              : { top: 0, bottom: 90, left: 0, right: 0 },
         duration: reduced ? 0 : 2600,
         easing: easeInOutCubic,
         essential: true,
       });
       const settle = () => {
-        map.setMinZoom(Math.max(0, view.planet + 0.9));
+        map.setMinZoom(Math.max(0, view.planet - 0.15));
         setPinsReady(true);
       };
       if (reduced) {
@@ -198,7 +198,6 @@ export default function Globe() {
   const fieldFading = onGlobe && pull >= 6;
 
   /* ---- selection, sheet, entering a route --------------------------------------------------- */
-  const features = spawns.features;
   const selected = onGlobe && !playing ? (features.find((f) => f.id === selectedId) ?? null) : null;
 
   const select = useCallback(
@@ -207,7 +206,7 @@ export default function Globe() {
       audio.sfx('menu_select');
       const map = engine?.map;
       const el = containerRef.current;
-      const f = spawns.features.find((x) => x.id === id);
+      const f = features.find((x) => x.id === id);
       if (!map || !el || !f) return;
       const narrow = el.clientWidth < 640;
       map.flyTo({
@@ -218,7 +217,7 @@ export default function Globe() {
         essential: true,
       });
     },
-    [engine, spawns.features],
+    [engine, features],
   );
 
   useEffect(() => {
@@ -231,10 +230,10 @@ export default function Globe() {
   }, [selected]);
 
   const enter = useCallback(() => {
-    if (!selected || !speciesId || !address) return;
+    if (!selected || !speciesId) return;
     audio.sfx('encounter');
     enterRoute(selected.id);
-  }, [selected, speciesId, address, enterRoute]);
+  }, [selected, speciesId, enterRoute]);
 
   // Stable identity matters: the game remounts if this callback changes.
   const onExit = useCallback(() => {
@@ -292,6 +291,38 @@ export default function Globe() {
         />
       )}
 
+
+      {onGlobe && !playing && !selected && pinsReady && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+          <Panel tone="dialog" className="pointer-events-auto w-[min(100%_-_1rem,46rem)] py-1.5! short:hidden!" aria-label="Routes">
+            <p className="font-pixel t-8 mb-1 text-yellow">Pick a route</p>
+            <ul className="grid grid-cols-4 gap-x-1 gap-y-1 sm:grid-cols-8">
+              {features.map((f) => {
+                const b = getBroker(f.properties.brokerId);
+                return (
+                  <li key={f.id}>
+                    <button
+                      type="button"
+                      className="flex min-h-[44px] w-full flex-col items-center gap-0.5 py-1 text-cream hover:bg-white/10 focus-visible:bg-white/10 focus-visible:outline-none"
+                      aria-label={`${f.properties.name}, ${f.properties.symbol}, ${f.properties.city}`}
+                      onClick={() => select(f.id)}
+                    >
+                      <span className="flex items-center gap-1">
+                        <i className="dot" style={{ ['--chip' as string]: TYPE_COLOR[b.type] }} aria-hidden="true" />
+                        <span className="font-pixel t-8">{f.properties.symbol}</span>
+                      </span>
+                      <span className={`font-pixel text-[7px] ${f.properties.pct >= 0 ? 'text-green' : 'text-red'}`}>
+                        {formatPrice(f.properties.price)} {arrow(f.properties.pct)}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </Panel>
+        </div>
+      )}
+
       {onGlobe && !playing && !engine && !mapFailed && (
         <div className="pointer-events-none absolute inset-x-0 top-20 z-30 flex justify-center">
           <Panel tone="plate" role="status" className="flex items-center gap-3 py-2!">
@@ -328,7 +359,6 @@ export default function Globe() {
         <MarketSheet
           key={selected.id}
           feature={selected}
-          meta={spawns.meta}
           speciesId={speciesId}
           onEnter={enter}
           onClose={() => setSelectedId(null)}
@@ -336,8 +366,8 @@ export default function Globe() {
         />
       )}
 
-      {playingMarketId !== null && speciesId && address && (
-        <PhaserMount marketId={playingMarketId} speciesId={speciesId} wallet={address} onExit={onExit} />
+      {playingRouteId !== null && speciesId && (
+        <PhaserMount routeId={playingRouteId} speciesId={speciesId} onExit={onExit} />
       )}
     </div>
   );

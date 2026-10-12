@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ROUTES } from './routes';
 
 /**
@@ -36,7 +36,7 @@ export function getPrice(id: string): PriceTick {
 
 /** Subscribe to simulated ticks (shared timer). */
 export function usePrices(): Record<string, PriceTick> {
-  const [, force] = useState(0);
+  const [version, force] = useState(0);
   useEffect(() => {
     seedState();
     const l = () => force((n) => n + 1);
@@ -48,7 +48,9 @@ export function usePrices(): Record<string, PriceTick> {
     };
   }, []);
   seedState();
-  return state;
+  // A fresh object per tick so memoised consumers update.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => ({ ...state }), [version]);
 }
 
 export function formatPrice(p: number): string {

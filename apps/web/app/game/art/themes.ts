@@ -187,12 +187,12 @@ export function tintDeep<T>(v: T, t: Tint): T {
 interface Variant { family: Family; label: string; tint: Tint; patch?: (p: ThemePal) => void }
 
 const VARIANTS: Record<RouteTheme, Variant> = {
-  sol:  { family: 'tech', label: 'Validator violet', tint: { hue: 52, sat: 1.05, light: 0.0 }, patch: (p) => { p.glow = h('#14f195'); p.accent = r('#9945ff'); p.flowers = [h('#14f195'), h('#f4f4ff'), h('#b46bff')]; p.iwallTrim = h('#14f195'); } },
+  sol:  { family: 'tech', label: 'Validator violet', tint: { hue: 52, sat: 1.05, light: 0.0 }, patch: (p) => { p.glow = h('#14f195'); p.accent = r('#9945ff'); p.flowers = [h('#14f195'), h('#f4f4ff'), h('#b46bff')]; p.iwallTrim = r('#14f195'); } },
   btc:  { family: 'energy', label: 'Genesis desert', tint: { hue: 0, sat: 1.05, light: 0.0 }, patch: (p) => { p.glow = h('#f7931a'); p.accent = r('#f7931a'); } },
-  eth:  { family: 'crypto', label: 'Obelisk indigo', tint: { hue: -38, sat: 0.9, light: 0.02 }, patch: (p) => { p.glow = h('#8ea0ff'); p.accent = r('#8ea0ff'); p.iwallTrim = h('#8ea0ff'); } },
+  eth:  { family: 'crypto', label: 'Obelisk indigo', tint: { hue: -38, sat: 0.9, light: 0.02 }, patch: (p) => { p.glow = h('#8ea0ff'); p.accent = r('#8ea0ff'); p.iwallTrim = r('#8ea0ff'); } },
   sui:  { family: 'consumer', label: 'Harbor azure', tint: { hue: 8, sat: 1.15, light: -0.02 }, patch: (p) => { p.glow = h('#4da2ff'); p.accent = r('#4da2ff'); } },
   zec:  { family: 'bluechip', label: 'Shielded dusk', tint: { hue: 28, sat: 0.55, light: -0.2 }, patch: (p) => { p.glow = h('#f4b728'); p.accent = r('#f4b728'); p.flowers = [h('#f4b728'), h('#e8e0c8'), h('#7a6a9a')]; } },
-  bnb:  { family: 'tech', label: 'Exchange gold', tint: { hue: -150, sat: 1.25, light: 0.04 }, patch: (p) => { p.glow = h('#f3ba2f'); p.accent = r('#f3ba2f'); p.iwallTrim = h('#f3ba2f'); } },
+  bnb:  { family: 'tech', label: 'Exchange gold', tint: { hue: -150, sat: 1.25, light: 0.04 }, patch: (p) => { p.glow = h('#f3ba2f'); p.accent = r('#f3ba2f'); p.iwallTrim = r('#f3ba2f'); } },
   doge: { family: 'meme', label: 'Moon meadow', tint: { hue: 70, sat: 0.85, light: 0.04 }, patch: (p) => { p.glow = h('#ffd23f'); p.accent = r('#c9a43c'); } },
   xrp:  { family: 'consumer', label: 'Ledger steel', tint: { hue: -30, sat: 0.45, light: 0.0 }, patch: (p) => { p.glow = h('#a8d8ff'); p.accent = r('#a8d8ff'); } },
 };

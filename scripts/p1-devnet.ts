@@ -38,7 +38,7 @@ async function airdrop(pk: PublicKey, sol: number) {
 async function main() {
   const A = Keypair.generate(); // funded player
   const B = Keypair.generate(); // UNFUNDED player (test G1.a)
-  const prog = programFor(base, A);
+  const prog: any = programFor(base, A);
   const pda = battlePda(programId, A.publicKey);
   console.log("program", programId.toBase58(), "A", A.publicKey.toBase58(), "region", region);
 
@@ -61,7 +61,7 @@ async function main() {
   // --- P1.4 ER txs from A (funded) + G1.a unfunded B
   const lat: number[] = [];
   let lastSig = "";
-  const erProg = programFor(er, A);
+  const erProg: any = programFor(er, A);
   const play = async (signer: Keypair, mv: number) => {
     const ix = await erProg.methods.playMove(mv).accounts({ battle: pda, sessionToken: null, signer: signer.publicKey } as never).instruction();
     return sendEr(er, [ix], [signer], { pollMs: 25 });
@@ -83,7 +83,7 @@ async function main() {
   ok("P1.4_er_tx_latency_ms", stats(lat));
 
   // --- P1.5 delegated VRF on the ER
-  const bState = async () => (await programFor(er, A).account.battle.fetch(pda)) as any;
+  const bState = async () => (await erProg.account.battle.fetch(pda)) as any;
   const vrfLat: number[] = [];
   for (let i = 0; i < 5; i++) {
     const b = await bState();

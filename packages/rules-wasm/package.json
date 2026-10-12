@@ -1,0 +1,24 @@
+{
+  "name": "@pokestonksss/rules-wasm",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Rust duel rules compiled to WASM with a typed wrapper (previews, bot, replay verifier)",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./wasm": "./pkg/duel_wasm_bg.wasm"
+  },
+  "scripts": {
+    "build:wasm": "wasm-pack build ../../crates/duel-wasm --target web --release --out-dir ../../packages/rules-wasm/pkg --out-name duel_wasm",
+    "gen": "node ../../scripts/gen-roster.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

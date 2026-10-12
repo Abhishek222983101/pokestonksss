@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import type Phaser from 'phaser';
 
 interface PhaserMountProps {
-  marketId: string;
+  routeId: string;
   speciesId: string;
-  wallet: string;
+  /** Route seed for deterministic encounters (VRF output once chain-wired); omitted offline. */
+  routeSeed?: number;
   onExit: () => void;
 }
 
@@ -15,17 +16,12 @@ interface PhaserMountProps {
  * (never state) and is destroyed on unmount, which makes React 19 StrictMode's mount → unmount →
  * remount safe: the first instance is torn down before the second is created.
  */
-export default function PhaserMount({ marketId, speciesId, wallet, onExit }: PhaserMountProps) {
+export default function PhaserMount({ routeId, speciesId, routeSeed, onExit }: PhaserMountProps) {
   const host = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const exitRef = useRef(onExit);
-  const walletRef = useRef(wallet);
+  const seedRef = useRef(routeSeed);
   useEffect(() => { exitRef.current = onExit; });
-  // Connecting a wallet mid-route must not restart the game: update the registry in place.
-  useEffect(() => {
-    walletRef.current = wallet;
-    gameRef.current?.registry.set('wallet', wallet);
-  }, [wallet]);
   const [rotateHint, setRotateHint] = useState(false);
 
   // The game is 3:2 landscape; on a portrait phone it letterboxes to a small strip, so suggest rotating.
@@ -71,9 +67,9 @@ export default function PhaserMount({ marketId, speciesId, wallet, onExit }: Pha
         callbacks: {
           // Registry is populated before the first scene boots, so scenes can read it in init().
           preBoot: (g) => {
-            g.registry.set('marketId', marketId);
+            g.registry.set('routeId', routeId);
             g.registry.set('speciesId', speciesId);
-            g.registry.set('wallet', walletRef.current);
+            if (seedRef.current !== undefined) g.registry.set('routeSeed', seedRef.current);
             g.registry.set('onExit', () => exitRef.current());
           },
         },
@@ -90,7 +86,7 @@ export default function PhaserMount({ marketId, speciesId, wallet, onExit }: Pha
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, [marketId, speciesId]);
+  }, [routeId, speciesId]);
 
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 50, background: '#0b1030', touchAction: 'none' }}>

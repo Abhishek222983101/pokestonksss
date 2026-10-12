@@ -1,20 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import Link from 'next/link';
-import { SPECIES_LIST } from 'game-core';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useSessionStore } from '../stores/sessionStore';
-import { totalSstock } from '../stores/walletStore';
-import { useIdentity } from '../web3/identity';
-import { useWalletData } from '../web3/useWalletData';
-import { addressUrl } from '../web3/chains';
-import { formatAmount, formatMon, shortAddress, ZERO } from '../web3/format';
+import { loadProfile, type Profile } from '../../lib/profile';
+import { rankOf } from '../../lib/rank';
+import { getBroker } from '../../lib/brokermon';
 import { audio } from '../game/audio';
+import { EventBus } from '../game/events';
 import { Icon } from './Icon';
 import { Portrait } from './Portrait';
 import Toasts from './Toasts';
-import { EventBus } from '../game/net/events';
-import DuelDialog from './DuelDialog';
 import { Button, Panel } from './ui';
 
 function useMuted(): boolean {
@@ -26,134 +21,54 @@ function useMuted(): boolean {
 }
 
 /**
- * Always-on heads-up display (top right). Full on the globe; inside a route it shrinks to the identity
- * pill and the mute toggle so the game keeps its screen. The container ignores pointer events, only the
- * controls take them, so it never blocks the game's input area.
+ * Always-on heads-up display (top right). Full on the globe; inside a route it shrinks to the mute toggle so
+ * the game keeps its screen. The container ignores pointer events, only the controls take them.
  */
 export default function Hud() {
-  const { address, displayName, mode, login, logout } = useIdentity();
-  const playing = useSessionStore((s) => s.marketId !== null);
+  const playing = useSessionStore((s) => s.routeId !== null);
+  const speciesId = useSessionStore((s) => s.speciesId);
   const setStage = useSessionStore((s) => s.setStage);
-  const wallet = useWalletData(address);
+  const signOut = useSessionStore((s) => s.signOut);
   const muted = useMuted();
-  const [open, setOpen] = useState(false);
-  const [duel, setDuel] = useState(false);
-  // Hidden during a battle: it would cover the turn timer, and Claim opens the wallet dialog itself.
+  const [profile, setProfile] = useState<Profile>({ rating: 1000, wins: 0, losses: 0 });
+  // Hidden during a battle: it would cover the turn timer.
   const [inBattle, setInBattle] = useState(false);
+
   useEffect(() => {
+    const refresh = () => setProfile(loadProfile());
+    refresh();
     const offs = [
       EventBus.on('battle:start', () => setInBattle(true)),
-      EventBus.on('battle:closed', () => setInBattle(false)),
+      EventBus.on('battle:closed', () => { setInBattle(false); refresh(); }),
       EventBus.on('game:exit', () => setInBattle(false)),
     ];
     return () => offs.forEach((off) => off());
   }, []);
-  const [copied, setCopied] = useState(false);
-  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(
-    () => () => {
-      if (copyTimer.current) clearTimeout(copyTimer.current);
-    },
-    [],
-  );
-
-  if (!address || inBattle) return null;
-
-  const total = totalSstock(wallet.sstock);
-  const owned = SPECIES_LIST.filter((s) => (wallet.sstock[s.ticker] ?? ZERO) > ZERO);
-  const loading = wallet.status === 'loading' || (wallet.status === 'idle' && !wallet.updatedAt);
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(address);
-      setCopied(true);
-      audio.sfx('menu_select');
-      if (copyTimer.current) clearTimeout(copyTimer.current);
-      copyTimer.current = setTimeout(() => setCopied(false), 1600);
-    } catch {
-      /* clipboard blocked: the address is still selectable in the explorer link */
-    }
-  };
+  if (inBattle) return null;
+  const mine = speciesId ? getBroker(speciesId) : null;
 
   return (
     <aside
-      aria-label="Wallet and controls"
+      aria-label="Trainer and controls"
       className="pointer-events-none fixed top-0 right-0 flex max-w-full flex-col items-end p-1 pt-[max(0.25rem,env(safe-area-inset-top))] pr-[max(0.25rem,env(safe-area-inset-right))]"
     >
-      <Panel tone="plate" className="pointer-events-auto p-2! short:p-1!">
-        <div className="flex items-center gap-1">
-          <span className="chip chip-plain" title={mode === 'guest' ? 'Throwaway testnet wallet saved in this browser' : 'Your connected browser wallet'}>
-            {mode === 'guest' ? 'Guest' : 'Wallet'}
-          </span>
-          <span className="px-1 text-[15px] tabular-nums" title={displayName}>
-            {shortAddress(address)}
-          </span>
-          <Button variant="secondary" small icon className="short:hidden!" onClick={copy} aria-label={copied ? 'Address copied' : 'Copy wallet address'}>
-            <Icon name={copied ? 'check' : 'copy'} size={14} />
-          </Button>
-          <a
-            className="btn btn-secondary btn-sm btn-icon short:hidden!"
-            href={addressUrl(address)}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="View wallet on MonadVision (opens in a new tab)"
-          >
-            <Icon name="external" size={14} />
-          </a>
-        </div>
-
-        {mode === 'guest' && (
-          <Button small className="mt-1 w-full" onClick={() => { audio.sfx('menu_select'); login(); }}>
-            <span className="short:hidden!">Connect wallet to claim</span>
-            <span className="hidden! short:inline!">Connect</span>
-          </Button>
-        )}
-
-        {!playing && (
-          <>
-            <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-1 short:hidden!">
-              <p className="text-[13px] leading-tight text-slate">
-                <span className="font-pixel t-8">MON</span>{' '}
-                <span className="font-pixel t-10 text-ink tabular-nums">{loading ? '…' : formatMon(wallet.mon)}</span>
+      {!playing && (
+        <Panel tone="plate" className="pointer-events-auto p-2! short:p-1!">
+          <div className="flex items-center gap-2">
+            {mine && <Portrait speciesId={mine.id} size={32} title={mine.name} />}
+            <div className="min-w-0">
+              <p className="flex items-center gap-1">
+                <span className="chip chip-plain">Guest</span>
+                <span className="font-pixel t-8">{rankOf(profile.rating)}</span>
               </p>
-              <button
-                type="button"
-                className="flex min-h-[44px] items-center gap-2 text-left"
-                aria-expanded={open}
-                aria-controls="hud-sstock"
-                onClick={() => setOpen((v) => !v)}
-              >
-                <span className="text-[13px] leading-tight text-slate">
-                  <span className="font-pixel t-8">sSTOCK</span>{' '}
-                  <span className="font-pixel t-10 text-ink tabular-nums">{loading ? '…' : formatAmount(total, 18, 2)}</span>
-                </span>
-                <Icon name={open ? 'up' : 'down'} size={12} className="text-navy" />
-              </button>
+              <p className="mt-1 text-[14px] leading-tight text-slate">
+                <span className="font-pixel t-10 text-ink tabular-nums">{profile.rating}</span> rating · {profile.wins}W {profile.losses}L
+              </p>
             </div>
-            {wallet.error && wallet.updatedAt && (
-              <p className="px-1 text-[13px] text-red-deep" role="status">
-                {wallet.error}
-              </p>
-            )}
-            {open && (
-              <ul id="hud-sstock" className="mt-1 max-h-[36dvh] overflow-y-auto px-1">
-                {owned.length === 0 ? (
-                  <li className="py-1 text-[14px] leading-snug text-slate">No tokens yet. Win a battle to earn your first sSTOCK.</li>
-                ) : (
-                  owned.map((s) => (
-                    <li key={s.id} className="flex items-center gap-2 py-0.5">
-                      <Portrait speciesId={s.id} size={32} />
-                      <span className="font-pixel t-8 flex-1">s{s.ticker}</span>
-                      <span className="text-[15px] tabular-nums">{formatAmount(wallet.sstock[s.ticker], 18, 4)}</span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            )}
-          </>
-        )}
-      </Panel>
+          </div>
+        </Panel>
+      )}
 
       <div className="pointer-events-auto flex items-center">
         <Button
@@ -168,16 +83,8 @@ export default function Hud() {
         >
           <Icon name={muted ? 'soundOff' : 'soundOn'} size={18} />
         </Button>
-        {playing && (
-          <Button variant="quiet" small aria-label="Duel a friend" title="Duel a friend" onClick={() => { audio.sfx('menu_select'); setDuel(true); }}>
-            <Icon name="swap" size={18} /> <span className="font-pixel t-8">Duel</span>
-          </Button>
-        )}
         {!playing && (
           <>
-            <Link href="/collection" className="btn btn-quiet btn-sm btn-icon" aria-label="Open your collection" title="Collection" onClick={() => audio.sfx('menu_select')}>
-              <Icon name="grid" size={18} />
-            </Link>
             <Button
               variant="quiet"
               small
@@ -195,11 +102,11 @@ export default function Hud() {
               variant="quiet"
               small
               icon
-              aria-label="Sign out"
-              title="Sign out"
+              aria-label="Back to title"
+              title="Back to title"
               onClick={() => {
                 audio.sfx('menu_back');
-                logout();
+                signOut();
               }}
             >
               <Icon name="power" size={18} />
@@ -209,10 +116,6 @@ export default function Hud() {
       </div>
 
       <Toasts />
-      {duel && <DuelDialog onClose={() => setDuel(false)} />}
-      <span className="sr-only-x" role="status">
-        {copied ? 'Wallet address copied' : ''}
-      </span>
     </aside>
   );
 }

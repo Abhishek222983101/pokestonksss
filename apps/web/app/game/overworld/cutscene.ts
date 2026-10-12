@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { getSpecies } from 'game-core';
+import { getBroker } from '../../../lib/brokermon';
 import { audio } from '../audio';
 
 /**
@@ -215,8 +215,8 @@ export async function playVersus(
   const { w, h } = viewSize(scene);
   ensureCover(cut);
 
-  const myCol = hexNum(getSpecies(me.speciesId).colors[0]);
-  const foeCol = hexNum(getSpecies(foe.speciesId).colors[0]);
+  const myCol = hexNum(getBroker(me.speciesId).colors[0]);
+  const foeCol = hexNum(getBroker(foe.speciesId).colors[0]);
 
   const left = cut.own(scene.add.graphics()).setScrollFactor(0).setDepth(COVER_DEPTH + 1);
   const right = cut.own(scene.add.graphics()).setScrollFactor(0).setDepth(COVER_DEPTH + 1);
@@ -239,7 +239,7 @@ export async function playVersus(
   const mySprites = mk(me.speciesId, myX, -w);
   const foeSprites = mk(foe.speciesId, foeX, w);
 
-  const foeTag = foe.isBot ? (opts.kind === 'trainer' ? 'TRAINER' : 'WILD') : 'RIVAL BROKER';
+  const foeTag = foe.isBot ? (opts.kind === 'trainer' ? 'TRAINER' : 'HOUSE AGENT') : 'RIVAL BROKER';
   const myPlate = plate(cut, myX - w * 0.02, h - 92, me.name, 'YOU', '#f8d858');
   const foePlate = plate(cut, foeX + w * 0.02, h - 92, foe.name, foeTag, '#ffb0b0');
   myPlate.x -= w; foePlate.x += w;

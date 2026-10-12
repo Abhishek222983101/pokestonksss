@@ -1513,6 +1513,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "pokestonksss"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "duel-rules",
+ "ephemeral-rollups-sdk",
+ "solana-sha256-hasher 3.1.0",
+]
+
+[[package]]
 name = "ppv-lite86"
 version = "0.2.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { getSpecies } from 'game-core';
+import { getBroker } from '../../../lib/brokermon';
 import { C, H, TYPE_COLOR, W, drawFrame, notched, txt } from './ui';
 
 export type ToastTone = 'info' | 'good' | 'bad';
@@ -17,7 +17,7 @@ export class Hud {
   private routeText: Phaser.GameObjects.Text;
 
   constructor(private scene: Phaser.Scene, speciesId: string, routeName: string, showHint: boolean) {
-    const sp = getSpecies(speciesId);
+    const sp = getBroker(speciesId);
     const depth = 4000;
 
     // species card
@@ -31,10 +31,10 @@ export class Hud {
     const name = txt(scene, 118, 30, sp.name.toUpperCase(), 14, '#f8f8d0').setDepth(depth + 2);
     const tick = txt(scene, 118, 56, `$${sp.ticker}`, 12, '#f8d858').setDepth(depth + 2);
     const chip = scene.add.graphics().setDepth(depth + 2);
-    const chipW = 12 * sp.affinity.length + 20;
+    const chipW = 12 * sp.typeLabel.length + 20;
     notched(chip, 118, 78, chipW, 24, C.ink, 1, 3);
-    notched(chip, 120, 80, chipW - 4, 20, TYPE_COLOR[sp.affinity] ?? C.slate, 1, 2);
-    const chipText = txt(scene, 118 + chipW / 2, 91, sp.affinity.toUpperCase(), 9, '#181818').setOrigin(0.5).setDepth(depth + 3);
+    notched(chip, 120, 80, chipW - 4, 20, TYPE_COLOR[sp.typeLabel.toUpperCase()] ?? C.slate, 1, 2);
+    const chipText = txt(scene, 118 + chipW / 2, 91, sp.typeLabel.toUpperCase(), 9, '#181818').setOrigin(0.5).setDepth(depth + 3);
     this.objs.push(card, well, name, tick, chip, chipText);
     if (portrait) this.objs.push(portrait);
 

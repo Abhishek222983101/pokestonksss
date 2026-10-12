@@ -1,11 +1,12 @@
 import * as Phaser from 'phaser';
 import { Direction } from 'grid-engine';
 import type { GridEngine } from 'grid-engine';
-import { ROUTE_TABLES, getMarket, rollEncounter, type EncounterSlot } from 'game-core';
+import { foeIndex, isEncounter, newRouteSeed } from '../../../lib/encounter';
+import { getRoute } from '../../../lib/routes';
+import { BROKERMON } from '../../../lib/brokermon';
 import { audio } from '../audio';
-import { EventBus } from '../net/events';
+import { EventBus } from '../events';
 import { isMatchActive, runEncounter } from '../flow/encounterFlow';
-import { bindDuelEvents } from '../flow/duelBridge';
 import { CHAR_WALK_MAPPING, type CharKey } from '../art/characters';
 import { hashStr } from '../art/pixel';
 import { isRouteTheme, type RouteTheme } from '../art/themes';
@@ -72,9 +73,11 @@ export class OverworldScene extends Phaser.Scene {
   private dialog!: DialogBox;
   private hud!: Hud;
 
-  private marketId = 'aapl';
-  private speciesId = 'aapl';
-  private theme: RouteTheme = 'bluechip';
+  private routeId = 'sol';
+  private speciesId = 'sol';
+  private routeSeed = 0;
+  private grassSteps = 0;
+  private theme: RouteTheme = 'sol';
   private routeName = 'Route';
   private playerKey: CharKey = 'player_a';
 
@@ -89,7 +92,6 @@ export class OverworldScene extends Phaser.Scene {
   private routeDoor = { x: 24, y: 8 };
   private subs: Array<{ unsubscribe(): void }> = [];
   private offToast: (() => void) | null = null;
-  private offDuel: (() => void) | null = null;
   private tapDialog: ((p: Phaser.Input.Pointer, over: unknown[]) => void) | null = null;
 
   constructor() {
@@ -107,13 +109,15 @@ export class OverworldScene extends Phaser.Scene {
     this.subs = [];
 
     const reg = this.registry;
-    this.marketId = (reg.get('marketId') as string | undefined) ?? 'aapl';
-    const market = getMarket(this.marketId);
-    this.speciesId = (reg.get('speciesId') as string | undefined) ?? market?.speciesId ?? 'aapl';
-    this.theme = isRouteTheme(market?.routeTheme) ? market!.routeTheme as RouteTheme : 'bluechip';
-    this.routeName = market?.name ?? 'Route';
-    const wallet = String(reg.get('wallet') ?? '');
-    this.playerKey = wallet && hashStr(wallet) & 1 ? 'player_b' : 'player_a';
+    this.routeId = (reg.get('routeId') as string | undefined) ?? 'sol';
+    const rdef = getRoute(this.routeId);
+    this.speciesId = (reg.get('speciesId') as string | undefined) ?? rdef?.brokerId ?? 'sol';
+    this.theme = isRouteTheme(rdef?.theme) ? rdef!.theme as RouteTheme : 'sol';
+    this.routeName = rdef?.name ?? 'Route';
+    // Encounters are a pure function of (routeSeed, grass step). Offline the seed is random per visit; P7 passes the VRF output.
+    this.routeSeed = (reg.get('routeSeed') as number | undefined) ?? newRouteSeed();
+    this.grassSteps = 0;
+    this.playerKey = hashStr(this.speciesId) & 1 ? 'player_b' : 'player_a';
 
     // Two cameras: the world (zoom 3, drawn first) and the unzoomed main camera that carries the HUD,
     // dialogs, touch pad and anything other modules add to this scene (battle flow, cutscenes).
@@ -131,7 +135,6 @@ export class OverworldScene extends Phaser.Scene {
     this.dialog = new DialogBox(this);
     this.hud = new Hud(this, this.speciesId, this.routeName, !this.controls.touch);
     // Toasts are rendered by the React HUD (one layer, works during battles too); nothing to subscribe to here.
-    this.offDuel = bindDuelEvents(this, this.marketId);
 
     this.tapDialog = (_p, over) => { if (this.dialog.isOpen && over.length === 0) this.dialog.press(); };
     this.input.on('pointerdown', this.tapDialog);
@@ -165,7 +168,6 @@ export class OverworldScene extends Phaser.Scene {
   private onShutdown() {
     this.alive = false;
     this.offToast?.(); this.offToast = null;
-    this.offDuel?.(); this.offDuel = null;
     if (this.tapDialog) this.input.off('pointerdown', this.tapDialog);
     this.tapDialog = null;
     this.events.off('addedtoscene', this.onAdded, this);
@@ -184,9 +186,9 @@ export class OverworldScene extends Phaser.Scene {
     let m = this.maps[kind];
     if (m) return m;
     const stored = this.registry.get(`map:${kind}`) as BuiltMap | undefined;
-    const fresh = stored && stored.meta.theme === this.theme && (kind === 'exchange' || stored.meta.key === `route_${this.marketId}`);
+    const fresh = stored && stored.meta.theme === this.theme && (kind === 'exchange' || stored.meta.key === `route_${this.routeId}`);
     m = (fresh ? stored : undefined) ?? (kind === 'route'
-      ? buildRouteMap(this.theme, this.marketId, { routeName: this.routeName })
+      ? buildRouteMap(this.theme, this.routeId, { routeName: this.routeName })
       : buildExchangeInterior(this.theme, this.routeName));
     this.maps[kind] = m;
     if (kind === 'route') {
@@ -393,8 +395,11 @@ export class OverworldScene extends Phaser.Scene {
       audio.sfx('step_grass');
       this.rustle(x, y, 3);
       if (this.steps > GRACE_STEPS && rt.kind === 'route' && !isMatchActive()) {
-        const slot = rollEncounter(ROUTE_TABLES[this.theme], Math.random);
-        if (slot) void this.guarded(() => this.wildEncounter(slot));
+        const step = this.grassSteps++;
+        if (isEncounter(this.routeSeed, step)) {
+          const foeNum = foeIndex(this.routeSeed, step, BROKERMON.length);
+          void this.guarded(() => this.wildEncounter(foeNum));
+        }
       }
     }
   }
@@ -455,7 +460,7 @@ export class OverworldScene extends Phaser.Scene {
     audio.sfx('encounter');
   }
 
-  private async wildEncounter(slot: EncounterSlot) {
+  private async wildEncounter(foeNum: number) {
     if (this.busy || isMatchActive()) return;
     this.lock();
     await this.settlePlayer();
@@ -464,13 +469,13 @@ export class OverworldScene extends Phaser.Scene {
     this.encounterSfx();
     await this.delay(330);
     if (!this.alive) return;
-    await this.runBattle({ kind: 'wild', foeHintSpeciesId: slot.speciesId });
+    await this.runBattle({ kind: 'wild', foeNum });
   }
 
-  private async runBattle(opts: { kind: 'wild' | 'trainer'; foeHintSpeciesId?: string; trainerName?: string }) {
+  private async runBattle(opts: { kind: 'wild' | 'trainer'; foeNum: number; trainerName?: string }) {
     if (opts.kind === 'trainer') this.encounterSfx();
     try {
-      await runEncounter(this, { marketId: this.marketId, ...opts });
+      await runEncounter(this, { routeId: this.routeId, ...opts });
     } catch (err) {
       console.error('[overworld] encounter failed', err);
     }
@@ -513,7 +518,7 @@ export class OverworldScene extends Phaser.Scene {
     EventBus.emit('toast', { text: `${t.spec.name} challenges you!`, tone: 'bad' });
     await this.dialog.open(pagesFrom(t.spec.intro), t.spec.name);
     if (!this.alive) return;
-    await this.runBattle({ kind: 'trainer', trainerName: t.spec.name });
+    await this.runBattle({ kind: 'trainer', foeNum: hashStr(`${this.routeId}:${t.spec.id}`) % BROKERMON.length, trainerName: t.spec.name });
     if (!this.alive) return;
     t.recoverUntil = Date.now() + TRAINER_COOLDOWN_MS;
     // head back to the post
@@ -601,15 +606,15 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   private async tellerFlow(n: NpcRec) {
-    const pick = await this.dialog.ask(pagesFrom(n.spec.dialog), ['HEAL', 'NOT NOW'], n.spec.name);
+    const pick = await this.dialog.ask(pagesFrom(n.spec.dialog), ['TOP UP', 'NOT NOW'], n.spec.name);
     if (!this.alive) return;
     if (pick === 0) {
       audio.sfx('heal');
       this.ui.flash(520, 255, 255, 255);
-      EventBus.emit('toast', { text: 'Positions settled — fully healed!', tone: 'good' });
+      EventBus.emit('toast', { text: 'Margin topped up!', tone: 'good' });
       await this.delay(420);
       if (!this.alive) return;
-      await this.dialog.open(['Positions settled.', 'Your BrokerMon is fully healed!'], n.spec.name);
+      await this.dialog.open(['Positions settled.', 'Your margin is topped up!'], n.spec.name);
     } else {
       await this.dialog.open(['Come back any time.'], n.spec.name);
     }

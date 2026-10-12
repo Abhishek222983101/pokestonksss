@@ -7,9 +7,11 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
+pokestonksss = "FRxAb7Nw1GFyLkV7KN7fitTztiZuJ1y1oNEmcW3mHM1M"
 er_vrf = "EuACsUBFjid6EoK2iN3piEv1auYicEViyVzJpkMvSta3"
 
 [programs.localnet]
+pokestonksss = "FRxAb7Nw1GFyLkV7KN7fitTztiZuJ1y1oNEmcW3mHM1M"
 er_vrf = "DAEhW8UFWVTApkKoLqwkBkQoN2JTSSdJqz1n7y8UWMKX"
 
 [provider]

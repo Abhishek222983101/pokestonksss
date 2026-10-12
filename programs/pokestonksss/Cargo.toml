@@ -1,0 +1,29 @@
+[package]
+name = "pokestonksss"
+version = "0.1.0"
+description = "PokeStonksss on-chain game: delegated Arena/Trainer accounts on MagicBlock ERs, VRF rolls, oracle mood"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "pokestonksss"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+anchor-debug = []
+custom-heap = []
+custom-panic = []
+
+[dependencies]
+anchor-lang = { version = "1.0.2", features = ["init-if-needed"] }
+ephemeral-rollups-sdk = { version = "0.16.2", features = ["anchor", "vrf"] }
+solana-sha256-hasher = "3"
+duel-rules = { path = "../../crates/duel-rules" }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }

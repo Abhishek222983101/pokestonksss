@@ -732,8 +732,7 @@ fn elo_extremes_clamped_and_minimum_one() {
     assert_eq!(elo_update(3000, 1000), (3001, 999));
     let (w, l) = elo_update(0, 5000);
     assert_eq!((w, l), (23, 4977)); // E clamps at 10 -> 24*990/1000 = 23
-    assert_eq!(elo_update(1000, 0).1, 0 .max(0));
-    assert_eq!(elo_update(1010, 3).1, 1010 - 1010 + 3 - 1);
+    assert_eq!(elo_update(1010, 3).1, 2);
     let (_, l) = elo_update(1000, 0);
     assert_eq!(l, 0, "loser never negative");
 }

@@ -3,13 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useSessionStore } from '../stores/sessionStore';
-import { useIdentity } from '../web3/identity';
 import { audio } from '../game/audio';
 import Title from './Title';
 import BrokerSelect from './BrokerSelect';
 import Hud from './Hud';
-import ClaimLayer from './ClaimLayer';
-import ConnectWalletDialog from './ConnectWalletDialog';
 
 // MapLibre + three (pixel field) only ever run in the browser.
 const Globe = dynamic(() => import('./Globe'), { ssr: false });
@@ -23,12 +20,12 @@ export default function App() {
   const stage = useSessionStore((s) => s.stage);
   const speciesId = useSessionStore((s) => s.speciesId);
   const hydrated = useSessionStore((s) => s.hydrated);
-  const marketId = useSessionStore((s) => s.marketId);
+  const routeId = useSessionStore((s) => s.routeId);
+  const guest = useSessionStore((s) => s.guest);
   const setStage = useSessionStore((s) => s.setStage);
   const chooseSpecies = useSessionStore((s) => s.chooseSpecies);
   const exitRoute = useSessionStore((s) => s.exitRoute);
   const hydrate = useSessionStore((s) => s.hydrate);
-  const { status } = useIdentity();
 
   const [leaving, setLeaving] = useState<Leaving>(null);
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -57,8 +54,8 @@ export default function App() {
 
   // Title music on every screen except inside a route (the game owns its own tracks).
   useEffect(() => {
-    if (marketId === null) audio.bgm('title');
-  }, [marketId]);
+    if (routeId === null) audio.bgm('title');
+  }, [routeId]);
 
   useEffect(
     () => () => {
@@ -67,13 +64,13 @@ export default function App() {
     [],
   );
 
-  // Lost the session (signed out in another tab, wallet disconnected): back to the start, never a dead screen.
+  // Lost the session (signed out in another tab): back to the start, never a dead screen.
   useEffect(() => {
-    if (status === 'signed-out' && stage !== 'title') {
+    if (hydrated && !guest && stage !== 'title') {
       exitRoute();
       setStage('title');
     }
-  }, [status, stage, exitRoute, setStage]);
+  }, [hydrated, guest, stage, exitRoute, setStage]);
 
   /** Title/select -> globe: one move. The screen dissolves in pixel steps while Globe pulls the camera in. */
   const goGlobe = useCallback(
@@ -101,7 +98,7 @@ export default function App() {
 
   const showTitle = stage === 'title' || leaving === 'title';
   const showSelect = stage === 'select' || leaving === 'select';
-  const showHud = status === 'signed-in' && stage === 'globe';
+  const showHud = guest && stage === 'globe';
 
   return (
     <main className="fixed inset-0 overflow-hidden bg-sky-pale">
@@ -129,8 +126,6 @@ export default function App() {
         </div>
       )}
 
-      <ClaimLayer />
-      <ConnectWalletDialog />
     </main>
   );
 }

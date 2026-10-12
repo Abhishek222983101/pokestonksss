@@ -1,8 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, type KeyboardEvent } from 'react';
-import { useIdentity } from '../web3/identity';
-import { shortAddress } from '../web3/format';
+import { useSessionStore } from '../stores/sessionStore';
 import { audio } from '../game/audio';
 import { Logotype } from './Logotype';
 import { Panel } from './ui';
@@ -18,24 +17,16 @@ interface Props {
  * with the menu, like a handheld's title menu: the blinking triangle marks the current choice.
  */
 export default function Title({ ready, onContinue }: Props) {
-  const { status, mode, address, displayName, login, playAsGuest, logout } = useIdentity();
+  const guest = useSessionStore((s) => s.guest);
+  const playAsGuest = useSessionStore((s) => s.playAsGuest);
+  const signOut = useSessionStore((s) => s.signOut);
   const menuRef = useRef<HTMLDivElement>(null);
-  /** Set when the player starts a sign-in here, so finishing it carries them straight on. */
-  const awaiting = useRef(false);
-
-  useEffect(() => {
-    if (awaiting.current && status === 'signed-in') {
-      awaiting.current = false;
-      audio.sfx('menu_select');
-      onContinue();
-    }
-  }, [status, onContinue]);
 
   // Keyboard players land on the first choice.
   useEffect(() => {
     const first = menuRef.current?.querySelector<HTMLButtonElement>('button:not([disabled])');
     first?.focus({ preventScroll: true });
-  }, [status]);
+  }, [guest, ready]);
 
   const onMenuKey = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
@@ -48,23 +39,15 @@ export default function Title({ ready, onContinue }: Props) {
     e.preventDefault();
   }, []);
 
-  const startWallet = () => {
-    audio.sfx('menu_select');
-    awaiting.current = true;
-    login();
-  };
   const startGuest = () => {
     audio.sfx('menu_select');
-    awaiting.current = true;
     playAsGuest();
+    onContinue();
   };
   const proceed = () => {
     audio.sfx('menu_select');
     onContinue();
   };
-
-  const signedIn = status === 'signed-in';
-  const walletLabel = mode === 'guest' ? 'Guest wallet on this device' : 'Your connected wallet';
 
   return (
     <section
@@ -79,19 +62,16 @@ export default function Title({ ready, onContinue }: Props) {
 
       <Panel tone="dialog" className="pointer-events-auto w-[min(100%_-_1rem,28rem)] short:w-[min(52vw,26rem)] short:py-2!" aria-label="Start menu">
         <p className="text-[17px] leading-snug short:text-[15px]">
-          Pick a stock as your monster, battle other players, and win tokens on Monad testnet.
+          Pick a BrokerMon, battle other players, and climb from Shrimp to Whale on Solana devnet.
         </p>
 
-        <div ref={menuRef} role="group" aria-label="Sign in" onKeyDown={onMenuKey} className="mt-3 -mx-2 short:mt-1">
-          {signedIn ? (
+        <div ref={menuRef} role="group" aria-label="Start" onKeyDown={onMenuKey} className="mt-3 -mx-2 short:mt-1">
+          {guest ? (
             <>
               <button type="button" className="menu-item" onClick={proceed} disabled={!ready}>
                 <span>
-                  Continue as {displayName}
-                  <small>
-                    {walletLabel}
-                    {address ? ` · ${shortAddress(address)}` : ''}
-                  </small>
+                  Continue
+                  <small>Guest trainer on this device</small>
                 </span>
               </button>
               <button
@@ -99,32 +79,36 @@ export default function Title({ ready, onContinue }: Props) {
                 className="menu-item"
                 onClick={() => {
                   audio.sfx('menu_back');
-                  logout();
+                  signOut();
                 }}
               >
-                <span>Sign out</span>
+                <span>Start over</span>
               </button>
             </>
           ) : (
             <>
-              <button type="button" className="menu-item" onClick={startWallet} disabled={status === 'loading'}>
-                <span>
-                  Connect wallet
-                  <small>{status === 'loading' ? 'Checking your wallet…' : 'MetaMask or any browser wallet with MON. Needed to claim rewards.'}</small>
-                </span>
-              </button>
-              <button type="button" className="menu-item" onClick={startGuest}>
+              <button type="button" className="menu-item" onClick={startGuest} disabled={!ready}>
                 <span>
                   Play as guest
-                  <small>Instant. Plays the full game; connect a wallet when you want to claim.</small>
+                  <small>Instant. No wallet, no popups, free devnet SOL.</small>
+                </span>
+              </button>
+              <button type="button" className="menu-item cursor-not-allowed!" disabled aria-disabled="true">
+                <span>
+                  Connect wallet
+                  <small>Coming soon. Guests can link a wallet later to keep their ribbons.</small>
                 </span>
               </button>
             </>
           )}
         </div>
 
+        <div className="mt-2 flex flex-wrap items-center gap-1 short:mt-1">
+          <span className="chip chip-plain">devnet</span>
+          <span className="chip chip-plain">Ephemeral Rollup</span>
+        </div>
         <p className="mt-2 text-[13px] leading-snug text-cream/75 short:mt-1 short:text-[12px]">
-          Rewards are synthetic testnet tokens and collectibles. They have no cash value.
+          Test network only. Nothing here has cash value.
         </p>
       </Panel>
     </section>

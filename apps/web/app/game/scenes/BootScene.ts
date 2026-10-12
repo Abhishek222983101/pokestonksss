@@ -12,12 +12,12 @@ export class BootScene extends Phaser.Scene {
   }
 
   /**
-   * PhaserMount writes marketId / speciesId / wallet / onExit into the registry before Boot runs.
+   * PhaserMount writes routeId / speciesId / routeSeed / onExit into the registry before Boot runs.
    * Never overwrite them; only fill gaps from scene-start data (older mounts pass data that way).
    */
   init(data?: Record<string, unknown>) {
     if (!data) return;
-    for (const key of ['marketId', 'speciesId', 'wallet', 'onExit']) {
+    for (const key of ['routeId', 'speciesId', 'routeSeed', 'onExit']) {
       if (data[key] !== undefined && !this.registry.has(key)) this.registry.set(key, data[key]);
     }
   }

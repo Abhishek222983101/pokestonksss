@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
-import { SPECIES_LIST, getMarket } from 'game-core';
+import { BROKERMON } from '../../../lib/brokermon';
+import { getRoute } from '../../../lib/routes';
 import { artSteps, type ArtStep } from '../art/register';
 import { isRouteTheme, type RouteTheme } from '../art/themes';
 import { buildExchangeInterior, buildRouteMap } from '../overworld/maps';
@@ -31,11 +32,11 @@ export class PreloadScene extends Phaser.Scene {
       bg.closePath(); bg.fillPath();
     }
 
-    const title = this.add.text(W / 2, 200, 'POKESTONKS', {
-      fontFamily: FONT, fontSize: '64px', color: '#f8d858', stroke: '#181818', strokeThickness: 12,
+    const title = this.add.text(W / 2, 200, 'POKESTONKSSS', {
+      fontFamily: FONT, fontSize: '56px', color: '#f8d858', stroke: '#181818', strokeThickness: 12,
     }).setOrigin(0.5).setResolution(2);
-    this.add.text(W / 2 + 4, 200 + 4, 'POKESTONKS', { fontFamily: FONT, fontSize: '64px', color: '#a8781c' }).setOrigin(0.5).setResolution(2).setDepth(-1);
-    this.add.text(W / 2, 262, 'WALK. BATTLE. TRADE.', { fontFamily: FONT, fontSize: '14px', color: '#f8f8d0' }).setOrigin(0.5).setResolution(2);
+    this.add.text(W / 2 + 4, 200 + 4, 'POKESTONKSSS', { fontFamily: FONT, fontSize: '56px', color: '#a8781c' }).setOrigin(0.5).setResolution(2).setDepth(-1);
+    this.add.text(W / 2, 262, 'PUMP. HEDGE. LEVERAGE.', { fontFamily: FONT, fontSize: '14px', color: '#f8f8d0' }).setOrigin(0.5).setResolution(2);
     this.tweens.add({ targets: title, y: 194, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
     // progress bar
@@ -58,9 +59,9 @@ export class PreloadScene extends Phaser.Scene {
 
     // BrokerMon roll-call: each portrait pops in as soon as its texture exists
     const shown = new Set<string>();
-    const slotX = (i: number) => W / 2 - 11 * 34 + i * 68;
+    const slotX = (i: number) => W / 2 - 7 * 34 + i * 68;
     const rollCall = () => {
-      SPECIES_LIST.forEach((sp, i) => {
+      BROKERMON.forEach((sp, i) => {
         const key = `mon_${sp.id}_front`;
         if (shown.has(sp.id) || !this.textures.exists(key)) return;
         shown.add(sp.id);
@@ -70,14 +71,14 @@ export class PreloadScene extends Phaser.Scene {
       });
     };
 
-    const marketId = (this.registry.get('marketId') as string | undefined) ?? 'aapl';
-    const market = getMarket(marketId);
-    const theme: RouteTheme = isRouteTheme(market?.routeTheme) ? (market!.routeTheme as RouteTheme) : 'bluechip';
-    const routeName = market?.name ?? 'Route';
+    const routeId = (this.registry.get('routeId') as string | undefined) ?? 'sol';
+    const route = getRoute(routeId);
+    const theme: RouteTheme = isRouteTheme(route?.theme) ? (route!.theme as RouteTheme) : 'sol';
+    const routeName = route?.name ?? 'Route';
 
     const steps: ArtStep[] = [
       ...artSteps(this).slice(1),
-      { label: 'Surveying the route', run: () => this.registerMap('route', buildRouteMap(theme, marketId, { routeName })) },
+      { label: 'Surveying the route', run: () => this.registerMap('route', buildRouteMap(theme, routeId, { routeName })) },
       { label: 'Building The Exchange', run: () => this.registerMap('exchange', buildExchangeInterior(theme, routeName)) },
     ];
 

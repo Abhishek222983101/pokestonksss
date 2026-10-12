@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { EventBus, type GameEvents } from '../game/net/events';
+import { EventBus, type GameEvents } from '../game/events';
 import { Panel } from './ui';
 
 interface Toast {

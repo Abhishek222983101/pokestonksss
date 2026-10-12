@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Map as MapLibreMap, Marker as MapLibreMarker } from 'maplibre-gl';
-import { getSpecies } from 'game-core';
-import type { SpawnFeature } from '../api/spawns/transform';
+import { getBroker } from '../../lib/brokermon';
+import type { RouteFeature as SpawnFeature } from './useRoutes';
 import { Portrait } from './Portrait';
 import { TYPE_COLOR } from './ui';
 import { audio } from '../game/audio';
@@ -39,7 +39,7 @@ interface Props {
 }
 
 /**
- * Type-coloured, ticker-labelled markers for the 12 markets, as real DOM buttons (focusable, >=44px)
+ * Type-coloured, ticker-labelled markers for the 8 routes, as real DOM buttons (focusable, >=44px)
  * positioned by MapLibre Markers. Pins within CLUSTER_PX of each other merge into a numbered cluster
  * that zooms in on click. Recomputed on move so clusters split as you zoom.
  */
@@ -178,23 +178,23 @@ function MarketPin({
   onSelect: () => void;
 }) {
   const p = feature.properties;
-  const sp = getSpecies(p.speciesId);
-  const glyph = p.live ? MOOD_GLYPH[p.mood] : '';
+  const sp = getBroker(p.brokerId);
+  const glyph = MOOD_GLYPH[p.mood];
   return (
     <button
       type="button"
       className={`pin ${reveal ? 'pin-in' : 'pin-hidden'}`}
       data-selected={selected || undefined}
       aria-pressed={selected}
-      aria-label={`${p.name}, ${p.symbol}, ${p.city}${p.live ? `, ${p.mood} market` : ''}`}
+      aria-label={`${p.name}, ${p.symbol}, ${p.city}, ${p.mood} market`}
       onClick={(e) => {
         e.stopPropagation();
         onSelect();
       }}
     >
       {selected && <span className="pin-pulse" aria-hidden="true" />}
-      <span className="pin-badge" style={{ ['--chip' as string]: TYPE_COLOR[sp.affinity] }}>
-        <Portrait speciesId={p.speciesId} size={32} />
+      <span className="pin-badge" style={{ ['--chip' as string]: TYPE_COLOR[sp.type] }}>
+        <Portrait speciesId={p.brokerId} size={32} />
       </span>
       <span className="pin-tag">
         {p.symbol}

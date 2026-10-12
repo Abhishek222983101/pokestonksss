@@ -6,7 +6,7 @@
 @import "@fontsource/press-start-2p";
 
 /* ------------------------------------------------------------------------------------------------
-   PokeStonks design tokens
+   PokeStonksss design tokens
 
    One handheld world, two surfaces, both lifted from the game itself:
      plate   cream fill, slate edge     -> information (stats, prices, results)
@@ -28,16 +28,16 @@
   --color-red: #e84040;
   --color-red-deep: #b42222; /* red for small text on cream (AA) */
   --color-green: #58d858;
+  --color-green-deep: #1f7a2c; /* green for small text on cream (AA) */
   --color-sky: #94c6fc;
   --color-sky-pale: #e2f0ff;
 
   /* Types (fixed by the game) */
-  --color-t-normal: #a8a878;
-  --color-t-electric: #f8d030;
-  --color-t-grass: #78c850;
-  --color-t-fire: #f08030;
-  --color-t-water: #6890f0;
-  --color-t-psychic: #f85888;
+  --color-t-speed: #f8d030;
+  --color-t-armor: #b8b8d0;
+  --color-t-arcane: #a870f8;
+  --color-t-tide: #6890f0;
+  --color-t-shade: #a07858;
 
   --font-pixel: "Press Start 2P", ui-monospace, monospace;
 
@@ -299,12 +299,11 @@ body {
     -2px 0 0 0 var(--color-ink),
     2px 0 0 0 var(--color-ink);
 }
-.chip-normal { --chip: var(--color-t-normal); }
-.chip-electric { --chip: var(--color-t-electric); }
-.chip-grass { --chip: var(--color-t-grass); }
-.chip-fire { --chip: var(--color-t-fire); }
-.chip-water { --chip: var(--color-t-water); }
-.chip-psychic { --chip: var(--color-t-psychic); }
+.chip-speed { --chip: var(--color-t-speed); }
+.chip-armor { --chip: var(--color-t-armor); }
+.chip-arcane { --chip: var(--color-t-arcane); }
+.chip-tide { --chip: var(--color-t-tide); }
+.chip-shade { --chip: var(--color-t-shade); }
 .chip-bull { --chip: var(--color-green); }
 .chip-bear { --chip: #d03030; color: #fff; }
 .chip-flat { --chip: var(--color-cream-deep); }
@@ -315,7 +314,7 @@ body {
   flex: none;
   width: 10px;
   height: 10px;
-  background: var(--chip, var(--color-t-normal));
+  background: var(--chip, var(--color-t-armor));
   box-shadow: 0 0 0 2px var(--color-ink);
   margin: 2px;
 }
@@ -411,7 +410,7 @@ body {
 
 /* ---------------------------------------------------------------- Broker roster tiles */
 .tile {
-  --t: var(--color-t-normal);
+  --t: var(--color-t-armor);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -487,7 +486,7 @@ body {
   justify-content: center;
   width: 36px;
   height: 36px;
-  background: var(--chip, var(--color-t-normal));
+  background: var(--chip, var(--color-t-armor));
   box-shadow:
     0 -3px 0 0 var(--color-ink),
     0 3px 0 0 var(--color-ink),
@@ -572,3 +571,5 @@ body {
 @media (max-height: 500px) {
   .menu-item small { display: none; }
 }
+
+.tile-price { font-size: 7px; letter-spacing: -0.2px; white-space: nowrap; }

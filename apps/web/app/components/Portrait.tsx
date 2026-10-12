@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getSpecies } from 'game-core';
+import { getBroker } from '../../lib/brokermon';
 import { loadPortraitFn } from './portraits';
 
 const cache = new Map<string, string>();
@@ -50,7 +50,7 @@ export function Portrait({
   title?: string;
 }) {
   const src = usePortrait(speciesId, size);
-  const sp = getSpecies(speciesId);
+  const sp = getBroker(speciesId);
   if (src) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={src} width={size} height={size} alt={title ?? ''} className={className} style={{ imageRendering: 'pixelated' }} draggable={false} />;

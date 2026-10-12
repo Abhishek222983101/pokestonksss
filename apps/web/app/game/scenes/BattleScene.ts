@@ -1,74 +1,71 @@
 import * as Phaser from 'phaser';
-import { getMarket, getMove, getSpecies, type ClaimStatus, type SeatKey, type TapCategory } from 'game-core';
-import { BattleSession, type PlayerView, type Snapshot } from '../net/session';
-import { EventBus } from '../net/events';
-import { claimWithWallet } from '../../web3/claimTx';
+import type { BattleSnapshot, BattleSource } from '../../../lib/battleSource';
+import { brokerByNum } from '../../../lib/brokermon';
+import { getRoute } from '../../../lib/routes';
+import { rules, typeName, type Side, type Slot } from '../../../lib/rules';
+import { EventBus } from '../events';
 import { audio } from '../audio';
 import { CommandMenu, MoveMenu } from '../battle/menu';
-import { TapTimingBar } from '../battle/tapbar';
 import { DialogBox } from '../battle/dialog';
 import { MonPlate } from '../battle/plates';
 import { EndOverlay } from '../battle/end';
-import { playTurn, resetStages } from '../battle/turns';
+import { playTurn } from '../battle/turns';
 import type { Combatant } from '../battle/types';
 import { C, H, W, delay, drawFrame, isTouch, tweenP, txt } from '../battle/ui';
 
 export interface BattleInit {
-  session: BattleSession;
-  marketId: string;
-  kind: 'wild' | 'trainer' | 'duel';
+  source: BattleSource;
+  routeId: string;
+  kind: 'wild' | 'trainer';
   trainerName?: string;
 }
 
-type Mode = 'boot' | 'intro' | 'idle' | 'command' | 'moves' | 'tap' | 'locked' | 'playing' | 'ended';
+type Mode = 'boot' | 'intro' | 'idle' | 'command' | 'moves' | 'locked' | 'playing' | 'ended';
 
-const other = (k: SeatKey): SeatKey => (k === 'A' ? 'B' : 'A');
 const POS = {
   foe: { x: 704, y: 168, size: 176, plateX: 24, plateY: 28, plateW: 392, plateH: 96, platY: 246 },
   ally: { x: 250, y: 372, size: 232, plateX: 548, plateY: 366, plateW: 392, plateH: 112, platY: 462 },
 } as const;
 
+const ME: Side = 0;
+const FOE: Side = 1;
+
 /**
- * Live 1v1 battle. This scene never decides an outcome: it sends inputs (a move + tap bucket), and
- * renders what the server resolves. It is a small state machine driven by synced room state.
+ * Live 1v1 battle. This scene never decides an outcome: it sends the player's pick to the BattleSource and
+ * plays whatever resolved turns the source publishes. It is a small state machine driven by snapshots, so the
+ * same scene works against LocalBattleSource (offline) and the chain-backed source (P7).
  */
 export class BattleScene extends Phaser.Scene {
-  private s!: BattleSession;
+  private src!: BattleSource;
   private init0!: BattleInit;
-  private mySeat: SeatKey = 'A';
-  private foeSeat: SeatKey = 'B';
   private mode: Mode = 'boot';
-  private cmb!: Record<SeatKey, Combatant>;
+  private cmb!: Record<Side, Combatant>;
   private dialog!: DialogBox;
   private command?: CommandMenu;
   private moveMenu?: MoveMenu;
-  private tapbar!: TapTimingBar;
   private overlay?: EndOverlay;
   private info: Phaser.GameObjects.GameObject[] = [];
   private timerG!: Phaser.GameObjects.Graphics;
   private timerLabel!: Phaser.GameObjects.Text;
   private foeStatus!: Phaser.GameObjects.Text;
-  private connBanner?: Phaser.GameObjects.Text;
-  private idle: Partial<Record<SeatKey, Phaser.Tweens.Tween>> = {};
+  private idle: Partial<Record<Side, Phaser.Tweens.Tween>> = {};
   private deadline = 0;
-  private cmdTurn = -1;
-  private lastPlayed = -1;
+  private played = 0;
   private playing = false;
   private endShown = false;
   private moodShown = false;
-  private unsub: Array<() => void> = [];
-  private claiming = false;
+  private closing = false;
 
   constructor() { super('Battle'); }
 
   init(data: BattleInit) {
     this.init0 = data;
-    this.s = data.session;
+    this.src = data.source;
     this.mode = 'boot';
     this.command = undefined; this.moveMenu = undefined; this.overlay = undefined;
-    this.info = []; this.idle = {}; this.unsub = [];
-    this.deadline = 0; this.cmdTurn = -1; this.lastPlayed = -1;
-    this.playing = false; this.endShown = false; this.moodShown = false; this.claiming = false;
+    this.info = []; this.idle = {};
+    this.deadline = 0; this.played = 0;
+    this.playing = false; this.endShown = false; this.moodShown = false; this.closing = false;
   }
 
   // ─────────────────────────────── build ───────────────────────────────────
@@ -76,38 +73,23 @@ export class BattleScene extends Phaser.Scene {
   create() {
     audio.bgm('battle');
     this.cameras.main.fadeIn(380, 0, 0, 0);
-    const snap = this.s.snapshot();
-    if (!snap || !snap.players.A || !snap.players.B) { this.bail('The match is no longer available.'); return; }
-    this.mySeat = this.s.mySeat() ?? 'A';
-    this.foeSeat = other(this.mySeat);
+    const snap = this.src.getSnapshot();
 
     this.buildBackdrop();
     this.cmb = {
-      [this.mySeat]: this.buildCombatant(this.mySeat, true, snap),
-      [this.foeSeat]: this.buildCombatant(this.foeSeat, false, snap),
-    } as Record<SeatKey, Combatant>;
+      0: this.buildCombatant(ME, true, snap),
+      1: this.buildCombatant(FOE, false, snap),
+    };
 
     this.dialog = new DialogBox(this);
-    this.tapbar = new TapTimingBar(this);
     this.buildTimer();
     this.buildCommandMenu();
-
-    this.unsub.push(
-      this.s.onTurn(() => { /* picked up by poll() */ }),
-      this.s.onEnd(() => { /* picked up by poll() */ }),
-      // Server refusals arrive here; wallet progress arrives from claimWithWallet. Both feed one status.
-      this.s.onClaim((st) => { if (!this.claiming) this.pushClaim(st); }),
-      this.s.onConn((c) => this.onConn(c)),
-      this.s.onRejected((r) => this.onRejected(r)),
-    );
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanup());
-
-    this.s.ready(); // the server starts its intro clock once both clients report ready
     void this.runIntro();
   }
 
   private buildBackdrop() {
-    const theme = getMarket(this.init0.marketId)?.routeTheme ?? 'tech';
+    const theme = getRoute(this.init0.routeId)?.theme ?? 'sol';
     const key = `bg_battle_${theme}`;
     if (this.textures.exists(key)) {
       this.add.image(W / 2, H / 2, key).setDisplaySize(W, H).setDepth(0);
@@ -115,7 +97,6 @@ export class BattleScene extends Phaser.Scene {
       const g = this.add.graphics().setDepth(0);
       g.fillGradientStyle(0x7ec8f4, 0x7ec8f4, 0xd8f0ff, 0xd8f0ff, 1).fillRect(0, 0, W, 300);
       g.fillStyle(0x8fd77a, 1).fillRect(0, 300, W, 340);
-      g.fillStyle(0x7cc76a, 1).fillRect(0, 300, W, 10);
     }
     // Slow clouds for depth.
     for (let i = 0; i < 4; i++) {
@@ -129,40 +110,37 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
-  private monTexture(speciesId: string, facing: 'front' | 'back'): string {
-    const key = `mon_${speciesId}_${facing}`;
+  private monTexture(brokerId: string, facing: 'front' | 'back'): string {
+    const key = `mon_${brokerId}_${facing}`;
     if (this.textures.exists(key)) return key;
-    const fb = `fallback_${speciesId}_${facing}`;
+    const fb = `fallback_${brokerId}_${facing}`;
     if (!this.textures.exists(fb)) {
-      const sp = getSpecies(speciesId);
       const cv = this.textures.createCanvas(fb, 128, 128)!;
       const ctx = cv.getContext();
-      ctx.fillStyle = sp.colors[0]; ctx.strokeStyle = '#181818'; ctx.lineWidth = 6;
+      ctx.fillStyle = '#c8c8d8'; ctx.strokeStyle = '#181818'; ctx.lineWidth = 6;
       ctx.beginPath(); ctx.ellipse(64, 74, 46, 42, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = sp.colors[1];
-      ctx.beginPath(); ctx.ellipse(64, 92, 30, 20, 0, 0, Math.PI * 2); ctx.fill();
-      if (facing === 'front') { ctx.fillStyle = '#181818'; ctx.fillRect(46, 60, 10, 14); ctx.fillRect(72, 60, 10, 14); }
       cv.refresh();
       this.textures.get(fb).setFilter(Phaser.Textures.FilterMode.NEAREST);
     }
     return fb;
   }
 
-  private buildCombatant(seat: SeatKey, ally: boolean, snap: Snapshot): Combatant {
-    const p = snap.players[seat]!;
+  private buildCombatant(side: Side, ally: boolean, snap: BattleSnapshot): Combatant {
+    const champ = snap.champions[side];
+    const broker = brokerByNum(champ.id);
     const pos = ally ? POS.ally : POS.foe;
-    const tex = this.monTexture(p.mon.speciesId, ally ? 'back' : 'front');
+    const tex = this.monTexture(broker.id, ally ? 'back' : 'front');
     const sprite = this.add.image(pos.x, pos.y, tex).setDepth(10).setOrigin(0.5);
     const baseScale = pos.size / sprite.width;
     sprite.setScale(baseScale);
     const shadow = this.add.ellipse(pos.x, pos.platY - 10, pos.size * 0.8, pos.size * 0.16, 0x000000, 0.22).setDepth(3);
     const plate = new MonPlate(this, pos.plateX, pos.plateY, pos.plateW, pos.plateH, ally);
-    plate.setMon(p.mon, p.ticker);
+    const f = snap.state.fighters[side];
+    plate.setMon({ name: broker.name, typeName: typeName(champ.type), hp: f.hp, maxHp: f.maxHp }, broker.ticker);
     const c: Combatant = {
-      seat, ally, speciesId: p.mon.speciesId, name: p.mon.name, affinity: p.mon.affinity as Combatant['affinity'],
+      side, ally, speciesId: broker.id, name: broker.name, typeName: typeName(champ.type),
       sprite, shadow, plate, baseX: pos.x, baseY: pos.y, baseScale,
     };
-    resetStages(c, p.mon.stages);
     // Start off-screen for the entrance.
     sprite.setX(pos.x + (ally ? -520 : 520)); shadow.setAlpha(0);
     plate.container.setX(pos.plateX + (ally ? 520 : -520));
@@ -188,7 +166,7 @@ export class BattleScene extends Phaser.Scene {
 
   private async runIntro() {
     this.mode = 'intro';
-    const me = this.cmb[this.mySeat], foe = this.cmb[this.foeSeat];
+    const me = this.cmb[ME], foe = this.cmb[FOE];
     this.tweens.add({ targets: [foe.plate.container], x: POS.foe.plateX, duration: 520, ease: 'Cubic.easeOut' });
     this.tweens.add({ targets: [me.plate.container], x: POS.ally.plateX, duration: 520, delay: 160, ease: 'Cubic.easeOut' });
     await Promise.all([
@@ -199,16 +177,14 @@ export class BattleScene extends Phaser.Scene {
     this.startIdle(foe); this.startIdle(me);
 
     const { kind, trainerName } = this.init0;
+    const snap = this.src.getSnapshot();
     const foeName = foe.name.toUpperCase();
-    const snap = this.s.snapshot();
-    const foeP = snap?.players[this.foeSeat];
-    if (kind === 'duel') {
-      await this.dialog.say(`${foeName} steps up for a duel!`, { holdMs: 750 });
-    } else if (kind === 'trainer') {
-      await this.dialog.say(`${(trainerName ?? 'A rival BROKER').toUpperCase()} wants to battle!`, { holdMs: 750 });
+    if (kind === 'trainer') {
+      await this.dialog.say(`${(trainerName ?? 'A rival BROKER').toUpperCase()} wants to trade blows!`, { holdMs: 750 });
       await this.dialog.say(`They sent out ${foeName}!`, { holdMs: 650 });
     } else {
-      await this.dialog.say(foeP?.isBot ? `A wild ${foeName} appeared!` : `A rival's ${foeName} appeared!`, { holdMs: 750 });
+      await this.dialog.say(`A wild ${foeName} appeared!`, { holdMs: 750 });
+      await this.dialog.say(`${snap.opponent.label} is at the controls.`, { holdMs: 650 });
     }
     await this.dialog.say(`Go! ${me.name.toUpperCase()}!`, { holdMs: 650 });
     for (const line of this.moodLines(snap)) await this.dialog.say(line, { holdMs: 900 });
@@ -216,27 +192,25 @@ export class BattleScene extends Phaser.Scene {
     this.mode = 'idle';
   }
 
-  private moodLines(snap: Snapshot | null): string[] {
-    if (!snap) return [];
+  private moodLines(snap: BattleSnapshot): string[] {
     const out: string[] = [];
-    for (const seat of [this.mySeat, this.foeSeat]) {
-      const p = snap.players[seat];
-      const buff = seat === 'A' ? snap.moodA : snap.moodB;
-      if (!p) continue;
-      if (buff > 1) out.push(`${p.ticker} is trending up. ${p.mon.name.toUpperCase()} hits 10% harder!`);
-      else if (buff < 1) out.push(`${p.ticker} is sliding. ${p.mon.name.toUpperCase()} hits 10% softer.`);
+    for (const side of [ME, FOE] as const) {
+      const t = brokerByNum(snap.champions[side].id);
+      const m = snap.mood[side];
+      if (m > 0) out.push(`${t.ticker} is trending up. ${t.name.toUpperCase()} hits 10% harder!`);
+      else if (m < 0) out.push(`${t.ticker} is sliding. ${t.name.toUpperCase()} hits 10% softer.`);
     }
     return out;
   }
 
   private startIdle(c: Combatant) {
-    this.idle[c.seat]?.stop();
+    this.idle[c.side]?.stop();
     c.sprite.setPosition(c.baseX, c.baseY);
-    this.idle[c.seat] = this.tweens.add({ targets: c.sprite, y: c.baseY - 6, duration: 1100 + (c.ally ? 0 : 160), yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    this.idle[c.side] = this.tweens.add({ targets: c.sprite, y: c.baseY - 6, duration: 1100 + (c.ally ? 0 : 160), yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
 
   private stopIdle() {
-    for (const k of ['A', 'B'] as const) {
+    for (const k of [0, 1] as const) {
       this.idle[k]?.stop();
       this.idle[k] = undefined;
       const c = this.cmb[k];
@@ -252,99 +226,55 @@ export class BattleScene extends Phaser.Scene {
     this.drawTimer();
   }
 
-  private me(snap: Snapshot): PlayerView | undefined { return snap.players[this.mySeat]; }
-  private foe(snap: Snapshot): PlayerView | undefined { return snap.players[this.foeSeat]; }
-
   private poll() {
-    const snap = this.s.snapshot();
-    if (!snap) return;
+    const snap = this.src.getSnapshot();
 
-    if (!this.moodShown && (snap.moodA !== 1 || snap.moodB !== 1 || this.s.mood.A !== 1 || this.s.mood.B !== 1)) {
+    if (!this.moodShown && (snap.mood[0] !== 0 || snap.mood[1] !== 0)) {
       this.moodShown = true;
-      for (const seat of ['A', 'B'] as const) {
-        this.cmb[seat].plate.setMood(seat === 'A' ? snap.moodA : snap.moodB, seat === 'A' ? this.s.mood.pctA : this.s.mood.pctB);
-      }
+      for (const side of [ME, FOE] as const) this.cmb[side].plate.setMood(snap.mood[side] > 0 ? 1.1 : snap.mood[side] < 0 ? 0.9 : 1, snap.movePct[side]);
     }
 
     if (this.mode === 'intro' || this.mode === 'ended') return;
 
-    // 1) Play anything the server has resolved, strictly in order.
-    if (this.s.hasPendingTurns() && !this.playing) { void this.playPending(); return; }
+    // 1) Play anything the source has resolved, strictly in order.
+    if (!this.playing && this.played < snap.turns.length) { void this.playPending(); return; }
     if (this.playing) return;
 
-    // 2) The match ended without a final turn (forfeit / flee / disconnect).
-    if (this.s.battleEnd && !this.s.hasPendingTurns()) { void this.finish(); return; }
+    // 2) The match ended without a final turn (forfeit).
+    if (snap.phase === 'FINISHED') { void this.finish(); return; }
 
-    // 3) Foe presence indicator while we choose.
-    const foe = this.foe(snap);
-    if (this.mode === 'command' || this.mode === 'moves' || this.mode === 'tap' || this.mode === 'locked') {
-      this.foeStatus.setText(!foe ? '' : !foe.connected ? 'OPPONENT RECONNECTING...' : foe.locked ? 'OPPONENT READY' : 'OPPONENT THINKING...')
-        .setColor(foe && foe.locked ? '#58d858' : '#ffffff');
-    } else this.foeStatus.setText('');
+    // 3) Opponent indicator while we choose.
+    if (this.mode === 'command' || this.mode === 'moves') this.foeStatus.setText('VS HOUSE AGENT').setColor('#f8d858');
+    else this.foeStatus.setText('');
 
-    // 4) Reconnect / late-join resync: the server is ahead of what we've played.
-    if (this.mode === 'idle' && snap.phase === 'COMMAND' && snap.turnNo > this.lastPlayed + 1 && !this.s.hasPendingTurns()) {
-      this.lastPlayed = snap.turnNo - 1;
-      this.syncFromSnapshot(snap);
-    }
-
-    // 5) Open our command window.
-    const me = this.me(snap);
-    if (this.mode === 'idle' && snap.phase === 'COMMAND' && me && !me.locked && snap.turnNo === this.lastPlayed + 1) {
-      this.openCommand(snap);
-      return;
-    }
-
-    // 6) The server closed our window (timeout / turn resolved elsewhere).
-    if ((this.mode === 'command' || this.mode === 'moves' || this.mode === 'tap') && (snap.phase !== 'COMMAND' || snap.turnNo !== this.cmdTurn)) {
-      this.abortInput('');
-    }
-    if (this.mode === 'locked' && snap.phase === 'COMMAND' && me && !me.locked && snap.turnNo === this.cmdTurn) {
-      this.mode = 'idle'; // our lock was rejected; reopen
-    }
-  }
-
-  private syncFromSnapshot(snap: Snapshot) {
-    for (const seat of ['A', 'B'] as const) {
-      const p = snap.players[seat];
-      if (!p) continue;
-      const c = this.cmb[seat];
-      void c.plate.setHp(p.mon.hp, false);
-      c.plate.setStages(p.mon.stages);
-      resetStages(c, p.mon.stages);
-      if (p.mon.hp <= 0) c.sprite.setVisible(false);
-    }
+    // 4) Open our command window.
+    if (this.mode === 'idle' && snap.phase === 'PICKING' && !snap.locked) this.openCommand(snap);
   }
 
   // ───────────────────────────── command flow ──────────────────────────────
 
-  private openCommand(snap: Snapshot) {
-    const me = this.me(snap)!;
-    this.cmdTurn = snap.turnNo;
+  private openCommand(snap: BattleSnapshot) {
     this.deadline = this.time.now + snap.turnMs;
-    const noPp = me.mon.moves.every((id) => (me.mon.pp[id] ?? 0) <= 0);
-    if (noPp) {
-      this.mode = 'locked';
-      this.dialog.prompt(`${me.mon.name.toUpperCase()} has no moves left!`);
-      this.time.delayedCall(700, () => { if (this.mode === 'locked') this.s.lock(this.cmdTurn, 'STRUGGLE', 'good'); });
-      return;
-    }
     this.mode = 'command';
-    this.dialog.prompt(`What will\n${me.mon.name.toUpperCase()} do?`);
+    this.dialog.prompt(`What will\n${this.cmb[ME].name.toUpperCase()} do?`);
     this.command!.show();
   }
 
   private onCommand(id: string) {
-    const snap = this.s.snapshot();
-    if (!snap || this.mode !== 'command') return;
-    const me = this.me(snap)!, foe = this.foe(snap)!;
+    const snap = this.src.getSnapshot();
+    if (this.mode !== 'command') return;
     if (id === 'fight') {
       this.command!.hide();
       this.dialog.clear();
       this.mode = 'moves';
       this.moveMenu?.destroy();
-      this.moveMenu = new MoveMenu(this, foe.mon.affinity as Combatant['affinity'], (mv) => void this.onPickMove(mv), () => this.backToCommand());
-      this.moveMenu.show(me.mon.moves.map((m) => ({ id: m, pp: me.mon.pp[m] ?? 0 })));
+      this.moveMenu = new MoveMenu(
+        this, snap.champions[FOE].type,
+        (slot) => rules.previewDamage(this.src.getSnapshot().state, ME, slot),
+        (slot) => void this.onPickMove(slot),
+        () => this.backToCommand(),
+      );
+      this.moveMenu.show(snap.champions[ME].moves);
     } else if (id === 'stats') this.showStats(snap);
     else if (id === 'market') this.showMarket(snap);
     else if (id === 'run') this.confirmRun();
@@ -354,51 +284,36 @@ export class BattleScene extends Phaser.Scene {
     if (this.mode !== 'moves') return;
     this.moveMenu?.hide();
     this.mode = 'command';
-    const snap = this.s.snapshot();
-    const me = snap && this.me(snap);
-    this.dialog.prompt(`What will\n${(me?.mon.name ?? '').toUpperCase()} do?`);
+    this.dialog.prompt(`What will\n${this.cmb[ME].name.toUpperCase()} do?`);
     this.command!.show();
   }
 
-  private async onPickMove(moveId: string) {
+  private async onPickMove(slot: Slot) {
     if (this.mode !== 'moves') return;
-    const turn = this.cmdTurn;
     this.moveMenu?.hide();
-    const move = getMove(moveId);
-    let tap: TapCategory = 'good';
-    if (move.category !== 'status') {
-      this.mode = 'tap';
-      this.dialog.prompt(`${move.name.toUpperCase()}!`);
-      const r = await this.tapbar.show(`${move.name.toUpperCase()}!`);
-      if (r === null || this.mode !== 'tap') return; // clock ran out or window closed
-      tap = r;
-    }
     this.mode = 'locked';
-    this.s.lock(turn, moveId, tap);
-    this.dialog.prompt('Waiting for the opponent...');
+    this.dialog.prompt('Locked in. The House Agent\nis deciding...');
+    await this.src.lock(slot);
   }
 
   private confirmRun() {
     this.command!.hide();
-    this.dialog.prompt('Run away and forfeit\nthe match?');
+    this.dialog.prompt('Close your position and\nforfeit the match?');
     const yn = new CommandMenu(this, [
       { id: 'yes', label: 'YES', color: C.red, dark: C.redDark },
       { id: 'no', label: 'NO', color: 0x9a9aa8, dark: C.grayDark },
     ], (id) => {
       yn.destroy();
-      if (id === 'yes') { this.mode = 'locked'; this.dialog.prompt('You ran away...'); this.s.flee(); }
-      else { this.mode = 'command'; const snap = this.s.snapshot(); const me = snap && this.me(snap); this.dialog.prompt(`What will\n${(me?.mon.name ?? '').toUpperCase()} do?`); this.command!.show(); }
+      if (id === 'yes') { this.mode = 'locked'; this.dialog.prompt('You bailed out...'); void this.src.leave(); }
+      else { this.mode = 'command'; this.dialog.prompt(`What will\n${this.cmb[ME].name.toUpperCase()} do?`); this.command!.show(); }
     });
     yn.show();
   }
 
-  private abortInput(msg: string) {
+  private abortInput() {
     this.command?.hide();
     this.moveMenu?.hide();
-    this.tapbar.cancel();
     this.closeInfo();
-    this.mode = 'locked';
-    if (msg) { this.dialog.prompt(msg); audio.sfx('error'); } else this.dialog.prompt('...');
   }
 
   // ───────────────────────── info panels (STATS / MARKET) ──────────────────
@@ -419,34 +334,31 @@ export class BattleScene extends Phaser.Scene {
     this.info.push(g, t, ...body, hint, zone);
   }
 
-  private showStats(snap: Snapshot) {
+  private showStats(snap: BattleSnapshot) {
     const rows: string[] = [];
-    for (const seat of [this.mySeat, this.foeSeat]) {
-      const p = snap.players[seat]!;
-      const s = p.mon.stages;
-      const f = (v: number, st: number) => `${v}${st ? (st > 0 ? `▲${st}` : `▼${-st}`) : ''}`;
-      rows.push(`${seat === this.mySeat ? 'YOU' : 'FOE'}  ${p.mon.name.toUpperCase()}  Lv${p.mon.level}  HP ${p.mon.hp}/${p.mon.maxHp}`);
-      rows.push(`  ATK ${f(p.mon.atk, s.atk)}  DEF ${f(p.mon.def, s.def)}  SPA ${f(p.mon.spa, s.spa)}  SPD ${f(p.mon.spd, s.spd)}  SPE ${f(p.mon.spe, s.spe)}`);
+    for (const side of [ME, FOE] as const) {
+      const c = snap.champions[side], f = snap.state.fighters[side];
+      rows.push(`${side === ME ? 'YOU' : 'FOE'}  ${c.name.toUpperCase()}  ${typeName(c.type)}  MARGIN ${f.hp}/${f.maxHp}`);
+      rows.push(`  ATK ${c.atk}  DEF ${c.def}  SPD ${c.spd}${f.charged ? '  LEVERAGED' : ''}`);
     }
     this.panel('BATTLE STATS', rows, ['#f8d858', '#ffffff', '#f88858', '#ffffff']);
   }
 
-  private showMarket(snap: Snapshot) {
+  private showMarket(snap: BattleSnapshot) {
     const rows: string[] = [];
     const cols: string[] = [];
-    for (const seat of [this.mySeat, this.foeSeat]) {
-      const p = snap.players[seat]!;
-      const buff = seat === 'A' ? snap.moodA : snap.moodB;
-      const pct = seat === 'A' ? this.s.mood.pctA : this.s.mood.pctB;
-      rows.push(`${p.ticker}: ${buff > 1 ? 'BULL' : buff < 1 ? 'BEAR' : 'FLAT'}  (${pct >= 0 ? '+' : ''}${pct.toFixed(2)}% vs EMA)`);
-      cols.push(buff > 1 ? '#58d858' : buff < 1 ? '#f85858' : '#ffffff');
-      rows.push(`  ${p.mon.name.toUpperCase()} deals ${buff > 1 ? '+10%' : buff < 1 ? '-10%' : 'normal'} damage`);
+    for (const side of [ME, FOE] as const) {
+      const b = brokerByNum(snap.champions[side].id);
+      const m = snap.mood[side], pct = snap.movePct[side];
+      rows.push(`${b.ticker}: ${m > 0 ? 'BULL' : m < 0 ? 'BEAR' : 'FLAT'}  (${pct >= 0 ? '+' : ''}${pct.toFixed(2)}% since the bell)`);
+      cols.push(m > 0 ? '#58d858' : m < 0 ? '#f85858' : '#ffffff');
+      rows.push(`  ${b.name.toUpperCase()} deals ${m > 0 ? '+10%' : m < 0 ? '-10%' : 'normal'} damage`);
       cols.push('#c8c8d8');
     }
     rows.push('');
-    rows.push('Live Pyth prices set the mood: a stock more than 2%');
-    rows.push('above its average buffs its BrokerMon, below it drags.');
-    this.panel('MARKET MOOD (PYTH)', rows, cols);
+    rows.push('Price moves since the bell set the mood:');
+    rows.push('up buffs a BrokerMon, down drags it.');
+    this.panel('MARKET MOOD', rows, cols);
   }
 
   // ───────────────────────────── timer ─────────────────────────────────────
@@ -454,10 +366,10 @@ export class BattleScene extends Phaser.Scene {
   private drawTimer() {
     const g = this.timerG;
     g.clear();
-    if (this.mode !== 'command' && this.mode !== 'moves' && this.mode !== 'tap') { this.timerLabel.setVisible(false); return; }
+    if (this.mode !== 'command' && this.mode !== 'moves') { this.timerLabel.setVisible(false); return; }
     const remainMs = Math.max(0, this.deadline - this.time.now);
     const secs = remainMs / 1000;
-    const total = Math.max(1, (this.s.snapshot()?.turnMs ?? 30000) / 1000);
+    const total = Math.max(1, this.src.getSnapshot().turnMs / 1000);
     const w = 240, x = 696, y = 22;
     const col = secs > 15 ? 0x58d858 : secs > 5 ? 0xf8d858 : 0xf85858;
     const pulse = secs < 3 ? 0.55 + 0.45 * Math.abs(Math.sin(this.time.now / 110)) : 1;
@@ -465,7 +377,14 @@ export class BattleScene extends Phaser.Scene {
     g.fillStyle(0x3a3f66, 1).fillRoundedRect(x - 1, y - 1, w + 2, 14, 4);
     g.fillStyle(col, pulse).fillRect(x, y, Math.max(0, Math.round(w * (secs / total))), 12);
     this.timerLabel.setVisible(true).setText(`${Math.ceil(secs)}s`).setPosition(x - 44, y);
-    if (remainMs <= 0) this.abortInput('Time is up!');
+    if (remainMs <= 0) {
+      // Same rule the chain applies on timeout: a missed pick defaults to HEDGE.
+      this.abortInput();
+      this.mode = 'locked';
+      this.dialog.prompt('Time is up! Hedging by default.');
+      audio.sfx('error');
+      void this.src.lock(2);
+    }
   }
 
   // ───────────────────────────── turn playback ─────────────────────────────
@@ -473,30 +392,26 @@ export class BattleScene extends Phaser.Scene {
   private async playPending() {
     if (this.playing) return;
     this.playing = true;
-    this.abortMenusOnly();
+    this.abortInput();
     this.mode = 'playing';
     this.foeStatus.setText('');
     this.dialog.clear();
     try {
-      while (this.s.hasPendingTurns()) {
-        for (const t of this.s.drainTurns()) {
-          this.stopIdle();
-          await playTurn({ scene: this, combatants: this.cmb, dialog: this.dialog }, t.events);
-          this.lastPlayed = t.turnNo;
-          this.s.ack(t.turnNo);
-          for (const seat of ['A', 'B'] as const) if (this.cmb[seat].sprite.visible) this.startIdle(this.cmb[seat]);
-        }
+      for (;;) {
+        const snap = this.src.getSnapshot();
+        if (this.played >= snap.turns.length) break;
+        const rec = snap.turns[this.played];
+        this.stopIdle();
+        await playTurn({ scene: this, combatants: this.cmb, champions: snap.champions, dialog: this.dialog }, rec.events, rec.state);
+        this.played++;
+        for (const k of [0, 1] as const) if (this.cmb[k].sprite.visible) this.startIdle(this.cmb[k]);
       }
     } finally {
       this.playing = false;
     }
-    if (this.s.battleEnd) { await this.finish(); return; }
+    if (this.src.getSnapshot().phase === 'FINISHED') { await this.finish(); return; }
     this.dialog.clear();
     this.mode = 'idle';
-  }
-
-  private abortMenusOnly() {
-    this.command?.hide(); this.moveMenu?.hide(); this.tapbar.cancel(); this.closeInfo();
   }
 
   // ───────────────────────────── ending ────────────────────────────────────
@@ -505,89 +420,41 @@ export class BattleScene extends Phaser.Scene {
     if (this.endShown) return;
     this.endShown = true;
     this.mode = 'ended';
-    this.abortMenusOnly();
+    this.abortInput();
     this.foeStatus.setText('');
-    const end = this.s.battleEnd!;
-    const won = end.winner === this.mySeat;
-    EventBus.emit('battle:end', { ...end, won });
-    // Forfeits have no faint events; make the loser visibly go down.
-    if (end.reason !== 'faint') {
-      const loser = this.cmb[other(end.winner)];
-      if (loser.sprite.visible) {
-        const msg = won ? 'The opponent gave up!' : 'You gave up...';
-        await this.dialog.say(msg, { holdMs: 800 });
-      }
+    const snap = this.src.getSnapshot();
+    const res = snap.result;
+    if (!res) { void this.close(); return; }
+    const won = res.winner === ME;
+    const forfeit = !snap.turns.some((t) => t.events.some((e) => e.kind === 'ko'));
+    EventBus.emit('battle:end', { won, turns: res.turns, ratingBefore: res.ratingBefore, ratingAfter: res.ratingAfter });
+    if (forfeit) {
+      const loser = this.cmb[res.winner === ME ? FOE : ME];
+      if (loser.sprite.visible) await this.dialog.say(won ? 'The opponent gave up!' : 'You gave up...', { holdMs: 800 });
     }
     await delay(this, 250);
     this.overlay = new EndOverlay(this, {
-      won, end,
-      onClaim: () => void this.claim(),
+      won, turns: res.turns, forfeit, foeLabel: snap.opponent.label,
+      ratingBefore: res.ratingBefore, ratingAfter: res.ratingAfter,
       onContinue: () => void this.close(),
     });
   }
 
-  private pushClaim(st: ClaimStatus) {
-    EventBus.emit('claim:status', st);
-    this.overlay?.setClaim(st);
-  }
-
-  /** The winner's own wallet submits the signed voucher; the player sees their wallet pop up. */
-  private async claim() {
-    if (this.claiming) return;
-    this.claiming = true;
-    EventBus.emit('claim:request');
-    // Keys typed into the wallet dialog must not drive the game while it is open.
-    const kb = this.input.keyboard;
-    if (kb) kb.enabled = false;
-    try {
-      await claimWithWallet(this.s, (st) => this.pushClaim(st));
-    } finally {
-      if (kb) kb.enabled = true;
-      this.claiming = false;
-    }
-  }
-
   private async close() {
+    if (this.closing) return;
+    this.closing = true;
     audio.lowHp(false);
-    await this.s.leave();
+    await this.src.leave();
     this.cameras.main.fadeOut(260, 0, 0, 0);
     await delay(this, 280);
     this.scene.stop('Battle');
     EventBus.emit('battle:closed');
   }
 
-  // ───────────────────────────── connection ────────────────────────────────
-
-  private onConn(c: 'online' | 'reconnecting' | 'closed') {
-    if (!this.connBanner) {
-      this.connBanner = txt(this, W / 2, 84, '', 13, '#ffffff', { backgroundColor: '#a82424', padding: { x: 14, y: 10 } }).setOrigin(0.5).setDepth(300).setVisible(false);
-    }
-    if (c === 'reconnecting') { this.connBanner.setText('CONNECTION LOST - RECONNECTING...').setVisible(true); }
-    else if (c === 'online') { this.connBanner.setVisible(false); }
-    else if (c === 'closed' && !this.endShown) {
-      this.connBanner.setText('DISCONNECTED FROM THE MATCH').setVisible(true);
-      this.time.delayedCall(1800, () => { if (!this.endShown) void this.close(); });
-    }
-  }
-
-  private onRejected(reason: string) {
-    if (this.mode === 'locked' || this.mode === 'tap') {
-      this.dialog.prompt(reason);
-      audio.sfx('error');
-    }
-  }
-
-  private bail(msg: string) {
-    EventBus.emit('toast', { text: msg, tone: 'bad' });
-    void this.close();
-  }
-
   private cleanup() {
-    this.unsub.forEach((f) => f());
-    this.unsub = [];
-    this.command?.destroy(); this.moveMenu?.destroy(); this.tapbar?.cancel(); this.overlay?.destroy(); this.closeInfo();
+    this.command?.destroy(); this.moveMenu?.destroy(); this.overlay?.destroy(); this.closeInfo();
     this.dialog?.destroy();
-    for (const k of ['A', 'B'] as const) { this.idle[k]?.stop(); this.cmb?.[k]?.plate.destroy(); }
+    for (const k of [0, 1] as const) { this.idle[k]?.stop(); this.cmb?.[k]?.plate.destroy(); }
     audio.lowHp(false);
   }
 }

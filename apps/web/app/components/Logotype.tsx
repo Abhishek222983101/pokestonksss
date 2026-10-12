@@ -1,6 +1,6 @@
 /**
- * The PokeStonks wordmark, drawn from a 5x7 pixel alphabet as one SVG (no image, no font).
- * POKE sits flat; STONKS climbs one cell per letter, a chart line that spells its name. Each glyph gets
+ * The PokeStonksss wordmark, drawn from a 5x7 pixel alphabet as one SVG (no image, no font).
+ * POKE sits flat; STONKSSS climbs one cell per letter, a chart line that spells its name. Each glyph gets
  * a two-tone bevel, a navy outline and a deep-navy drop shadow, all derived from the same cell grid so the
  * pixels stay exact at any size.
  */
@@ -15,7 +15,7 @@ const GLYPHS: Record<string, string[]> = {
   N: ['1...1', '11..1', '11..1', '1.1.1', '1..11', '1..11', '1...1'],
 };
 
-const WORD = 'POKESTONKS';
+const WORD = 'POKESTONKSSS';
 const FLAT = 4; // POKE stays on the baseline
 const GAP = 1;
 const GW = 5;
@@ -101,7 +101,7 @@ function build() {
 
 const G = build();
 
-export function Logotype({ className, title = 'PokeStonks' }: { className?: string; title?: string }) {
+export function Logotype({ className, title = 'PokeStonksss' }: { className?: string; title?: string }) {
   const g = G;
   return (
     <svg

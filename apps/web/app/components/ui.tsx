@@ -1,5 +1,7 @@
 import type { ComponentPropsWithRef, ElementType, HTMLAttributes } from 'react';
-import type { Affinity, Mood } from 'game-core';
+import { TYPE_NAMES, type TypeId } from '../../lib/rules';
+
+export type Mood = 'bull' | 'bear' | 'flat';
 
 const cx = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(' ');
 
@@ -60,31 +62,31 @@ export function LinkButton({ variant = 'secondary', small, icon, className, ...r
 
 /* ------------------------------------------------------------------- Chips */
 
-const TYPE_CLASS: Record<Affinity, string> = {
-  Normal: 'chip-normal',
-  Electric: 'chip-electric',
-  Grass: 'chip-grass',
-  Fire: 'chip-fire',
-  Water: 'chip-water',
-  Psychic: 'chip-psychic',
+const TYPE_CLASS: Record<TypeId, string> = {
+  0: 'chip-speed',
+  1: 'chip-armor',
+  2: 'chip-arcane',
+  3: 'chip-tide',
+  4: 'chip-shade',
 };
 
-export const TYPE_COLOR: Record<Affinity, string> = {
-  Normal: '#A8A878',
-  Electric: '#F8D030',
-  Grass: '#78C850',
-  Fire: '#F08030',
-  Water: '#6890F0',
-  Psychic: '#F85888',
+export const TYPE_COLOR: Record<TypeId, string> = {
+  0: '#F8D030',
+  1: '#B8B8D0',
+  2: '#A870F8',
+  3: '#6890F0',
+  4: '#A07858',
 };
 
-export const typeChipClass = (t: Affinity) => TYPE_CLASS[t];
+const typeLabel = (t: TypeId) => TYPE_NAMES[t][0] + TYPE_NAMES[t].slice(1).toLowerCase();
 
-export function TypeChip({ type, className }: { type: Affinity; className?: string }) {
-  return <span className={cx('chip', TYPE_CLASS[type], className)}>{type}</span>;
+export const typeChipClass = (t: TypeId) => TYPE_CLASS[t];
+
+export function TypeChip({ type, className }: { type: TypeId; className?: string }) {
+  return <span className={cx('chip', TYPE_CLASS[type], className)}>{typeLabel(type)}</span>;
 }
 
-export function TypeDot({ type }: { type: Affinity }) {
+export function TypeDot({ type }: { type: TypeId }) {
   return <i className={cx('dot', TYPE_CLASS[type])} aria-hidden="true" />;
 }
 
