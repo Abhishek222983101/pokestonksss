@@ -1,8 +1,24 @@
 import { Connection, PublicKey, Transaction, TransactionInstruction, Keypair } from "@solana/web3.js";
 import type { Latency } from "./latency";
 
-export interface TxSigner { publicKey: PublicKey; sign(tx: Transaction): Promise<Transaction> }
+/**
+ * Whoever signs transactions. For a guest or a wallet, `publicKey` is the Trainer owner. For a MagicBlock session key,
+ * `publicKey` is the ephemeral session signer, `authority` the wallet that owns the Trainer and `sessionToken` the
+ * on-chain session token that lets the signer act for it.
+ */
+export interface TxSigner {
+  publicKey: PublicKey;
+  sign(tx: Transaction): Promise<Transaction>;
+  authority?: PublicKey;
+  sessionToken?: PublicKey;
+}
 export const keypairSigner = (kp: Keypair): TxSigner => ({ publicKey: kp.publicKey, sign: async (tx) => { tx.partialSign(kp); return tx; } });
+/** The Trainer owner this signer acts for. */
+export const authorityOf = (s: TxSigner): PublicKey => s.authority ?? s.publicKey;
+/** A session signer: signs with the ephemeral key on behalf of `authority`. */
+export const sessionSigner = (kp: Keypair, authority: PublicKey, sessionToken: PublicKey): TxSigner => ({
+  publicKey: kp.publicKey, authority, sessionToken, sign: async (tx) => { tx.partialSign(kp); return tx; },
+});
 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 

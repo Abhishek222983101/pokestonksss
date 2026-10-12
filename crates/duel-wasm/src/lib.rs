@@ -1,7 +1,7 @@
 //! WASM bindings. All structured values cross the boundary as JSON strings or flat byte arrays so output is
 //! byte-identical to the fixtures produced by `duel-rules`.
 use duel_rules::{
-    bot_pick, elo_update, preview_damage, replay, resolve_turn, MatchState, Tier, TurnLog, STATE_BYTES, TURN_LOG_BYTES,
+    bot_level, bot_pick, elo_update, level_for_xp, preview_damage, replay, resolve_turn, xp_gain, MatchState, Tier, TurnLog, STATE_BYTES, TURN_LOG_BYTES,
 };
 use wasm_bindgen::prelude::*;
 
@@ -24,8 +24,8 @@ pub fn roster() -> String {
 
 /// New match state JSON `{turn,winner,f:[..]}`; `{"ok":false,...}` if a species is invalid.
 #[wasm_bindgen(js_name = newMatch)]
-pub fn new_match(a: u8, b: u8) -> String {
-    match MatchState::new(a, b) {
+pub fn new_match(a: u8, b: u8, la: u8, lb: u8) -> String {
+    match MatchState::with_levels(a, la, b, lb) {
         Some(s) => s.to_string(),
         None => err("bad_species"),
     }
@@ -50,7 +50,7 @@ pub fn resolve_turn_js(state: &[u8], picks: &[u8], rnd: &[u8], mood: &[u8]) -> S
     format!("{{\"ok\":true,\"state\":{},\"events\":{}}}", st, ev)
 }
 
-/// House Agent pick (0..=3), or -1 on bad input. `tier`: 0 Rookie, 1 Pro, 2 Champion.
+/// House Agent pick (0..=3), or -1 on bad input. `tier`: 0 Rookie, 1 Pro, 2 Champion, 3 Trainee, 4 Dummy.
 #[wasm_bindgen(js_name = botPick)]
 pub fn bot_pick_js(state: &[u8], side: u8, rnd: &[u8], tier: u8) -> i32 {
     let (Some(st), Ok(r), Some(t)) = (state_from(state), <[u8; 32]>::try_from(rnd), Tier::from_u8(tier)) else {
@@ -62,11 +62,11 @@ pub fn bot_pick_js(state: &[u8], side: u8, rnd: &[u8], tier: u8) -> i32 {
     bot_pick(&st, side, &r, t) as i32
 }
 
-/// `species`: 2 bytes; `log`: N * 14 bytes (picks[2] | rnd[10] | mood[2]).
+/// `species`: 2 bytes; `levels`: 2 bytes; `log`: N * 14 bytes (picks[2] | rnd[10] | mood[2]).
 /// Returns `{"ok":true,"winner":..,"hp":[..],"turns":..}` or `{"ok":false,"error":code}`.
 #[wasm_bindgen(js_name = replay)]
-pub fn replay_js(species: &[u8], log: &[u8]) -> String {
-    let Ok(sp) = <[u8; 2]>::try_from(species) else { return err("bad_input") };
+pub fn replay_js(species: &[u8], levels: &[u8], log: &[u8]) -> String {
+    let (Ok(sp), Ok(lv)) = (<[u8; 2]>::try_from(species), <[u8; 2]>::try_from(levels)) else { return err("bad_input") };
     if log.len() % TURN_LOG_BYTES != 0 {
         return err("bad_input");
     }
@@ -74,7 +74,7 @@ pub fn replay_js(species: &[u8], log: &[u8]) -> String {
         .chunks_exact(TURN_LOG_BYTES)
         .map(|c| TurnLog::from_bytes(c.try_into().unwrap()))
         .collect();
-    match replay(sp, &turns) {
+    match replay(sp, lv, &turns) {
         Ok(o) => format!("{{\"ok\":true,\"winner\":{},\"hp\":[{},{}],\"turns\":{}}}", o.winner, o.hp[0], o.hp[1], o.turns),
         Err(e) => err(e.code()),
     }
@@ -90,6 +90,27 @@ pub fn preview_damage_js(state: &[u8], side: u8, slot: u8, mood: i8) -> String {
             format!("{{\"ok\":true,\"min\":{},\"max\":{},\"eff\":{},\"acc\":{}}}", min, max, e, acc)
         }
         None => err("not_a_strike"),
+    }
+}
+
+/// Creature level for accumulated XP.
+#[wasm_bindgen(js_name = levelForXp)]
+pub fn level_for_xp_js(xp: u16) -> u8 {
+    level_for_xp(xp)
+}
+
+/// XP for a finished match.
+#[wasm_bindgen(js_name = xpGain)]
+pub fn xp_gain_js(won: bool, my_rating: i32, opp_rating: i32) -> u16 {
+    xp_gain(won, my_rating, opp_rating)
+}
+
+/// House Agent creature level for a tier and the player's level.
+#[wasm_bindgen(js_name = botLevel)]
+pub fn bot_level_js(tier: u8, player_level: u8) -> i32 {
+    match Tier::from_u8(tier) {
+        Some(t) => bot_level(t, player_level) as i32,
+        None => -1,
     }
 }
 

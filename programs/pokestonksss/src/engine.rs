@@ -2,7 +2,7 @@
 use crate::consts::*;
 use crate::state::*;
 use anchor_lang::prelude::*;
-use duel_rules::{elo_update, MatchState, TurnLog, NO_WINNER};
+use duel_rules::{elo_update, level_for_xp, xp_gain, MatchState, TurnLog, NO_WINNER};
 
 pub fn load_state(a: &Arena) -> Result<MatchState> {
     MatchState::from_bytes(&a.state).ok_or_else(|| error!(crate::errors::GameError::CorruptState))
@@ -26,16 +26,29 @@ pub fn token_hash(token: &[u8; 32]) -> [u8; 32] {
     solana_sha256_hasher::hashv(&[token]).to_bytes()
 }
 
+/// Judge Demo Dummy: pays a fixed XP while the creature is still below its first evolution, then nothing.
+const DUMMY_TIER: u8 = 4;
+const DUMMY_XP: u16 = 30;
+
 /// Updates trainer records after a finished match. `guest` is None for practice.
 pub fn settle(a: &Arena, st: &MatchState, host: &mut Trainer, guest: Option<&mut Trainer>) {
     let winner = a.winner;
     if winner == NO_WINNER {
         return;
     }
-    let bump = |t: &mut Trainer, won: bool, opp_rating: i32, opp_species: u8| {
+    let dummy = a.mode == MODE_PRACTICE && a.tier == DUMMY_TIER;
+    // `me`/`opp` are the fighters' species; XP goes to the species the trainer fought with.
+    let bump = |t: &mut Trainer, won: bool, my_species: u8, opp_rating: i32, opp_species: u8| {
         let r = t.rating as i32;
         let new_r = if won { elo_update(r, opp_rating).0 } else { elo_update(opp_rating, r).1 };
         t.rating = new_r.clamp(0, u16::MAX as i32) as u16;
+        let slot = my_species as usize % t.xp.len();
+        let gain = if dummy {
+            if won && level_for_xp(t.xp[slot]) < 3 { DUMMY_XP } else { 0 }
+        } else {
+            xp_gain(won, r, opp_rating)
+        };
+        t.xp[slot] = t.xp[slot].saturating_add(gain);
         if won {
             t.wins = t.wins.saturating_add(1);
             t.streak = t.streak.saturating_add(1);
@@ -50,13 +63,29 @@ pub fn settle(a: &Arena, st: &MatchState, host: &mut Trainer, guest: Option<&mut
     match guest {
         None => {
             let bot = BOT_RATING[(a.tier as usize).min(4)];
-            bump(host, winner == 0, bot, st.f[1].species);
+            bump(host, winner == 0, st.f[0].species, bot, st.f[1].species);
         }
         Some(g) => {
             let (hr, gr) = (host.rating as i32, g.rating as i32);
-            bump(host, winner == 0, gr, st.f[1].species);
-            bump(g, winner == 1, hr, st.f[0].species);
+            bump(host, winner == 0, st.f[0].species, gr, st.f[1].species);
+            bump(g, winner == 1, st.f[1].species, hr, st.f[0].species);
         }
+    }
+}
+
+/// Which badges a Trainer record qualifies for (checked on the committed base-layer copy when minting).
+pub fn badge_earned(id: u8, t: &Trainer) -> bool {
+    let top = t.xp.iter().map(|&x| level_for_xp(x)).max().unwrap_or(0);
+    match id {
+        0 => t.wins >= 1,
+        1 => t.wins >= 5,
+        2 => t.dex.count_ones() >= 4,
+        3 => t.rating >= 1050,
+        4 => t.rating >= 1200,
+        5 => top >= 3,
+        6 => top >= 6,
+        7 => t.streak >= 3,
+        _ => false,
     }
 }
 
@@ -65,7 +94,7 @@ mod tests {
     use super::*;
 
     fn trainer(rating: u16) -> Trainer {
-        Trainer { owner: Pubkey::new_unique(), rating, wins: 0, losses: 0, streak: 0, dex: 0, battles: 0, unsaved: 0, commits: 0, name_seed: 1, bump: 255 }
+        Trainer { owner: Pubkey::new_unique(), rating, wins: 0, losses: 0, streak: 0, dex: 0, battles: 0, unsaved: 0, commits: 0, name_seed: 1, xp: [0; 8], avatar: 0, bump: 255 }
     }
     fn arena(mode: u8, winner: u8) -> Arena {
         Arena {
@@ -85,6 +114,56 @@ mod tests {
         assert_eq!((h.wins, h.losses, h.streak, h.battles, h.unsaved), (1, 0, 1, 1, 1));
         assert!(h.rating > 1000);
         assert_eq!(h.dex, 1 << 3);
+    }
+
+    #[test]
+    fn xp_goes_to_the_species_used_and_levels_up() {
+        let a = arena(MODE_PRACTICE, 0);
+        let st = MatchState::new(2, 3).unwrap();
+        let mut h = trainer(1000);
+        for _ in 0..4 {
+            settle(&a, &st, &mut h, None);
+        }
+        assert!(h.xp[2] >= 90 && h.xp[0] == 0, "xp {:?}", h.xp);
+        assert!(level_for_xp(h.xp[2]) >= 2);
+    }
+
+    #[test]
+    fn dummy_pays_fixed_xp_until_first_evolution_then_nothing() {
+        let mut a = arena(MODE_PRACTICE, 0);
+        a.tier = 4;
+        let st = MatchState::new(1, 4).unwrap();
+        let mut h = trainer(1000);
+        settle(&a, &st, &mut h, None);
+        assert_eq!(h.xp[1], 30);
+        for _ in 0..3 {
+            settle(&a, &st, &mut h, None);
+        }
+        assert_eq!(level_for_xp(h.xp[1]), 3, "four demo wins reach level 3 (120 xp)");
+        let before = h.xp[1];
+        settle(&a, &st, &mut h, None);
+        assert_eq!(h.xp[1], before, "no farming past the first evolution");
+    }
+
+    #[test]
+    fn badge_rules() {
+        let mut t = trainer(1000);
+        assert!(!badge_earned(0, &t));
+        t.wins = 1;
+        assert!(badge_earned(0, &t) && !badge_earned(1, &t));
+        t.wins = 5;
+        assert!(badge_earned(1, &t));
+        t.dex = 0b1111;
+        assert!(badge_earned(2, &t));
+        t.rating = 1200;
+        assert!(badge_earned(3, &t) && badge_earned(4, &t));
+        t.xp[5] = 120;
+        assert!(badge_earned(5, &t) && !badge_earned(6, &t));
+        t.xp[5] = 330;
+        assert!(badge_earned(6, &t));
+        t.streak = 3;
+        assert!(badge_earned(7, &t));
+        assert!(!badge_earned(8, &t));
     }
 
     #[test]

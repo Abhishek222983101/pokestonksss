@@ -45,7 +45,7 @@ describe('replays.json', () => {
     let n = 0;
     for (const c of cases) {
       for (const v of c.variants) {
-        expect(R.replayBytes(c.species, R.hexToBytes(v.log)), `case ${c.id}`).toEqual(v.expect);
+        expect(R.replayBytes(c.species, R.hexToBytes(v.log), c.levels), `case ${c.id}`).toEqual(v.expect);
         n++;
       }
     }
@@ -103,5 +103,33 @@ describe('wrapper API', () => {
     const dmg = (m: R.Mood) => (R.resolveTurn(s, [0, 3], rnd, [m, 0]).events.find((e) => e.t === 'hit') as any).dmg;
     expect(dmg(1)).toBeGreaterThan(dmg(0));
     expect(dmg(-1)).toBeLessThanOrEqual(dmg(0));
+  });
+});
+
+describe('levels and xp (wasm == rust)', () => {
+  it('levelForXp matches the table over the full range', () => {
+    const table = [0, 30, 70, 120, 180, 250, 330, 420, 520, 630];
+    for (let xp = 0; xp <= 700; xp++) {
+      let want = 0;
+      for (let l = 0; l < table.length; l++) if (xp >= table[l]) want = l;
+      expect(R.levelForXp(xp), `xp ${xp}`).toBe(want);
+    }
+  });
+  it('levels change the match state and survive the byte round trip', () => {
+    const s = R.newMatch(0, 1, 5, 9);
+    expect(s.f[0].level).toBe(5);
+    expect(s.f[1].level).toBe(9);
+    expect(s.f[0].maxHp).toBeGreaterThan(R.newMatch(0, 1).f[0].maxHp);
+    const r = R.resolveTurn(s, [0, 2], new Uint8Array(32));
+    expect(r.state.f[0].level).toBe(5);
+  });
+  it('xp gain, evolution stages and bot levels', () => {
+    expect(R.xpGain(true, 1000, 1000)).toBe(25);
+    expect(R.xpGain(false, 1000, 1000)).toBe(8);
+    expect(R.evolutionStage(2)).toBe(0);
+    expect(R.evolutionStage(3)).toBe(1);
+    expect(R.evolutionStage(6)).toBe(2);
+    expect(R.botLevel(R.TIER.DUMMY, 9)).toBe(0);
+    expect(R.botLevel(R.TIER.PRO, 4)).toBe(4);
   });
 });

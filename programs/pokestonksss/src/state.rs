@@ -16,7 +16,20 @@ pub struct Trainer {
     pub unsaved: u8,
     pub commits: u8,
     pub name_seed: u32,
+    /// XP per species (index = species id); level = `duel_rules::level_for_xp`.
+    pub xp: [u16; 8],
+    /// Trainer avatar choice 0..=5.
+    pub avatar: u8,
     pub bump: u8,
+}
+
+/// Marker that a badge was minted to an owner (makes `mint_badge` idempotent per owner and badge).
+#[account]
+#[derive(InitSpace)]
+pub struct Claim {
+    pub owner: Pubkey,
+    pub id: u8,
+    pub slot: u64,
 }
 
 #[account]
@@ -64,3 +77,4 @@ impl Arena {
 }
 
 const _: () = assert!(8 + Arena::INIT_SPACE <= 800);
+const _: () = assert!(8 + Trainer::INIT_SPACE == 8 + 69);

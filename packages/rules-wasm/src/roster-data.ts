@@ -55,6 +55,10 @@ export const ROSTER_DATA = {
           "name": "Leverage",
           "kind": "charge"
         }
+      ],
+      "evolutions": [
+        "Voltfang",
+        "Voltstorm"
       ]
     },
     {
@@ -96,6 +100,10 @@ export const ROSTER_DATA = {
           "name": "Leverage",
           "kind": "charge"
         }
+      ],
+      "evolutions": [
+        "Ironbull",
+        "Irontitan"
       ]
     },
     {
@@ -137,6 +145,10 @@ export const ROSTER_DATA = {
           "name": "Leverage",
           "kind": "charge"
         }
+      ],
+      "evolutions": [
+        "Prismalis",
+        "Prismarch"
       ]
     },
     {
@@ -178,6 +190,10 @@ export const ROSTER_DATA = {
           "name": "Leverage",
           "kind": "charge"
         }
+      ],
+      "evolutions": [
+        "Surgewyrm",
+        "Tsunagon"
       ]
     },
     {
@@ -219,6 +235,10 @@ export const ROSTER_DATA = {
           "name": "Leverage",
           "kind": "charge"
         }
+      ],
+      "evolutions": [
+        "Veilphantom",
+        "Veilreaper"
       ]
     },
     {
@@ -260,6 +280,10 @@ export const ROSTER_DATA = {
           "name": "Leverage",
           "kind": "charge"
         }
+      ],
+      "evolutions": [
+        "Gildhawk",
+        "Gildsovereign"
       ]
     },
     {
@@ -301,6 +325,10 @@ export const ROSTER_DATA = {
           "name": "Leverage",
           "kind": "charge"
         }
+      ],
+      "evolutions": [
+        "Moonhound",
+        "Lunarlord"
       ]
     },
     {
@@ -342,6 +370,10 @@ export const ROSTER_DATA = {
           "name": "Leverage",
           "kind": "charge"
         }
+      ],
+      "evolutions": [
+        "Ripplex",
+        "Ripplord"
       ]
     }
   ]

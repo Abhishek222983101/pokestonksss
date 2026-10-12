@@ -24,4 +24,6 @@ pub enum GameError {
     CannotReset,
     #[msg("cannot duel yourself")]
     SelfDuel,
+    #[msg("this trainer has not earned that badge yet (save progress to Solana first)")]
+    BadgeNotEarned,
 }

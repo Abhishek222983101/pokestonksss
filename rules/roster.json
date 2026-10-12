@@ -54,6 +54,10 @@
           "name": "Leverage",
           "kind": "charge"
         }
+      ],
+      "evolutions": [
+        "Voltfang",
+        "Voltstorm"
       ]
     },
     {
@@ -95,6 +99,10 @@
           "name": "Leverage",
           "kind": "charge"
         }
+      ],
+      "evolutions": [
+        "Ironbull",
+        "Irontitan"
       ]
     },
     {
@@ -136,6 +144,10 @@
           "name": "Leverage",
           "kind": "charge"
         }
+      ],
+      "evolutions": [
+        "Prismalis",
+        "Prismarch"
       ]
     },
     {
@@ -177,6 +189,10 @@
           "name": "Leverage",
           "kind": "charge"
         }
+      ],
+      "evolutions": [
+        "Surgewyrm",
+        "Tsunagon"
       ]
     },
     {
@@ -218,6 +234,10 @@
           "name": "Leverage",
           "kind": "charge"
         }
+      ],
+      "evolutions": [
+        "Veilphantom",
+        "Veilreaper"
       ]
     },
     {
@@ -259,6 +279,10 @@
           "name": "Leverage",
           "kind": "charge"
         }
+      ],
+      "evolutions": [
+        "Gildhawk",
+        "Gildsovereign"
       ]
     },
     {
@@ -300,6 +324,10 @@
           "name": "Leverage",
           "kind": "charge"
         }
+      ],
+      "evolutions": [
+        "Moonhound",
+        "Lunarlord"
       ]
     },
     {
@@ -341,6 +369,10 @@
           "name": "Leverage",
           "kind": "charge"
         }
+      ],
+      "evolutions": [
+        "Ripplex",
+        "Ripplord"
       ]
     }
   ]

@@ -1,7 +1,18 @@
 /* @ts-self-types="./duel_wasm.d.ts" */
 
 /**
- * House Agent pick (0..=3), or -1 on bad input. `tier`: 0 Rookie, 1 Pro, 2 Champion.
+ * House Agent creature level for a tier and the player's level.
+ * @param {number} tier
+ * @param {number} player_level
+ * @returns {number}
+ */
+export function botLevel(tier, player_level) {
+    const ret = wasm.botLevel(tier, player_level);
+    return ret;
+}
+
+/**
+ * House Agent pick (0..=3), or -1 on bad input. `tier`: 0 Rookie, 1 Pro, 2 Champion, 3 Trainee, 4 Dummy.
  * @param {Uint8Array} state
  * @param {number} side
  * @param {Uint8Array} rnd
@@ -38,17 +49,29 @@ export function eloUpdate(winner, loser) {
 }
 
 /**
+ * Creature level for accumulated XP.
+ * @param {number} xp
+ * @returns {number}
+ */
+export function levelForXp(xp) {
+    const ret = wasm.levelForXp(xp);
+    return ret;
+}
+
+/**
  * New match state JSON `{turn,winner,f:[..]}`; `{"ok":false,...}` if a species is invalid.
  * @param {number} a
  * @param {number} b
+ * @param {number} la
+ * @param {number} lb
  * @returns {string}
  */
-export function newMatch(a, b) {
+export function newMatch(a, b, la, lb) {
     let deferred1_0;
     let deferred1_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        wasm.newMatch(retptr, a, b);
+        wasm.newMatch(retptr, a, b, la, lb);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         deferred1_0 = r0;
@@ -89,30 +112,33 @@ export function previewDamage(state, side, slot, mood) {
 }
 
 /**
- * `species`: 2 bytes; `log`: N * 14 bytes (picks[2] | rnd[10] | mood[2]).
+ * `species`: 2 bytes; `levels`: 2 bytes; `log`: N * 14 bytes (picks[2] | rnd[10] | mood[2]).
  * Returns `{"ok":true,"winner":..,"hp":[..],"turns":..}` or `{"ok":false,"error":code}`.
  * @param {Uint8Array} species
+ * @param {Uint8Array} levels
  * @param {Uint8Array} log
  * @returns {string}
  */
-export function replay(species, log) {
-    let deferred3_0;
-    let deferred3_1;
+export function replay(species, levels, log) {
+    let deferred4_0;
+    let deferred4_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         const ptr0 = passArray8ToWasm0(species, wasm.__wbindgen_export);
         const len0 = WASM_VECTOR_LEN;
-        const ptr1 = passArray8ToWasm0(log, wasm.__wbindgen_export);
+        const ptr1 = passArray8ToWasm0(levels, wasm.__wbindgen_export);
         const len1 = WASM_VECTOR_LEN;
-        wasm.replay(retptr, ptr0, len0, ptr1, len1);
+        const ptr2 = passArray8ToWasm0(log, wasm.__wbindgen_export);
+        const len2 = WASM_VECTOR_LEN;
+        wasm.replay(retptr, ptr0, len0, ptr1, len1, ptr2, len2);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-        deferred3_0 = r0;
-        deferred3_1 = r1;
+        deferred4_0 = r0;
+        deferred4_1 = r1;
         return getStringFromWasm0(r0, r1);
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
-        wasm.__wbindgen_export2(deferred3_0, deferred3_1, 1);
+        wasm.__wbindgen_export2(deferred4_0, deferred4_1, 1);
     }
 }
 
@@ -169,6 +195,18 @@ export function roster() {
         wasm.__wbindgen_add_to_stack_pointer(16);
         wasm.__wbindgen_export2(deferred1_0, deferred1_1, 1);
     }
+}
+
+/**
+ * XP for a finished match.
+ * @param {boolean} won
+ * @param {number} my_rating
+ * @param {number} opp_rating
+ * @returns {number}
+ */
+export function xpGain(won, my_rating, opp_rating) {
+    const ret = wasm.xpGain(won, my_rating, opp_rating);
+    return ret;
 }
 function __wbg_get_imports() {
     const import0 = {

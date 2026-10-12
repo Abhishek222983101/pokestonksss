@@ -571,7 +571,7 @@ fn json_shapes() {
     assert_eq!(
         s.to_string(),
         std::format!(
-            "{{\"turn\":0,\"winner\":null,\"f\":[{{\"species\":0,\"hp\":{h0},\"maxHp\":{h0},\"charged\":false,\"lastGuard\":false,\"momentum\":0}},{{\"species\":1,\"hp\":{h1},\"maxHp\":{h1},\"charged\":false,\"lastGuard\":false,\"momentum\":0}}]}}",
+            "{{\"turn\":0,\"winner\":null,\"f\":[{{\"species\":0,\"hp\":{h0},\"maxHp\":{h0},\"charged\":false,\"lastGuard\":false,\"momentum\":0,\"level\":0}},{{\"species\":1,\"hp\":{h1},\"maxHp\":{h1},\"charged\":false,\"lastGuard\":false,\"momentum\":0,\"level\":0}}]}}",
             h0 = ROSTER[0].hp,
             h1 = ROSTER[1].hp
         )
@@ -797,7 +797,7 @@ fn replay_reproduces_live_matches() {
     for seed in 0..200u64 {
         let (a, b) = ((seed % 8) as u8, ((seed / 8) % 8) as u8);
         let (log, s) = play_random(a, b, seed);
-        let o = replay([a, b], &log).unwrap();
+        let o = replay([a, b], [0, 0], &log).unwrap();
         assert_eq!(o, Outcome { winner: s.winner, hp: [s.f[0].hp, s.f[1].hp], turns: s.turn });
         assert!(o.turns <= MAX_TURNS);
     }
@@ -806,17 +806,17 @@ fn replay_reproduces_live_matches() {
 #[test]
 fn replay_errors() {
     let (log, _) = play_random(0, 1, 7);
-    assert_eq!(replay([9, 1], &log), Err(ReplayError::BadSpecies));
-    assert_eq!(replay([0, 1], &log[..log.len() - 1]), Err(ReplayError::Unfinished));
-    assert_eq!(replay([0, 1], &[]), Err(ReplayError::Unfinished));
+    assert_eq!(replay([9, 1], [0, 0], &log), Err(ReplayError::BadSpecies));
+    assert_eq!(replay([0, 1], [0, 0], &log[..log.len() - 1]), Err(ReplayError::Unfinished));
+    assert_eq!(replay([0, 1], [0, 0], &[]), Err(ReplayError::Unfinished));
     let mut extra = log.clone();
     extra.push(log[0]);
-    assert_eq!(replay([0, 1], &extra), Err(ReplayError::TrailingTurns));
+    assert_eq!(replay([0, 1], [0, 0], &extra), Err(ReplayError::TrailingTurns));
     let mut bad = log.clone();
     bad[0].picks[1] = 4;
-    assert_eq!(replay([0, 1], &bad), Err(ReplayError::BadPick(0)));
+    assert_eq!(replay([0, 1], [0, 0], &bad), Err(ReplayError::BadPick(0)));
     let long = std::vec![log[0]; 17];
-    assert_eq!(replay([0, 1], &long), Err(ReplayError::TooLong));
+    assert_eq!(replay([0, 1], [0, 0], &long), Err(ReplayError::TooLong));
     assert_eq!(ReplayError::TooLong.code(), "too_long");
 }
 
@@ -825,10 +825,10 @@ fn replay_detects_tampering() {
     let mut differs = 0;
     for seed in 0..50u64 {
         let (mut log, s) = play_random(2, 3, seed);
-        let honest = replay([2, 3], &log).unwrap();
+        let honest = replay([2, 3], [0, 0], &log).unwrap();
         assert_eq!(honest.winner, s.winner);
         log[0].rnd[0] ^= 0xFF;
-        if let Ok(o) = replay([2, 3], &log) {
+        if let Ok(o) = replay([2, 3], [0, 0], &log) {
             if o != honest {
                 differs += 1;
             }
@@ -910,4 +910,83 @@ fn trainee_is_passive_valid_and_deterministic() {
     }
     // Hedge + Leverage dominate (6/8), strikes are rare (2/8)
     assert!(counts[2] + counts[3] > counts[0] + counts[1] * 2);
+}
+
+#[test]
+fn levels_scale_stats_and_roundtrip() {
+    let base = MatchState::new(0, 1).unwrap();
+    let lv = MatchState::with_levels(0, 5, 1, 9).unwrap();
+    assert_eq!(lv.f[0].level, 5);
+    assert_eq!(lv.f[1].level, 9);
+    assert_eq!(lv.f[0].max_hp as u32, lvl_stat(ROSTER[0].hp, 5));
+    assert!(lv.f[0].max_hp > base.f[0].max_hp);
+    assert_eq!(lvl_stat(100, 0), 100);
+    assert_eq!(lvl_stat(100, 9), 136);
+    assert_eq!(lvl_stat(100, 200), 136, "level is clamped");
+    // bytes round trip keeps the level next to momentum and last_guard
+    let mut s = lv;
+    s.f[0].momentum = 2;
+    s.f[0].last_guard = true;
+    let back = MatchState::from_bytes(&s.to_bytes()).unwrap();
+    assert_eq!(back, s);
+    // an out of range level is rejected by the strict decoder
+    let mut b = s.to_bytes();
+    b[2 + 6] = 10 << 3;
+    assert!(MatchState::from_bytes(&b).is_none());
+}
+
+#[test]
+fn higher_level_hits_harder_and_takes_less() {
+    let mut a = MatchState::with_levels(0, 9, 1, 0).unwrap();
+    let mut b = MatchState::with_levels(0, 0, 1, 0).unwrap();
+    let r = rnd(|_| {});
+    resolve_turn(&mut a, [0, 2], &r, [0, 0]);
+    resolve_turn(&mut b, [0, 2], &r, [0, 0]);
+    let dmg_a = a.f[1].max_hp - a.f[1].hp;
+    let dmg_b = b.f[1].max_hp - b.f[1].hp;
+    assert!(dmg_a > dmg_b, "level 9 attacker should deal more ({} vs {})", dmg_a, dmg_b);
+}
+
+#[test]
+fn xp_levels_and_evolution_stages() {
+    assert_eq!(level_for_xp(0), 0);
+    assert_eq!(level_for_xp(29), 0);
+    assert_eq!(level_for_xp(30), 1);
+    assert_eq!(level_for_xp(630), 9);
+    assert_eq!(level_for_xp(u16::MAX), MAX_LEVEL);
+    assert_eq!(evolution_stage(2), 0);
+    assert_eq!(evolution_stage(3), 1);
+    assert_eq!(evolution_stage(5), 1);
+    assert_eq!(evolution_stage(6), 2);
+    assert_eq!(xp_gain(true, 1000, 1000), 25);
+    assert!(xp_gain(true, 1000, 1400) > xp_gain(true, 1000, 800));
+    assert_eq!(xp_gain(false, 1000, 1000), 8);
+    assert!(xp_gain(true, 0, 5000) >= 15 && xp_gain(true, 5000, 0) >= 15);
+}
+
+#[test]
+fn dummy_always_charges_and_never_attacks() {
+    let s = st(0, 1);
+    for i in 0..=255u8 {
+        assert_eq!(bot_pick(&s, 1, &rnd(|r| r[8] = i), Tier::Dummy), SLOT_CHARGE);
+    }
+    assert_eq!(Tier::from_u8(4), Some(Tier::Dummy));
+    assert_eq!(bot_level(Tier::Dummy, 9), 0);
+    assert_eq!(bot_level(Tier::Rookie, 0), 0);
+    assert_eq!(bot_level(Tier::Pro, 4), 4);
+    assert_eq!(bot_level(Tier::Champion, 9), MAX_LEVEL);
+}
+
+#[test]
+fn any_attack_beats_the_dummy_quickly() {
+    let mut s = st(0, 1);
+    let mut turns = 0;
+    while !s.is_over() && turns < MAX_TURNS {
+        let r = rnd(|r| { r[0] = 0; r[1] = 0; r[8] = 0; });
+        let pick = bot_pick(&s, 1, &r, Tier::Dummy);
+        resolve_turn(&mut s, [0, pick], &r, [0, 0]);
+        turns += 1;
+    }
+    assert_eq!(s.winner, 0, "a plain Pump line must win");
+    assert!(turns <= 9, "won in {} turns", turns);
 }

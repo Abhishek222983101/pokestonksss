@@ -70,11 +70,12 @@ fn main() {
     let n = 640;
     for i in 0..n {
         let (a, b) = if i < 64 { ((i / 8) as u8, (i % 8) as u8) } else { (r.below(8) as u8, r.below(8) as u8) };
-        let mut s = MatchState::new(a, b).unwrap();
+        let (la, lb) = if i % 3 == 0 { (r.below(10) as u8, r.below(10) as u8) } else { (0, 0) };
+        let mut s = MatchState::with_levels(a, la, b, lb).unwrap();
         let depth = if i % 10 == 0 { 15 } else { r.below(8) };
         walk(&mut r, &mut s, depth);
         if s.is_over() {
-            s = MatchState::new(a, b).unwrap();
+            s = MatchState::with_levels(a, la, b, lb).unwrap();
         }
         if i % 10 == 0 {
             // force a turn-limit decision state
@@ -112,14 +113,15 @@ fn main() {
     let n = 256;
     for i in 0..n {
         let (a, b) = (r.below(8) as u8, r.below(8) as u8);
-        let mut s = MatchState::new(a, b).unwrap();
+        let (la, lb) = if i % 2 == 0 { (r.below(10) as u8, r.below(10) as u8) } else { (0, 0) };
+        let mut s = MatchState::with_levels(a, la, b, lb).unwrap();
         let d = r.below(6);
         walk(&mut r, &mut s, d);
         if s.is_over() {
-            s = MatchState::new(a, b).unwrap();
+            s = MatchState::with_levels(a, la, b, lb).unwrap();
         }
         let side = r.below(2) as u8;
-        let tier = (i % 3) as u8;
+        let tier = (i % 5) as u8;
         let mut rnd = r.rnd32();
         if i % 4 == 0 {
             rnd[8] = 255; // force the greedy branch
@@ -141,7 +143,8 @@ fn main() {
     let n = 80;
     for i in 0..n {
         let (a, b) = (r.below(8) as u8, r.below(8) as u8);
-        let mut s = MatchState::new(a, b).unwrap();
+        let (la, lb) = if i % 2 == 0 { (r.below(10) as u8, r.below(10) as u8) } else { (0, 0) };
+        let mut s = MatchState::with_levels(a, la, b, lb).unwrap();
         let mut log: Vec<TurnLog> = Vec::new();
         while !s.is_over() {
             let rnd = r.rnd32();
@@ -162,7 +165,7 @@ fn main() {
         }
         // variants: 0 ok, 1 truncated (Unfinished), 2 trailing
         let mut variants = Vec::new();
-        let outcome = replay([a, b], &log).unwrap();
+        let outcome = replay([a, b], [la, lb], &log).unwrap();
         variants.push(format!(
             "{{\"log\":\"{}\",\"expect\":{{\"ok\":true,\"winner\":{},\"hp\":[{},{}],\"turns\":{}}}}}",
             turns_hex, outcome.winner, outcome.hp[0], outcome.hp[1], outcome.turns
@@ -177,14 +180,14 @@ fn main() {
                 for t in &variant {
                     h.push_str(&hex(&t.to_bytes()));
                 }
-                let e = replay([a, b], &variant).expect_err("variant must be invalid");
+                let e = replay([a, b], [la, lb], &variant).expect_err("variant must be invalid");
                 variants.push(format!("{{\"log\":\"{}\",\"expect\":{{\"ok\":false,\"error\":\"{}\"}}}}", h, e.code()));
             }
         }
         write!(
             out,
-            "  {{\"id\":{},\"species\":[{},{}],\"variants\":[{}]}}{}\n",
-            i, a, b, variants.join(","), if i + 1 < n { "," } else { "" }
+            "  {{\"id\":{},\"species\":[{},{}],\"levels\":[{},{}],\"variants\":[{}]}}{}\n",
+            i, a, b, la, lb, variants.join(","), if i + 1 < n { "," } else { "" }
         )
         .unwrap();
     }

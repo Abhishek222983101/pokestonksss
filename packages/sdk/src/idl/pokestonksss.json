@@ -8,6 +8,88 @@
   },
   "instructions": [
     {
+      "name": "arm_timer",
+      "docs": [
+        "ER. (Re)arms the MagicBlock crank sweep for this duel: every 20 s for ~3 minutes the validator's task scheduler",
+        "calls `crank_timeout`, which settles the duel if it has been idle for `ABANDON_SECS`. Replaces the previous task."
+      ],
+      "discriminator": [
+        126,
+        64,
+        85,
+        3,
+        100,
+        126,
+        28,
+        239
+      ],
+      "accounts": [
+        {
+          "name": "arena",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  114,
+                  101,
+                  110,
+                  97,
+                  50
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "arena.host",
+                "account": "Arena"
+              }
+            ]
+          }
+        },
+        {
+          "name": "trainer",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  97,
+                  105,
+                  110,
+                  101,
+                  114,
+                  50
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "trainer.owner",
+                "account": "Trainer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "session_token",
+          "optional": true
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "callback_turn",
       "docs": [
         "Called by the VRF oracle (identity enforced by `#[vrf_callback]`). Idempotent: stale/duplicate callbacks are ignored."
@@ -81,15 +163,21 @@
                   114,
                   101,
                   110,
-                  97
+                  97,
+                  50
                 ]
               },
               {
                 "kind": "account",
-                "path": "signer"
+                "path": "arena.host",
+                "account": "Arena"
               }
             ]
           }
+        },
+        {
+          "name": "session_token",
+          "optional": true
         },
         {
           "name": "signer",
@@ -127,7 +215,8 @@
                   114,
                   101,
                   110,
-                  97
+                  97,
+                  50
                 ]
               },
               {
@@ -152,7 +241,8 @@
                   105,
                   110,
                   101,
-                  114
+                  114,
+                  50
                 ]
               },
               {
@@ -177,7 +267,8 @@
                   105,
                   110,
                   101,
-                  114
+                  114,
+                  50
                 ]
               },
               {
@@ -260,7 +351,8 @@
                   114,
                   101,
                   110,
-                  97
+                  97,
+                  50
                 ]
               },
               {
@@ -270,6 +362,35 @@
               }
             ]
           }
+        },
+        {
+          "name": "trainer",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  97,
+                  105,
+                  110,
+                  101,
+                  114,
+                  50
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "trainer.owner",
+                "account": "Trainer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "session_token",
+          "optional": true
         },
         {
           "name": "signer",
@@ -319,15 +440,21 @@
                   105,
                   110,
                   101,
-                  114
+                  114,
+                  50
                 ]
               },
               {
                 "kind": "account",
-                "path": "signer"
+                "path": "trainer.owner",
+                "account": "Trainer"
               }
             ]
           }
+        },
+        {
+          "name": "session_token",
+          "optional": true
         },
         {
           "name": "signer",
@@ -342,6 +469,173 @@
           "name": "magic_context",
           "writable": true,
           "address": "MagicContext1111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "crank_timeout",
+      "docs": [
+        "ER, crank only (the signer is the task scheduler's PDA). Idle duels are settled: the side that failed to act",
+        "forfeits; if neither acted the duel is closed without a result."
+      ],
+      "discriminator": [
+        102,
+        242,
+        155,
+        184,
+        215,
+        150,
+        81,
+        73
+      ],
+      "accounts": [
+        {
+          "name": "arena",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  114,
+                  101,
+                  110,
+                  97,
+                  50
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "arena.host",
+                "account": "Arena"
+              }
+            ]
+          }
+        },
+        {
+          "name": "crank_signer",
+          "docs": [
+            "Only the validator's task scheduler can sign for this PDA."
+          ],
+          "signer": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  114,
+                  97,
+                  110,
+                  107,
+                  45,
+                  101,
+                  120,
+                  101,
+                  99,
+                  117,
+                  116,
+                  111,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "arena"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                3,
+                9,
+                115,
+                187,
+                171,
+                86,
+                176,
+                95,
+                66,
+                206,
+                3,
+                79,
+                119,
+                118,
+                67,
+                48,
+                79,
+                137,
+                61,
+                97,
+                116,
+                104,
+                235,
+                217,
+                161,
+                243,
+                44,
+                64,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        {
+          "name": "host_trainer",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  97,
+                  105,
+                  110,
+                  101,
+                  114,
+                  50
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "arena.host",
+                "account": "Arena"
+              }
+            ]
+          }
+        },
+        {
+          "name": "guest_trainer",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  97,
+                  105,
+                  110,
+                  101,
+                  114,
+                  50
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "arena.guest",
+                "account": "Arena"
+              }
+            ]
+          }
         }
       ],
       "args": []
@@ -512,7 +806,8 @@
                   105,
                   110,
                   101,
-                  114
+                  114,
+                  50
                 ]
               },
               {
@@ -665,7 +960,8 @@
                   114,
                   101,
                   110,
-                  97
+                  97,
+                  50
                 ]
               },
               {
@@ -718,7 +1014,8 @@
                   114,
                   101,
                   110,
-                  97
+                  97,
+                  50
                 ]
               },
               {
@@ -743,7 +1040,8 @@
                   105,
                   110,
                   101,
-                  114
+                  114,
+                  50
                 ]
               },
               {
@@ -768,7 +1066,8 @@
                   105,
                   110,
                   101,
-                  114
+                  114,
+                  50
                 ]
               },
               {
@@ -815,7 +1114,8 @@
                   114,
                   101,
                   110,
-                  97
+                  97,
+                  50
                 ]
               },
               {
@@ -842,15 +1142,21 @@
                   105,
                   110,
                   101,
-                  114
+                  114,
+                  50
                 ]
               },
               {
                 "kind": "account",
-                "path": "signer"
+                "path": "guest_trainer.owner",
+                "account": "Trainer"
               }
             ]
           }
+        },
+        {
+          "name": "session_token",
+          "optional": true
         },
         {
           "name": "signer",
@@ -908,7 +1214,8 @@
                   114,
                   101,
                   110,
-                  97
+                  97,
+                  50
                 ]
               },
               {
@@ -918,6 +1225,10 @@
               }
             ]
           }
+        },
+        {
+          "name": "session_token",
+          "optional": true
         },
         {
           "name": "signer",
@@ -969,6 +1280,198 @@
       ]
     },
     {
+      "name": "mint_badge",
+      "docs": [
+        "Base layer, permissionless: mints badge `id` (an SPL token, supply 1 per owner) to the owner of a Trainer that",
+        "has earned it. The check reads the Trainer's last committed state, so progress must be saved to Solana first."
+      ],
+      "discriminator": [
+        242,
+        234,
+        237,
+        183,
+        232,
+        245,
+        146,
+        1
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "owner"
+        },
+        {
+          "name": "trainer",
+          "docs": [
+            "program); its address proves the data is the real record, and the discriminator is checked on deserialize"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  97,
+                  105,
+                  110,
+                  101,
+                  114,
+                  50
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "badge_mint",
+          "writable": true
+        },
+        {
+          "name": "badge_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  100,
+                  103,
+                  101,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "badge_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "claim",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "id",
+          "type": "u8"
+        }
+      ]
+    },
+    {
       "name": "onboard",
       "docs": [
         "Creates the player's Trainer + Arena PDAs (once per player)."
@@ -998,7 +1501,8 @@
                   105,
                   110,
                   101,
-                  114
+                  114,
+                  50
                 ]
               },
               {
@@ -1020,7 +1524,8 @@
                   114,
                   101,
                   110,
-                  97
+                  97,
+                  50
                 ]
               },
               {
@@ -1044,6 +1549,10 @@
         {
           "name": "name_seed",
           "type": "u32"
+        },
+        {
+          "name": "avatar",
+          "type": "u8"
         }
       ]
     },
@@ -1072,12 +1581,14 @@
                   114,
                   101,
                   110,
-                  97
+                  97,
+                  50
                 ]
               },
               {
                 "kind": "account",
-                "path": "signer"
+                "path": "trainer.owner",
+                "account": "Trainer"
               }
             ]
           }
@@ -1095,15 +1606,21 @@
                   105,
                   110,
                   101,
-                  114
+                  114,
+                  50
                 ]
               },
               {
                 "kind": "account",
-                "path": "signer"
+                "path": "trainer.owner",
+                "account": "Trainer"
               }
             ]
           }
+        },
+        {
+          "name": "session_token",
+          "optional": true
         },
         {
           "name": "signer",
@@ -1260,15 +1777,21 @@
                   114,
                   101,
                   110,
-                  97
+                  97,
+                  50
                 ]
               },
               {
                 "kind": "account",
-                "path": "signer"
+                "path": "arena.host",
+                "account": "Arena"
               }
             ]
           }
+        },
+        {
+          "name": "session_token",
+          "optional": true
         },
         {
           "name": "signer",
@@ -1306,7 +1829,8 @@
                   114,
                   101,
                   110,
-                  97
+                  97,
+                  50
                 ]
               },
               {
@@ -1316,6 +1840,35 @@
               }
             ]
           }
+        },
+        {
+          "name": "trainer",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  97,
+                  105,
+                  110,
+                  101,
+                  114,
+                  50
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "trainer.owner",
+                "account": "Trainer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "session_token",
+          "optional": true
         },
         {
           "name": "signer",
@@ -1405,7 +1958,8 @@
                   105,
                   110,
                   101,
-                  114
+                  114,
+                  50
                 ]
               },
               {
@@ -1427,7 +1981,8 @@
                   114,
                   101,
                   110,
-                  97
+                  97,
+                  50
                 ]
               },
               {
@@ -1482,12 +2037,14 @@
                   114,
                   101,
                   110,
-                  97
+                  97,
+                  50
                 ]
               },
               {
                 "kind": "account",
-                "path": "signer"
+                "path": "trainer.owner",
+                "account": "Trainer"
               }
             ]
           }
@@ -1505,15 +2062,21 @@
                   105,
                   110,
                   101,
-                  114
+                  114,
+                  50
                 ]
               },
               {
                 "kind": "account",
-                "path": "signer"
+                "path": "trainer.owner",
+                "account": "Trainer"
               }
             ]
           }
+        },
+        {
+          "name": "session_token",
+          "optional": true
         },
         {
           "name": "signer",
@@ -1555,6 +2118,19 @@
         211,
         232,
         168
+      ]
+    },
+    {
+      "name": "Claim",
+      "discriminator": [
+        155,
+        70,
+        22,
+        176,
+        123,
+        215,
+        246,
+        102
       ]
     },
     {
@@ -1626,6 +2202,11 @@
       "code": 6010,
       "name": "SelfDuel",
       "msg": "cannot duel yourself"
+    },
+    {
+      "code": 6011,
+      "name": "BadgeNotEarned",
+      "msg": "this trainer has not earned that badge yet (save progress to Solana first)"
     }
   ],
   "types": [
@@ -1786,6 +2367,57 @@
       }
     },
     {
+      "name": "Claim",
+      "docs": [
+        "Marker that a badge was minted to an owner (makes `mint_badge` idempotent per owner and badge)."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "id",
+            "type": "u8"
+          },
+          {
+            "name": "slot",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SessionTokenV2",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "target_program",
+            "type": "pubkey"
+          },
+          {
+            "name": "session_signer",
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_payer",
+            "type": "pubkey"
+          },
+          {
+            "name": "valid_until",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
       "name": "Trainer",
       "type": {
         "kind": "struct",
@@ -1835,6 +2467,25 @@
           {
             "name": "name_seed",
             "type": "u32"
+          },
+          {
+            "name": "xp",
+            "docs": [
+              "XP per species (index = species id); level = `duel_rules::level_for_xp`."
+            ],
+            "type": {
+              "array": [
+                "u16",
+                8
+              ]
+            }
+          },
+          {
+            "name": "avatar",
+            "docs": [
+              "Trainer avatar choice 0..=5."
+            ],
+            "type": "u8"
           },
           {
             "name": "bump",

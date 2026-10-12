@@ -19,7 +19,7 @@ PID_ADDR="$(solana address -k "$PID")"
 if solana program show "$PID_ADDR" --url "$RPC" >/dev/null 2>&1; then
   CUR=$(solana program show "$PID_ADDR" --url "$RPC" | awk '/Data Length/ {print $3}')
   NEW=$(stat -c %s "$SO")
-  if [ "${NEW:-0}" -gt "${CUR:-0}" ]; then solana program extend "$PID_ADDR" 20480 --keypair "$KP" --url "$RPC" || true; fi
+  if [ "${NEW:-0}" -gt "${CUR:-0}" ]; then solana program extend "$PID_ADDR" $(( NEW - CUR + 10240 )) --keypair "$KP" --url "$RPC" || true; fi
 fi
 solana program deploy "$SO" --program-id "$PID" --keypair "$KP" --url "$RPC" --use-rpc
 echo "DONE. Program: $(solana address -k "$PID")"

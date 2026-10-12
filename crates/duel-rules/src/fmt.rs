@@ -47,8 +47,8 @@ impl Display for MatchState {
             }
             write!(
                 f,
-                "{{\"species\":{},\"hp\":{},\"maxHp\":{},\"charged\":{},\"lastGuard\":{},\"momentum\":{}}}",
-                x.species, x.hp, x.max_hp, x.charged, x.last_guard, x.momentum
+                "{{\"species\":{},\"hp\":{},\"maxHp\":{},\"charged\":{},\"lastGuard\":{},\"momentum\":{},\"level\":{}}}",
+                x.species, x.hp, x.max_hp, x.charged, x.last_guard, x.momentum, x.level
             )?;
         }
         f.write_str("]}")

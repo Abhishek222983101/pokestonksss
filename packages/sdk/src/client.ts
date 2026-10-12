@@ -1,12 +1,12 @@
 import { AnchorProvider, Program, type Idl } from "@coral-xyz/anchor";
-import { Connection, PublicKey, type TransactionInstruction } from "@solana/web3.js";
+import { Connection, PublicKey, SystemProgram, TransactionInstruction } from "@solana/web3.js";
 import { sha256 } from "@noble/hashes/sha256";
 import idl from "./idl/pokestonksss.json";
 import { ChainConfig, ER_VRF_QUEUE, FEEDS } from "./config";
-import { arenaPda, trainerPda } from "./pda";
+import { arenaPda, ataOf, badgeAuthorityPda, badgeMintPda, claimPda, sessionTokenPda, SESSION_PROGRAM_ID, trainerPda, ATA_PROGRAM_ID, TOKEN_PROGRAM_ID } from "./pda";
 import { ArenaView, TrainerView, decodeLog, decodeMatch } from "./state";
 import { Latency } from "./latency";
-import { sendBase, sendEr, TxSigner, type Sent, waitFor } from "./tx";
+import { authorityOf, sendBase, sendEr, TxSigner, type Sent, waitFor } from "./tx";
 import { txLink } from "./explorer";
 
 export type Layer = "base" | "er";
@@ -36,7 +36,7 @@ export class GameClient {
   }
   decodeTrainer(data: Buffer | Uint8Array): TrainerView {
     const t: any = this.program.coder.accounts.decode("trainer", Buffer.from(data));
-    return { owner: t.owner.toBase58(), rating: t.rating, wins: t.wins, losses: t.losses, streak: t.streak, dex: t.dex, battles: t.battles, unsaved: t.unsaved, commits: t.commits, nameSeed: t.nameSeed };
+    return { owner: t.owner.toBase58(), rating: t.rating, wins: t.wins, losses: t.losses, streak: t.streak, dex: t.dex, battles: t.battles, unsaved: t.unsaved, commits: t.commits, nameSeed: t.nameSeed, xp: Array.from(t.xp as number[]), avatar: t.avatar };
   }
   async getArena(owner: PublicKey, layer: Layer = "er"): Promise<ArenaView | null> {
     const info = await this.conn(layer).getAccountInfo(arenaPda(owner, this.cfg.programId));
@@ -54,7 +54,7 @@ export class GameClient {
 
   /** Every Trainer on the rollup (leaderboard). Sorted by rating, then wins. */
   async listTrainers(): Promise<TrainerView[]> {
-    const accts = await this.er.getProgramAccounts(this.cfg.programId, { filters: [{ dataSize: 8 + 52 }] });
+    const accts = await this.er.getProgramAccounts(this.cfg.programId, { filters: [{ dataSize: 8 + 69 }] });
     const out: TrainerView[] = [];
     for (const a of accts) { try { out.push(this.decodeTrainer(a.account.data)); } catch { /* not a Trainer */ } }
     return out.sort((x, y) => y.rating - x.rating || y.wins - x.wins);
@@ -93,20 +93,23 @@ export class GameClient {
     return { ...r, layer: "base", link: txLink(r.sig, "base", this.cfg) };
   }
   private m() { return this.program.methods as any; }
+  /** Accounts every session-aware instruction takes: the optional token is `null` for a plain wallet or guest. */
+  private sess(signer: TxSigner) { return { sessionToken: signer.sessionToken ?? null, signer: signer.publicKey }; }
+  private owner(signer: TxSigner) { return authorityOf(signer); }
 
   // ----------------------------------------------------------------------------------------- onboarding (base layer)
-  async onboardIx(owner: PublicKey, nameSeed = Math.floor(Math.random() * 2 ** 31)) {
-    return this.m().onboard(nameSeed).accounts({ trainer: trainerPda(owner, this.cfg.programId), arena: arenaPda(owner, this.cfg.programId), payer: owner }).instruction() as Promise<TransactionInstruction>;
+  async onboardIx(owner: PublicKey, nameSeed = Math.floor(Math.random() * 2 ** 31), avatar = 0) {
+    return this.m().onboard(nameSeed, avatar).accounts({ trainer: trainerPda(owner, this.cfg.programId), arena: arenaPda(owner, this.cfg.programId), payer: owner }).instruction() as Promise<TransactionInstruction>;
   }
   async delegateIx(owner: PublicKey) {
     return this.m().delegateAll().accounts({ payer: owner, trainer: trainerPda(owner, this.cfg.programId), arena: arenaPda(owner, this.cfg.programId) })
       .remainingAccounts([{ pubkey: this.cfg.validator, isSigner: false, isWritable: false }]).instruction() as Promise<TransactionInstruction>;
   }
-  onboard(signer: TxSigner) { return this.onboardIx(signer.publicKey).then((ix) => this.base_([ix], signer)); }
+  onboard(signer: TxSigner, avatar = 0) { return this.onboardIx(signer.publicKey, undefined, avatar).then((ix) => this.base_([ix], signer)); }
   delegate(signer: TxSigner) { return this.delegateIx(signer.publicKey).then((ix) => this.base_([ix], signer)); }
   /** One tx: create + delegate. Falls back to two txs if the combined one is rejected. */
-  async onboardAndDelegate(signer: TxSigner): Promise<Receipt[]> {
-    const [a, b] = await Promise.all([this.onboardIx(signer.publicKey), this.delegateIx(signer.publicKey)]);
+  async onboardAndDelegate(signer: TxSigner, avatar = 0): Promise<Receipt[]> {
+    const [a, b] = await Promise.all([this.onboardIx(signer.publicKey, undefined, avatar), this.delegateIx(signer.publicKey)]);
     try { return [await this.base_([a, b], signer)]; }
     catch { return [await this.base_([a], signer), await this.base_([b], signer)]; }
   }
@@ -119,14 +122,15 @@ export class GameClient {
 
   // ----------------------------------------------------------------------------------------- practice (ER)
   async startPractice(signer: TxSigner, species: number, oppSpecies: number, tier = 1) {
+    const o = this.owner(signer);
     const ix = await this.m().startPractice(species, oppSpecies, tier).accounts({
-      arena: arenaPda(signer.publicKey, this.cfg.programId), trainer: trainerPda(signer.publicKey, this.cfg.programId), signer: signer.publicKey,
+      arena: arenaPda(o, this.cfg.programId), trainer: trainerPda(o, this.cfg.programId), ...this.sess(signer),
       feedA: FEEDS[species], feedB: FEEDS[oppSpecies],
     }).instruction();
     return this.er_([ix], signer);
   }
   async lockPick(signer: TxSigner, slot: number) {
-    const ix = await this.m().lockPick(slot).accounts({ arena: arenaPda(signer.publicKey, this.cfg.programId), signer: signer.publicKey, oracleQueue: ER_VRF_QUEUE }).instruction();
+    const ix = await this.m().lockPick(slot).accounts({ arena: arenaPda(this.owner(signer), this.cfg.programId), ...this.sess(signer), oracleQueue: ER_VRF_QUEUE }).instruction();
     return this.er_([ix], signer);
   }
 
@@ -140,23 +144,24 @@ export class GameClient {
     return Array.from(sha256(buf));
   }
   async openDuel(signer: TxSigner, species: number, token: Uint8Array) {
-    const ix = await this.m().openDuel(species, GameClient.tokenHash(token)).accounts({ arena: arenaPda(signer.publicKey, this.cfg.programId), trainer: trainerPda(signer.publicKey, this.cfg.programId), signer: signer.publicKey }).instruction();
+    const o = this.owner(signer);
+    const ix = await this.m().openDuel(species, GameClient.tokenHash(token)).accounts({ arena: arenaPda(o, this.cfg.programId), trainer: trainerPda(o, this.cfg.programId), ...this.sess(signer) }).instruction();
     return this.er_([ix], signer);
   }
   async cancelDuel(signer: TxSigner) {
-    return this.er_([await this.m().cancelDuel().accounts({ arena: arenaPda(signer.publicKey, this.cfg.programId), signer: signer.publicKey }).instruction()], signer);
+    return this.er_([await this.m().cancelDuel().accounts({ arena: arenaPda(this.owner(signer), this.cfg.programId), ...this.sess(signer) }).instruction()], signer);
   }
   async joinDuel(signer: TxSigner, host: PublicKey, hostSpecies: number, species: number, token: Uint8Array) {
     const ix = await this.m().joinDuel(species, Array.from(token)).accounts({
-      arena: arenaPda(host, this.cfg.programId), guestTrainer: trainerPda(signer.publicKey, this.cfg.programId), signer: signer.publicKey, feedA: FEEDS[hostSpecies], feedB: FEEDS[species],
+      arena: arenaPda(host, this.cfg.programId), guestTrainer: trainerPda(this.owner(signer), this.cfg.programId), ...this.sess(signer), feedA: FEEDS[hostSpecies], feedB: FEEDS[species],
     }).instruction();
     return this.er_([ix], signer);
   }
   async commitPick(signer: TxSigner, host: PublicKey, hash: number[]) {
-    return this.er_([await this.m().commitPick(hash).accounts({ arena: arenaPda(host, this.cfg.programId), signer: signer.publicKey }).instruction()], signer);
+    return this.er_([await this.m().commitPick(hash).accounts({ arena: arenaPda(host, this.cfg.programId), trainer: trainerPda(this.owner(signer), this.cfg.programId), ...this.sess(signer) }).instruction()], signer);
   }
   async revealPick(signer: TxSigner, host: PublicKey, slot: number, salt: Uint8Array) {
-    const ix = await this.m().revealPick(slot, Array.from(salt)).accounts({ arena: arenaPda(host, this.cfg.programId), signer: signer.publicKey, oracleQueue: ER_VRF_QUEUE }).instruction();
+    const ix = await this.m().revealPick(slot, Array.from(salt)).accounts({ arena: arenaPda(host, this.cfg.programId), trainer: trainerPda(this.owner(signer), this.cfg.programId), ...this.sess(signer), oracleQueue: ER_VRF_QUEUE }).instruction();
     return this.er_([ix], signer);
   }
   async claimTimeout(signer: TxSigner, host: PublicKey, guest: PublicKey) {
@@ -172,16 +177,75 @@ export class GameClient {
     return this.er_([ix], signer);
   }
   async resetArena(signer: TxSigner) {
-    return this.er_([await this.m().resetArena().accounts({ arena: arenaPda(signer.publicKey, this.cfg.programId), signer: signer.publicKey }).instruction()], signer);
+    return this.er_([await this.m().resetArena().accounts({ arena: arenaPda(this.owner(signer), this.cfg.programId), ...this.sess(signer) }).instruction()], signer);
   }
 
   // ----------------------------------------------------------------------------------------- save to Solana
   async commitTrainer(signer: TxSigner) {
-    const ix = await this.m().commitTrainer().accounts({ trainer: trainerPda(signer.publicKey, this.cfg.programId), signer: signer.publicKey }).instruction();
+    const ix = await this.m().commitTrainer().accounts({ trainer: trainerPda(this.owner(signer), this.cfg.programId), ...this.sess(signer) }).instruction();
     return this.er_([ix], signer);
   }
   async saveAndLeave(signer: TxSigner) {
     const ix = await this.m().saveAndLeave().accounts({ trainer: trainerPda(signer.publicKey, this.cfg.programId), arena: arenaPda(signer.publicKey, this.cfg.programId), signer: signer.publicKey }).instruction();
     return this.er_([ix], signer);
+  }
+
+  // ----------------------------------------------------------------------------------------- crank (MagicBlock task scheduler)
+  /** (Re)arms the crank sweep that settles an abandoned duel. Fire and forget: a failure never blocks play. */
+  async armTimer(signer: TxSigner, host: PublicKey) {
+    const ix = await this.m().armTimer().accounts({
+      arena: arenaPda(host, this.cfg.programId), trainer: trainerPda(this.owner(signer), this.cfg.programId), ...this.sess(signer),
+    }).instruction();
+    return this.er_([ix], signer);
+  }
+
+  // ----------------------------------------------------------------------------------------- session keys (base layer)
+  /**
+   * `create_session_v2` of the GPL session keys program, hand encoded (no extra dependency). Both the authority wallet
+   * (fee payer) and the fresh session key must sign the transaction. `validUntil` is unix seconds, at most 7 days out.
+   */
+  createSessionIx(authority: PublicKey, sessionSigner: PublicKey, validUntil: number, topUpLamports = 0): TransactionInstruction {
+    const data = Buffer.alloc(8 + 2 + 9 + 9);
+    Buffer.from([223, 233, 108, 7, 65, 194, 235, 38]).copy(data, 0);
+    let o = 8;
+    data[o++] = 1; data[o++] = topUpLamports > 0 ? 1 : 0;
+    data[o++] = 1; data.writeBigInt64LE(BigInt(validUntil), o); o += 8;
+    data[o++] = 1; data.writeBigUInt64LE(BigInt(topUpLamports), o); o += 8;
+    return new TransactionInstruction({
+      programId: SESSION_PROGRAM_ID,
+      keys: [
+        { pubkey: sessionTokenPda(sessionSigner, authority, this.cfg.programId), isSigner: false, isWritable: true },
+        { pubkey: sessionSigner, isSigner: true, isWritable: true },
+        { pubkey: authority, isSigner: true, isWritable: true },
+        { pubkey: authority, isSigner: true, isWritable: false },
+        { pubkey: this.cfg.programId, isSigner: false, isWritable: false },
+        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      ],
+      data: data.subarray(0, o),
+    });
+  }
+  /** True when a usable (existing, program owned) session token is on chain for this pair. */
+  async sessionActive(sessionSigner: PublicKey, authority: PublicKey): Promise<boolean> {
+    const info = await this.base.getAccountInfo(sessionTokenPda(sessionSigner, authority, this.cfg.programId));
+    return !!info && info.owner.equals(SESSION_PROGRAM_ID);
+  }
+
+  // ----------------------------------------------------------------------------------------- badges (base layer)
+  mintBadgeIx(payer: PublicKey, owner: PublicKey, id: number): Promise<TransactionInstruction> {
+    const mint = badgeMintPda(id, this.cfg.programId);
+    return this.m().mintBadge(id).accounts({
+      payer, owner, trainer: trainerPda(owner, this.cfg.programId), badgeMint: mint, badgeAuthority: badgeAuthorityPda(this.cfg.programId),
+      ownerAta: ataOf(owner, mint), claim: claimPda(owner, id, this.cfg.programId),
+      tokenProgram: TOKEN_PROGRAM_ID, associatedTokenProgram: ATA_PROGRAM_ID, systemProgram: SystemProgram.programId,
+    }).instruction() as Promise<TransactionInstruction>;
+  }
+  async mintBadge(payer: TxSigner, owner: PublicKey, id: number) {
+    return this.base_([await this.mintBadgeIx(payer.publicKey, owner, id)], payer);
+  }
+  /** Badge ids already minted to `owner` (a claim record exists). */
+  async claimedBadges(owner: PublicKey): Promise<number[]> {
+    const ids = [0, 1, 2, 3, 4, 5, 6, 7];
+    const infos = await this.base.getMultipleAccountsInfo(ids.map((i) => claimPda(owner, i, this.cfg.programId)));
+    return ids.filter((_, i) => !!infos[i]);
   }
 }

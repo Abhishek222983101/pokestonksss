@@ -1,4 +1,4 @@
-use crate::{damage, eff, species, DamageIn, MatchState, MoveKind, RND_USED};
+use crate::{damage, eff, lvl_stat, species, DamageIn, MatchState, MoveKind, MAX_LEVEL, RND_USED};
 
 /// House Agent difficulty = exploration noise.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -53,7 +53,7 @@ pub fn bot_pick(st: &MatchState, side: u8, rnd: &[u8; 32], tier: Tier) -> u8 {
         return 0;
     }
     if tier == Tier::Dummy {
-        return 2;
+        return 3;
     }
     if tier == Tier::Trainee {
         // 1/8 Signature, 1/8 Coverage, 3/8 Hedge, 3/8 Leverage: easy to read and to punish with Pump.
@@ -83,8 +83,8 @@ pub fn bot_pick(st: &MatchState, side: u8, rnd: &[u8; 32], tier: Tier) -> u8 {
             MoveKind::Strike => {
                 let d = damage(&DamageIn {
                     power: mv.power as u32,
-                    atk: ms.atk as u32,
-                    def: os.def as u32,
+                    atk: lvl_stat(ms.atk, me.level),
+                    def: lvl_stat(os.def, opp.level),
                     stab: mv.typ == ms.typ,
                     eff: eff(mv.typ, os.typ),
                     variance: 100,
@@ -128,4 +128,15 @@ pub fn bot_pick(st: &MatchState, side: u8, rnd: &[u8; 32], tier: Tier) -> u8 {
         }
     }
     best
+}
+
+/// Level of the House Agent's creature: shadows the player's level so the ladder stays fair as you grow.
+/// Trainee and the judge Dummy stay at level 0.
+pub fn bot_level(tier: Tier, player_level: u8) -> u8 {
+    match tier {
+        Tier::Trainee | Tier::Dummy => 0,
+        Tier::Rookie => player_level.saturating_sub(1),
+        Tier::Pro => player_level,
+        Tier::Champion => (player_level + 1).min(MAX_LEVEL),
+    }
 }

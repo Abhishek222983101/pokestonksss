@@ -13,8 +13,8 @@ export const TURN_LOG_BYTES = 14;
 export const TYPES = ['SPEED', 'ARMOR', 'ARCANE', 'TIDE', 'SHADE'] as const;
 export type TypeName = (typeof TYPES)[number];
 export const SLOT = { SIGNATURE: 0, COVERAGE: 1, GUARD: 2, CHARGE: 3 } as const;
-export const TIER = { ROOKIE: 0, PRO: 1, CHAMPION: 2 } as const;
-export type Tier = 0 | 1 | 2;
+export const TIER = { ROOKIE: 0, PRO: 1, CHAMPION: 2, TRAINEE: 3, DUMMY: 4 } as const;
+export type Tier = 0 | 1 | 2 | 3 | 4;
 export type Side = 0 | 1;
 export type Pick = 0 | 1 | 2 | 3;
 export type Mood = -1 | 0 | 1;
@@ -27,6 +27,8 @@ export interface FighterState {
   lastGuard: boolean;
   /** Momentum level 0..3 (+10% strike damage per level). */
   momentum: number;
+  /** Creature level 0..9 (+4% hp/atk/def per level). */
+  level: number;
 }
 export interface MatchState {
   turn: number;
@@ -109,7 +111,7 @@ export function stateToBytes(s: MatchState): Uint8Array {
     o[b + 3] = f.maxHp & 255;
     o[b + 4] = f.maxHp >> 8;
     o[b + 5] = f.charged ? 1 : 0;
-    o[b + 6] = (f.lastGuard ? 1 : 0) | ((f.momentum & 3) << 1);
+    o[b + 6] = (f.lastGuard ? 1 : 0) | ((f.momentum & 3) << 1) | ((Math.min(9, f.level ?? 0) & 15) << 3);
   });
   return o;
 }
@@ -123,9 +125,9 @@ export function roster(): Roster {
   return JSON.parse(wasm.roster());
 }
 
-export function newMatch(a: number, b: number): MatchState {
+export function newMatch(a: number, b: number, la = 0, lb = 0): MatchState {
   need();
-  const r = JSON.parse(wasm.newMatch(a, b));
+  const r = JSON.parse(wasm.newMatch(a, b, la, lb));
   if (r.ok === false) throw new Error(r.error);
   return r;
 }
@@ -147,7 +149,7 @@ export function botPick(state: MatchState, side: Side, rnd: ArrayLike<number>, t
 }
 
 /** Re-simulate a finished match; each log entry needs `rnd` of at least 10 bytes. */
-export function replay(species: [number, number], log: TurnLog[]): ReplayResult {
+export function replay(species: [number, number], log: TurnLog[], levels: [number, number] = [0, 0]): ReplayResult {
   need();
   const buf = new Uint8Array(log.length * TURN_LOG_BYTES);
   log.forEach((t, i) => {
@@ -159,13 +161,13 @@ export function replay(species: [number, number], log: TurnLog[]): ReplayResult 
     buf[o + 12] = t.mood[0] & 255;
     buf[o + 13] = t.mood[1] & 255;
   });
-  return replayBytes(species, buf);
+  return replayBytes(species, buf, levels);
 }
 
 /** Same as `replay` with an already-packed log (N x 14 bytes: picks[2] | rnd[10] | mood[2]). */
-export function replayBytes(species: [number, number], log: Uint8Array): ReplayResult {
+export function replayBytes(species: [number, number], log: Uint8Array, levels: [number, number] = [0, 0]): ReplayResult {
   need();
-  return JSON.parse(wasm.replay(Uint8Array.from(species), log));
+  return JSON.parse(wasm.replay(Uint8Array.from(species), Uint8Array.from(levels), log));
 }
 
 export function previewDamage(state: MatchState, side: Side, slot: Pick, mood: Mood = 0): DamagePreview | null {
@@ -178,4 +180,25 @@ export function eloUpdate(winner: number, loser: number): [number, number] {
   need();
   const r = wasm.eloUpdate(winner, loser);
   return [r[0], r[1]];
+}
+
+export const MAX_LEVEL = 9;
+/** Creature level for accumulated XP (single source of truth: the Rust rules). */
+export function levelForXp(xp: number): number {
+  need();
+  return wasm.levelForXp(Math.max(0, Math.min(65535, Math.floor(xp))));
+}
+/** XP for a finished match. */
+export function xpGain(won: boolean, myRating: number, oppRating: number): number {
+  need();
+  return wasm.xpGain(won, myRating, oppRating);
+}
+/** House Agent creature level for a tier and the player's level. */
+export function botLevel(tier: Tier, playerLevel: number): number {
+  need();
+  return wasm.botLevel(tier, playerLevel);
+}
+/** 0 base, 1 from level 3, 2 from level 6. */
+export function evolutionStage(level: number): 0 | 1 | 2 {
+  return level >= 6 ? 2 : level >= 3 ? 1 : 0;
 }

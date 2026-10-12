@@ -9,7 +9,7 @@ mod fmt;
 mod replay;
 mod roster_data;
 
-pub use bot::{bot_pick, Tier};
+pub use bot::{bot_level, bot_pick, Tier};
 pub use elo::elo_update;
 pub use replay::{replay, Outcome, ReplayError, TurnLog, TURN_LOG_BYTES};
 pub use roster_data::{NAMES, ROSTER, ROSTER_LEN};
@@ -76,6 +76,47 @@ pub struct Fighter {
     pub last_guard: bool,
     /// Momentum level 0..=3: +10% strike damage per level; built by out-reading the opponent (see `resolve_turn`).
     pub momentum: u8,
+    /// Creature level 0..=MAX_LEVEL: +4% hp/atk/def per level (earned from XP on the Trainer).
+    pub level: u8,
+}
+
+/// Highest creature level.
+pub const MAX_LEVEL: u8 = 9;
+/// Cumulative XP needed for level i (index = level).
+pub const LEVEL_XP: [u16; 10] = [0, 30, 70, 120, 180, 250, 330, 420, 520, 630];
+
+/// Level for a species' accumulated XP.
+pub fn level_for_xp(xp: u16) -> u8 {
+    let mut l = 0u8;
+    while (l as usize) < LEVEL_XP.len() - 1 && xp >= LEVEL_XP[l as usize + 1] {
+        l += 1;
+    }
+    l
+}
+
+/// Evolution stage: 0 base, 1 from level 3, 2 from level 6.
+pub fn evolution_stage(level: u8) -> u8 {
+    if level >= 6 {
+        2
+    } else if level >= 3 {
+        1
+    } else {
+        0
+    }
+}
+
+/// XP earned for a finished match. Wins pay more against stronger opponents; losses still teach a little.
+pub fn xp_gain(won: bool, my_rating: i32, opp_rating: i32) -> u16 {
+    if won {
+        (25 + ((opp_rating - my_rating) / 10).clamp(-10, 15)) as u16
+    } else {
+        8
+    }
+}
+
+/// Stat after level scaling (+4% per level).
+pub fn lvl_stat(base: u16, level: u8) -> u32 {
+    base as u32 * (100 + 4 * level.min(MAX_LEVEL) as u32) / 100
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -89,7 +130,11 @@ pub struct MatchState {
 impl MatchState {
     /// Fresh match; `None` if a species id is invalid.
     pub fn new(a: u8, b: u8) -> Option<MatchState> {
-        Some(MatchState { f: [new_fighter(a)?, new_fighter(b)?], turn: 0, winner: NO_WINNER })
+        Self::with_levels(a, 0, b, 0)
+    }
+    /// Fresh match with creature levels (clamped to MAX_LEVEL).
+    pub fn with_levels(a: u8, la: u8, b: u8, lb: u8) -> Option<MatchState> {
+        Some(MatchState { f: [new_fighter_lv(a, la)?, new_fighter_lv(b, lb)?], turn: 0, winner: NO_WINNER })
     }
     pub fn is_over(&self) -> bool {
         self.winner != NO_WINNER
@@ -104,7 +149,7 @@ impl MatchState {
             o[b + 1..b + 3].copy_from_slice(&f.hp.to_le_bytes());
             o[b + 3..b + 5].copy_from_slice(&f.max_hp.to_le_bytes());
             o[b + 5] = f.charged as u8;
-            o[b + 6] = (f.last_guard as u8) | (f.momentum.min(3) << 1);
+            o[b + 6] = (f.last_guard as u8) | (f.momentum.min(3) << 1) | (f.level.min(MAX_LEVEL) << 3);
         }
         o
     }
@@ -116,10 +161,10 @@ impl MatchState {
             species(b[o])?;
             let hp = u16::from_le_bytes([b[o + 1], b[o + 2]]);
             let max_hp = u16::from_le_bytes([b[o + 3], b[o + 4]]);
-            if hp > max_hp || b[o + 5] > 1 || b[o + 6] > 7 {
+            if hp > max_hp || b[o + 5] > 1 || (b[o + 6] >> 3) > MAX_LEVEL || b[o + 6] > 0x7f {
                 return None;
             }
-            *f = Fighter { species: b[o], hp, max_hp, charged: b[o + 5] == 1, last_guard: b[o + 6] & 1 == 1, momentum: (b[o + 6] >> 1) & 3 };
+            *f = Fighter { species: b[o], hp, max_hp, charged: b[o + 5] == 1, last_guard: b[o + 6] & 1 == 1, momentum: (b[o + 6] >> 1) & 3, level: b[o + 6] >> 3 };
         }
         if b[1] != NO_WINNER && b[1] > 1 {
             return None;
@@ -129,8 +174,14 @@ impl MatchState {
 }
 
 pub fn new_fighter(species_id: u8) -> Option<Fighter> {
+    new_fighter_lv(species_id, 0)
+}
+
+pub fn new_fighter_lv(species_id: u8, level: u8) -> Option<Fighter> {
     let s = species(species_id)?;
-    Some(Fighter { species: species_id, hp: s.hp, max_hp: s.hp, charged: false, last_guard: false, momentum: 0 })
+    let level = level.min(MAX_LEVEL);
+    let hp = lvl_stat(s.hp, level) as u16;
+    Some(Fighter { species: species_id, hp, max_hp: hp, charged: false, last_guard: false, momentum: 0, level })
 }
 
 /// Type effectiveness in percent: 200 super, 100 neutral, 50 resisted.
@@ -324,8 +375,8 @@ pub fn resolve_turn(st: &mut MatchState, picks: [u8; 2], rnd: &[u8; 32], mood: [
         };
         let dmg = damage(&DamageIn {
             power: mv.power as u32,
-            atk: sp[a].atk as u32,
-            def: sp[d].def as u32,
+            atk: lvl_stat(sp[a].atk, st.f[a].level),
+            def: lvl_stat(sp[d].def, st.f[d].level),
             stab: mv.typ == sp[a].typ,
             eff: e,
             variance: 85 + (rnd[4 + a] % 16) as u32,
@@ -392,8 +443,8 @@ pub fn preview_damage(st: &MatchState, side: u8, slot: u8, mood: Mood) -> Option
     }
     let mut i = DamageIn {
         power: mv.power as u32,
-        atk: a.atk as u32,
-        def: d.def as u32,
+        atk: lvl_stat(a.atk, st.f[side as usize].level),
+        def: lvl_stat(d.def, st.f[1 - side as usize].level),
         stab: mv.typ == a.typ,
         eff: eff(mv.typ, d.typ),
         variance: 85,

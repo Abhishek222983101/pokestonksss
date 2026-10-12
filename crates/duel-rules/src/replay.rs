@@ -61,8 +61,8 @@ impl ReplayError {
 }
 
 /// Re-simulate a full match from the species pair and per-turn log.
-pub fn replay(species: [u8; 2], log: &[TurnLog]) -> Result<Outcome, ReplayError> {
-    let mut st = MatchState::new(species[0], species[1]).ok_or(ReplayError::BadSpecies)?;
+pub fn replay(species: [u8; 2], levels: [u8; 2], log: &[TurnLog]) -> Result<Outcome, ReplayError> {
+    let mut st = MatchState::with_levels(species[0], levels[0], species[1], levels[1]).ok_or(ReplayError::BadSpecies)?;
     if log.len() > MAX_TURNS as usize {
         return Err(ReplayError::TooLong);
     }

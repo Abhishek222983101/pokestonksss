@@ -2,7 +2,12 @@
 /* eslint-disable */
 
 /**
- * House Agent pick (0..=3), or -1 on bad input. `tier`: 0 Rookie, 1 Pro, 2 Champion.
+ * House Agent creature level for a tier and the player's level.
+ */
+export function botLevel(tier: number, player_level: number): number;
+
+/**
+ * House Agent pick (0..=3), or -1 on bad input. `tier`: 0 Rookie, 1 Pro, 2 Champion, 3 Trainee, 4 Dummy.
  */
 export function botPick(state: Uint8Array, side: number, rnd: Uint8Array, tier: number): number;
 
@@ -12,9 +17,14 @@ export function botPick(state: Uint8Array, side: number, rnd: Uint8Array, tier: 
 export function eloUpdate(winner: number, loser: number): Int32Array;
 
 /**
+ * Creature level for accumulated XP.
+ */
+export function levelForXp(xp: number): number;
+
+/**
  * New match state JSON `{turn,winner,f:[..]}`; `{"ok":false,...}` if a species is invalid.
  */
-export function newMatch(a: number, b: number): string;
+export function newMatch(a: number, b: number, la: number, lb: number): string;
 
 /**
  * `{"ok":true,"min":..,"max":..,"eff":..,"acc":..}` for `side`'s strike `slot` vs the opponent (no guard/charge on
@@ -23,10 +33,10 @@ export function newMatch(a: number, b: number): string;
 export function previewDamage(state: Uint8Array, side: number, slot: number, mood: number): string;
 
 /**
- * `species`: 2 bytes; `log`: N * 14 bytes (picks[2] | rnd[10] | mood[2]).
+ * `species`: 2 bytes; `levels`: 2 bytes; `log`: N * 14 bytes (picks[2] | rnd[10] | mood[2]).
  * Returns `{"ok":true,"winner":..,"hp":[..],"turns":..}` or `{"ok":false,"error":code}`.
  */
-export function replay(species: Uint8Array, log: Uint8Array): string;
+export function replay(species: Uint8Array, levels: Uint8Array, log: Uint8Array): string;
 
 /**
  * `state`: 16 bytes (see MatchState::to_bytes), `picks`: 2 bytes, `rnd`: 32 bytes (only [0..10] used),
@@ -39,17 +49,25 @@ export function resolveTurn(state: Uint8Array, picks: Uint8Array, rnd: Uint8Arra
  */
 export function roster(): string;
 
+/**
+ * XP for a finished match.
+ */
+export function xpGain(won: boolean, my_rating: number, opp_rating: number): number;
+
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
+    readonly botLevel: (a: number, b: number) => number;
     readonly botPick: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly eloUpdate: (a: number, b: number, c: number) => void;
-    readonly newMatch: (a: number, b: number, c: number) => void;
+    readonly levelForXp: (a: number) => number;
+    readonly newMatch: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly previewDamage: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
-    readonly replay: (a: number, b: number, c: number, d: number, e: number) => void;
+    readonly replay: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
     readonly resolveTurn: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => void;
     readonly roster: (a: number) => void;
+    readonly xpGain: (a: number, b: number, c: number) => number;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number) => void;
