@@ -8,7 +8,7 @@
 
 ## Verify it yourself in 60 seconds
 1. Open **/?demo=1**, play as a guest (or connect a wallet), walk into tall grass. You face a Dummy House Agent that never attacks, so any attack wins. Open **Proof** in the battle and follow every link: delegation, rollup moves, VRF rolls, oracle weigh in, commit to Solana, session key, badge mint.
-2. Open **/judge** and press **Run self-test**: it plays a real battle from your browser and lists every transaction.
+2. Open **/judge** and press **Run self-test** (a real practice battle) and **Run Private ER self-test** (a full sealed duel inside the TEE between two throwaway keys, with the peek proofs and a replay of the committed result). Every row links to the explorer.
 3. **Private ER:** press **Duel a friend** (Private duel is the default), open the invite link in a second browser, and play. In **Proof** press **Peek at my opponent**: reading their sealed pick returns nothing, with your own login and with none.
 4. Open **/verify/<arena>** or **/verify/sealed/<match key>** to replay any match from on-chain data with the same Rust rules.
 5. Read the program: [`programs/pokestonksss`](programs/pokestonksss).

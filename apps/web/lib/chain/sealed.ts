@@ -39,7 +39,7 @@ export function newHostKey(): Keypair {
   return kp;
 }
 
-async function fundKey(pk: PublicKey) {
+export async function fundKey(pk: PublicKey) {
   const client = getClient();
   if ((await client.base.getBalance(pk)) >= 15_000_000) return;
   let last = 'faucet unavailable';

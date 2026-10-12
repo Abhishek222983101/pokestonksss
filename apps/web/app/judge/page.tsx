@@ -7,6 +7,7 @@ import { PROGRAM_ID, accountLink, arenaPda, tierName, trainerPda } from '@pokest
 import { getClient } from '../../lib/chain/config';
 import { ownerKey, activeSigner } from '../../lib/chain/guest';
 import { useChain } from '../../lib/chain/store';
+import { runSealedSelfTest } from '../../lib/chain/sealedSelfTest';
 import { Button, Panel } from '../components/ui';
 
 interface Row { name: string; ok: boolean | null; detail: string; link?: string }
@@ -15,6 +16,14 @@ interface Row { name: string; ok: boolean | null; detail: string; link?: string 
 export default function JudgePage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [running, setRunning] = useState(false);
+  const [prows, setProws] = useState<Row[]>([]);
+  const [prunning, setPrunning] = useState(false);
+  const runPrivate = useCallback(async () => {
+    setProws([]); setPrunning(true);
+    try { await runSealedSelfTest((r) => setProws((x) => [...x, r])); }
+    catch (e) { setProws((x) => [...x, { name: 'Private ER self-test stopped', ok: false, detail: String((e as Error).message).slice(0, 200) }]); }
+    finally { setPrunning(false); }
+  }, []);
   const boot = useChain((s) => s.boot);
   const mine = useSyncExternalStore(() => () => {}, () => arenaPda(ownerKey()).toBase58(), () => '');
 
@@ -68,6 +77,22 @@ export default function JudgePage() {
       <Button onClick={run} disabled={running}>{running ? 'Running…' : 'Run self-test'}</Button>
       <ol className="mt-4 space-y-2" aria-live="polite">
         {rows.map((r, i) => (
+          <li key={i}><Panel tone="plate" className="!py-2">
+            <div className="flex items-start gap-2">
+              <span className={`font-pixel t-12 ${r.ok === false ? 'text-red-deep' : 'text-navy'}`}>{r.ok === false ? '✗' : '✓'}</span>
+              <div className="min-w-0">
+                <div className="text-sm font-medium">{r.name}</div>
+                <div className="text-xs text-slate break-all">{r.detail} {r.link && <a className="underline" target={r.link.startsWith('/') ? undefined : '_blank'} rel="noreferrer" href={r.link}>link ↗</a>}</div>
+              </div>
+            </div>
+          </Panel></li>
+        ))}
+      </ol>
+      <h2 className="font-pixel t-14 text-navy mt-8 mb-2">Private ER self-test</h2>
+      <p className="mb-3 text-sm">Plays a full <b>sealed duel inside the MagicBlock Private Ephemeral Rollup (TEE)</b> between two throwaway keys, then tries to read the sealed picks as the opponent, as a stranger and anonymously. Every roll is recomputed from the public VRF seed. About 30 seconds. No wallet.</p>
+      <Button onClick={runPrivate} disabled={prunning}>{prunning ? 'Running…' : 'Run Private ER self-test'}</Button>
+      <ol className="mt-4 space-y-2" aria-live="polite">
+        {prows.map((r, i) => (
           <li key={i}><Panel tone="plate" className="!py-2">
             <div className="flex items-start gap-2">
               <span className={`font-pixel t-12 ${r.ok === false ? 'text-red-deep' : 'text-navy'}`}>{r.ok === false ? '✗' : '✓'}</span>

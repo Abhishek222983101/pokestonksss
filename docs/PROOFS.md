@@ -17,6 +17,8 @@ Everything below is on Solana devnet and the MagicBlock devnet rollups. Program:
 | Private duel result is on Solana | Final duel account is owned by our program again with the full log | `e2e-sealed.ts` waits for undelegation and decodes it |
 | Attacks are rejected | 8 attacks on devnet (wrong seat, forged VRF callback, stranger session key, wrong token, spectator commit, early timeout, bad reveal...) | `scripts/e2e-security.ts`, `scripts/e2e-duel.ts` |
 
+One click: **/judge > Run Private ER self-test** plays a whole sealed duel, runs the peek proofs and checks the committed result (`pnpm --filter scripts e2e:judgeprivate` does it in a real browser).
+
 ## Re-run
 ```bash
 pnpm --filter scripts e2e:practice && pnpm --filter scripts e2e:duel && pnpm --filter scripts e2e:security
