@@ -100,7 +100,7 @@ describe('wrapper API', () => {
     const rnd = new Uint8Array(32);
     rnd[2] = rnd[3] = 200;
     rnd[4] = rnd[5] = 15;
-    const dmg = (m: R.Mood) => (R.resolveTurn(s, [0, 2], rnd, [m, 0]).events.find((e) => e.t === 'hit') as any).dmg;
+    const dmg = (m: R.Mood) => (R.resolveTurn(s, [0, 3], rnd, [m, 0]).events.find((e) => e.t === 'hit') as any).dmg;
     expect(dmg(1)).toBeGreaterThan(dmg(0));
     expect(dmg(-1)).toBeLessThanOrEqual(dmg(0));
   });

@@ -86,9 +86,9 @@ export interface RulesApi {
   elo(rating: number, opponent: number, won: boolean): number;
 }
 
-export { rules } from './rulesTs';
+export { rules, initRules } from './rulesWasm';
 
-import { rules as impl } from './rulesTs';
+import { rules as impl } from './rulesWasm';
 
 export const getChampion = (id: number): Champion => impl.roster()[id] ?? impl.roster()[0];
 export const typeName = (t: TypeId): TypeName => TYPE_NAMES[t];

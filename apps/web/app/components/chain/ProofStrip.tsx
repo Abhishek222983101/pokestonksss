@@ -9,7 +9,7 @@ const ext = (href: string, children: React.ReactNode, title?: string) => (
 );
 
 /** Weighed · Sealed · Rolled · Saved — every chip links to an explorer transaction. */
-export default function ProofStrip({ sealedMode = 'commit-reveal' }: { sealedMode?: string }) {
+export default function ProofStrip({ sealedMode = 'commit-reveal', compact = false }: { sealedMode?: string; compact?: boolean }) {
   const { weighed, sealed, rolled, saved, start } = useProof();
   const [lat, setLat] = useState({ p50: 0, p95: 0, n: 0 });
   useEffect(() => {
@@ -24,12 +24,12 @@ export default function ProofStrip({ sealedMode = 'commit-reveal' }: { sealedMod
   const moodTxt = weighed ? weighed.mood.map((m) => (m > 0 ? '▲' : m < 0 ? '▼' : '■')).join(' ') : '–';
   return (
     <div className="flex flex-wrap items-center gap-2" aria-label="Proof strip">
-      <span className="font-pixel t-8 text-green" title="This battle runs on a MagicBlock Ephemeral Rollup">● LIVE · EPHEMERAL ROLLUP · devnet</span>
+      <span className="font-pixel t-8 text-green" title="This battle runs on a MagicBlock Ephemeral Rollup">{compact ? '● ROLLUP · devnet' : '● LIVE · EPHEMERAL ROLLUP · devnet'}</span>
       <span className={chip(!!weighed)} title="Live oracle prices vs the bell snapshot">Weighed {moodTxt}</span>
       <span className={chip(!!start || sealed.length > 0)} title={`Picks are sealed: ${sealedMode}`}>Sealed {sealed.length ? ext(sealed[sealed.length - 1].link, '↗') : start ? ext(start.link, '↗') : ''}</span>
       <span className={chip(rolled.length > 0)} title={last?.rnd ? `VRF randomness: ${last.rnd}` : 'MagicBlock VRF roll'}>Rolled ×{rolled.length} {last && ext(last.link, '↗')}</span>
       <span className={chip(!!saved)} title="Committed to Solana base layer">Saved {saved ? ext(saved.link, '↗') : '…'}</span>
-      <span className="font-pixel t-8 text-slate" title="Measured transaction confirmation time on the rollup">{lat.n ? `${Math.round(lat.p50)} ms p50 · ${Math.round(lat.p95)} ms p95` : 'measuring…'}</span>
+      <span className="font-pixel t-8 text-slate-soft" title="Measured transaction confirmation time on the rollup">{lat.n ? (compact ? `${Math.round(lat.p50)} ms` : `${Math.round(lat.p50)} ms p50 · ${Math.round(lat.p95)} ms p95`) : 'measuring…'}</span>
     </div>
   );
 }

@@ -10,7 +10,8 @@
     "e2e:duel": "tsx e2e-duel.ts",
     "judge": "tsx judge-selftest.ts",
     "loadtest": "tsx loadtest.ts",
-    "e2e:browser": "tsx e2e-browser.ts"
+    "e2e:browser": "tsx e2e-browser.ts",
+    "e2e:game": "tsx e2e-game.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.32.1",
@@ -20,7 +21,8 @@
     "bs58": "^6.0.0",
     "tweetnacl": "^1.0.3",
     "@pokestonksss/sdk": "workspace:*",
-    "playwright-core": "^1.49.0"
+    "playwright-core": "^1.49.0",
+    "@pokestonksss/rules-wasm": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

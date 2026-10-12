@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Atkinson_Hyperlegible_Next } from 'next/font/google';
 import './globals.css';
+import RulesGate from './components/RulesGate';
 
 /**
  * Body face: Atkinson Hyperlegible Next. Made for unambiguous characters (0/O, 1/l/I), which matters
@@ -27,7 +28,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={body.variable}>
-      <body>{children}</body>
+      <body><RulesGate>{children}</RulesGate></body>
     </html>
   );
 }

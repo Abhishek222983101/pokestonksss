@@ -48,8 +48,8 @@ export default function ChainBridge() {
     <>
       {guest && status !== 'ready' && <OnboardingOverlay />}
       {inBattle && status === 'ready' && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center p-2">
-          <div className="pointer-events-auto panel panel-dialog on-navy !m-0 !py-2 !px-3 text-cream"><ProofStrip /></div>
+        <div className="pointer-events-none fixed left-2 top-1 z-40 max-w-[calc(100vw-1rem)]">
+          <div className="pointer-events-auto panel panel-dialog on-navy !m-0 !py-1 !px-2 text-cream"><ProofStrip compact /></div>
         </div>
       )}
     </>

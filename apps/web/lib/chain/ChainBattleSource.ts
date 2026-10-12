@@ -19,6 +19,7 @@ export class ChainBattleSource implements BattleSource {
   private stops: Array<() => void> = [];
   private nowRaw: [bigint | null, bigint | null] = [null, null];
   private localLocked = false;
+  private lockedAtLog = 0;
   private ratingBefore = 1000;
   private ended = false;
   private starting: Promise<void>;
@@ -110,8 +111,9 @@ export class ChainBattleSource implements BattleSource {
       proof.set({ rolled });
     }
     const finished = a.phase === PHASE.FINISHED;
+    // our own lock stays in force until the roll for it shows up in the on-chain log (or the match ended)
+    if (this.localLocked && (a.log.length > this.lockedAtLog || finished)) this.localLocked = false;
     const resolving = a.vrfPending || a.phase === PHASE.ROLLING || this.localLocked;
-    if (!resolving) this.localLocked = false;
     this.emit({
       state: { turn: a.match.turn, fighters: [
         { champ: this.player, hp: f[0].hp, maxHp: f[0].maxHp, charged: f[0].charged, lastGuard: f[0].lastGuard },
@@ -129,6 +131,7 @@ export class ChainBattleSource implements BattleSource {
     await this.starting;
     if (this.snap.phase !== 'PICKING' || this.ended) return;
     this.localLocked = true;
+    this.lockedAtLog = this.arena?.log.length ?? 0;
     this.emit({ locked: true, phase: 'RESOLVING' });
     try {
       const r = await getClient().lockPick(guestSigner(), slot);

@@ -25,7 +25,8 @@
     "react-dom": "19.2.8",
     "three": "^0.186.0",
     "zustand": "^5.0.15",
-    "@pokestonksss/sdk": "workspace:*"
+    "@pokestonksss/sdk": "workspace:*",
+    "@pokestonksss/rules-wasm": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

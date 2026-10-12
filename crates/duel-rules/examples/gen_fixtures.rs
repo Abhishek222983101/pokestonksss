@@ -168,10 +168,18 @@ fn main() {
             turns_hex, outcome.winner, outcome.hp[0], outcome.hp[1], outcome.turns
         ));
         if i % 8 == 0 {
-            let cut = &turns_hex[..turns_hex.len() - 2 * TURN_LOG_BYTES];
-            variants.push(format!("{{\"log\":\"{}\",\"expect\":{{\"ok\":false,\"error\":\"unfinished\"}}}}", cut));
-            let extra = format!("{}{}", turns_hex, &turns_hex[..2 * TURN_LOG_BYTES]);
-            variants.push(format!("{{\"log\":\"{}\",\"expect\":{{\"ok\":false,\"error\":\"trailing_turns\"}}}}", extra));
+            let mut cut = log.clone();
+            cut.pop();
+            let mut extra = log.clone();
+            extra.push(log[0]);
+            for variant in [cut, extra] {
+                let mut h = String::new();
+                for t in &variant {
+                    h.push_str(&hex(&t.to_bytes()));
+                }
+                let e = replay([a, b], &variant).expect_err("variant must be invalid");
+                variants.push(format!("{{\"log\":\"{}\",\"expect\":{{\"ok\":false,\"error\":\"{}\"}}}}", h, e.code()));
+            }
         }
         write!(
             out,

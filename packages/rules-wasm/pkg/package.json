@@ -1,0 +1,17 @@
+{
+  "name": "duel-wasm",
+  "type": "module",
+  "description": "wasm-bindgen bindings for duel-rules",
+  "version": "0.1.0",
+  "license": "MIT",
+  "files": [
+    "duel_wasm_bg.wasm",
+    "duel_wasm.js",
+    "duel_wasm.d.ts"
+  ],
+  "main": "duel_wasm.js",
+  "types": "duel_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
