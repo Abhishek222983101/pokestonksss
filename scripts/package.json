@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "p1": "tsx p1-devnet.ts",
+    "e2e:practice": "tsx e2e-practice.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -59,3 +59,87 @@ pub fn settle(a: &Arena, st: &MatchState, host: &mut Trainer, guest: Option<&mut
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn trainer(rating: u16) -> Trainer {
+        Trainer { owner: Pubkey::new_unique(), rating, wins: 0, losses: 0, streak: 0, dex: 0, battles: 0, unsaved: 0, commits: 0, name_seed: 1, bump: 255 }
+    }
+    fn arena(mode: u8, winner: u8) -> Arena {
+        Arena {
+            host: Pubkey::new_unique(), guest: Pubkey::new_unique(), mode, phase: PHASE_FINISHED, tier: 1,
+            state: [0; duel_rules::STATE_BYTES], picks: [NO_PICK; 2], commits: [[0; 32]; 2], committed_mask: 0, revealed_mask: 0,
+            vrf_pending: false, rnd_turn: 0, token_hash: [0; 32], opened_at: 0, updated_at: 0, deadline: 0, timeouts: [0; 2],
+            snap: [0; 2], winner, log_len: 0, log: [[0; LOG_ENTRY]; LOG_SLOTS], bump: 255,
+        }
+    }
+
+    #[test]
+    fn practice_win_updates_host_only_and_sets_dex() {
+        let a = arena(MODE_PRACTICE, 0);
+        let st = MatchState::new(0, 3).unwrap();
+        let mut h = trainer(1000);
+        settle(&a, &st, &mut h, None);
+        assert_eq!((h.wins, h.losses, h.streak, h.battles, h.unsaved), (1, 0, 1, 1, 1));
+        assert!(h.rating > 1000);
+        assert_eq!(h.dex, 1 << 3);
+    }
+
+    #[test]
+    fn practice_loss_resets_streak() {
+        let a = arena(MODE_PRACTICE, 1);
+        let st = MatchState::new(0, 3).unwrap();
+        let mut h = trainer(1000);
+        h.streak = 4;
+        settle(&a, &st, &mut h, None);
+        assert_eq!((h.wins, h.losses, h.streak), (0, 1, 0));
+        assert!(h.rating < 1000);
+        assert_eq!(h.dex, 0);
+    }
+
+    #[test]
+    fn duel_is_zero_sum_and_updates_both() {
+        let a = arena(MODE_DUEL, 1);
+        let st = MatchState::new(2, 5).unwrap();
+        let (mut h, mut g) = (trainer(1000), trainer(1000));
+        settle(&a, &st, &mut h, Some(&mut g));
+        assert_eq!(h.rating as i32 + g.rating as i32, 2000);
+        assert_eq!((h.losses, g.wins), (1, 1));
+        assert_eq!(g.dex, 1 << 2);
+    }
+
+    #[test]
+    fn commitment_binds_every_field() {
+        let (arena, who) = (Pubkey::new_unique(), Pubkey::new_unique());
+        let salt = [7u8; 32];
+        let base = commitment(1, &salt, &arena, 3, &who);
+        assert_ne!(base, commitment(2, &salt, &arena, 3, &who));
+        assert_ne!(base, commitment(1, &[8u8; 32], &arena, 3, &who));
+        assert_ne!(base, commitment(1, &salt, &Pubkey::new_unique(), 3, &who));
+        assert_ne!(base, commitment(1, &salt, &arena, 4, &who));
+        assert_ne!(base, commitment(1, &salt, &arena, 3, &Pubkey::new_unique()));
+        assert_eq!(base, commitment(1, &salt, &arena, 3, &who));
+    }
+
+    #[test]
+    fn log_is_capped_and_replayable() {
+        let mut a = arena(MODE_PRACTICE, NO_WINNER);
+        for i in 0..20u8 {
+            push_log(&mut a, [i % 4, 2], &[i; 32], [0, 1]);
+        }
+        assert_eq!(a.log_len as usize, LOG_SLOTS);
+        assert_eq!(TurnLog::from_bytes(&a.log[0]).picks, [0, 2]);
+    }
+
+    #[test]
+    fn seat_lookup_and_sizes() {
+        let a = arena(MODE_DUEL, NO_WINNER);
+        assert_eq!(a.seat_of(&a.host), Some(0));
+        assert_eq!(a.seat_of(&a.guest), Some(1));
+        assert_eq!(a.seat_of(&Pubkey::new_unique()), None);
+        assert!(8 + Arena::INIT_SPACE <= 800, "arena {} B", 8 + Arena::INIT_SPACE);
+        assert!(8 + Trainer::INIT_SPACE <= 128);
+    }
+}
