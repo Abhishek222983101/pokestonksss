@@ -12,7 +12,8 @@
     "loadtest": "tsx loadtest.ts",
     "e2e:browser": "tsx e2e-browser.ts",
     "e2e:game": "tsx e2e-game.ts",
-    "e2e:duelbrowser": "tsx e2e-duel-browser.ts"
+    "e2e:duelbrowser": "tsx e2e-duel-browser.ts",
+    "e2e:security": "tsx e2e-security.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.32.1",

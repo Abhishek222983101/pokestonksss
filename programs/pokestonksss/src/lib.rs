@@ -79,8 +79,12 @@ macro_rules! request_roll {
     }};
 }
 
+/// A new match may start when the slot is idle/finished/waiting, when it holds only an abandoned practice battle
+/// (the host is the only party and a stale VRF callback is ignored by the `vrf_pending`/`rnd_turn` guard), or when stuck.
 fn startable(a: &Arena, now: i64) -> bool {
-    matches!(a.phase, PHASE_IDLE | PHASE_FINISHED | PHASE_WAITING) || now - a.updated_at > STUCK_RESET_SECS
+    matches!(a.phase, PHASE_IDLE | PHASE_FINISHED | PHASE_WAITING)
+        || a.mode == MODE_PRACTICE
+        || now - a.updated_at > STUCK_RESET_SECS
 }
 
 fn fresh(a: &mut Arena, mode: u8, host: Pubkey, guest: Pubkey, now: i64) {

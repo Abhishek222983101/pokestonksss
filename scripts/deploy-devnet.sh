@@ -14,6 +14,13 @@ echo "Deployer: $(solana address -k "$KP")  balance: $(solana balance -k "$KP" -
 anchor build -p "$NAME"
 SO="target/deploy/$SNAKE.so"; PID="target/deploy/$SNAKE-keypair.json"
 echo "Binary: $(du -h "$SO" | cut -f1)  program id: $(solana address -k "$PID")"
+# upgrades fail if the new binary outgrew the program account: extend it with headroom first (no-op on first deploy)
+PID_ADDR="$(solana address -k "$PID")"
+if solana program show "$PID_ADDR" --url "$RPC" >/dev/null 2>&1; then
+  CUR=$(solana program show "$PID_ADDR" --url "$RPC" | awk '/Data Length/ {print $3}')
+  NEW=$(stat -c %s "$SO")
+  if [ "${NEW:-0}" -gt "${CUR:-0}" ]; then solana program extend "$PID_ADDR" 20480 --keypair "$KP" --url "$RPC" || true; fi
+fi
 solana program deploy "$SO" --program-id "$PID" --keypair "$KP" --url "$RPC" --use-rpc
 echo "DONE. Program: $(solana address -k "$PID")"
 solana program show "$(solana address -k "$PID")" --url "$RPC" | head -8

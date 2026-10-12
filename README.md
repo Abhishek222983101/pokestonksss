@@ -2,6 +2,8 @@
 
 **Pokémon-Go-style battles where the rollup is the game server.** Pick a BrokerMon (one per crypto asset), walk a pixel route, and battle — every move runs on a **MagicBlock Ephemeral Rollup**, every dice roll is a **MagicBlock VRF** result you can verify, live **MagicBlock oracle** prices change the damage, and your rating is saved to Solana **with no claim button**. No game server, no database, no cold start.
 
+> **Live demo: https://pokestonksss.vercel.app** · judge page: https://pokestonksss.vercel.app/judge
+>
 > Built for MagicBlock **Solana Blitz V9** (and Colosseum Crypto World's Fair). Devnet only, no real money.
 
 ## Verify it yourself in 60 seconds

@@ -1,0 +1,10 @@
+{
+  "attacker locks a pick in the victim's arena": "rejected: tx 5JaMhubQuyWn7gr4iMgdu5bt3nRmcdMx8uEHcCdQDWxfQ13JQkqaUJyAbgHi6qQuSDndhYCvSccRrx5t3EC3Y7i",
+  "attacker starts a practice battle on the victim's arena": "rejected: tx 4PqhkKjQoPzf3dt36i5p7QVMEAdbKdW89Thf99s5ZguZkXN2835yUAkNXNmpt54R1A6QHrAsuiq42mPLnNxKoJh",
+  "attacker commits the victim's trainer": "rejected: tx 4tpZjZYU7tnptaZUsbPg7LWaiBYQdfFff7RukBEQtqCUhqMNYecTwuZmJXjhu2j2nhrmrYe5LyiwQBTC6NGqxuX",
+  "attacker resets the victim's live arena": "rejected: tx 2utKmarVhioHnkhkFe4a7F6N3AepUfypQ9zYfq4qVouK3sH1a42W9SjiUukZJHthwupq5x5S7NpxVCLPH14MgTK",
+  "forged VRF callback (fake identity signer)": "rejected: tx 5iQhsbmroK5ZBMwatbKGpFefPyrn9h3CtVUUKZkBmCxoUVU6UMgAu11pzbDtDKB1TCySvvisxbit5B3u3gJG4zn",
+  "attacker forfeits a duel they are not in (practice arena)": "rejected: tx 3nbhnxGiWzCpuNrmFE78jW76tWAvahX5Zf3oxauMdApzwxmBeYD8Q6TwqumSNyTSpEQwgH4v39aE9oSoqF91pyB",
+  "start_practice with an out-of-range species": "rejected: tx 32ajPX5Sjcg9xH5cvjwNDtBRyhKDzLtUCxa78n9fWzsG7zgv4EP1VGvY2HwkaivbcxABUXc5b6A4L5CLhtCreGG",
+  "restart": "FAILED"
+}

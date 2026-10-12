@@ -13,3 +13,8 @@
 - [x] Replay check: on-chain turn log replayed through rules-wasm in Node reproduces final HP + winner (3/3 battles) — `docs/e2e-practice.json`.
 - [x] P6/P7 UI: PokeStonks-grade game (title→select→globe→route→encounter) with on-chain practice battles via ChainBridge; Proof Strip; onboarding overlay; /judge (8 s self-test in headless Chromium, 0 page errors); /verify; duel host dialog (link+QR) and /d/[host] guest page.
 - [x] Browser e2e: `pnpm --filter scripts e2e:game` (full flow incl. real on-chain battle from UI).
+- [x] P8 art: 8 original BrokerMon sprites (front+back), docs/fidelity/brokermon-sheet.png
+- [x] P9 security: scripts/e2e-security.ts — 7/7 attacks rejected on devnet (lock in victim's arena, start on victim's arena, commit victim's trainer, reset victim's arena, forged VRF callback, forfeit outside a duel, out-of-range species). Duel negatives (6) in e2e-duel.
+- [x] P10 DEPLOYED https://pokestonksss.vercel.app (Vercel project pokestonksss, faucet wallet 4k1hGCLa… funded 4 SOL). Production browser e2e: /judge self-test PASS (9 s, 0 page errors); full game flow (guest → onboarding → select → globe → route → walk into grass → ON-CHAIN battle) PASS.
+- [x] Two-browser sealed duel (host dialog + QR, guest invite link) PASS on devnet (4 turns, winner decided).
+- Program upgrade note: new binaries larger than the account need `solana program extend` (scripts/deploy-devnet.sh does it).
