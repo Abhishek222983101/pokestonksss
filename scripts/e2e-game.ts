@@ -39,10 +39,22 @@ const check = (name: string, ok: boolean, d = "") => { console.log(`${ok ? "✓"
   }
   await page.getByRole("button", { name: /enter route/i }).first().click({ timeout: 20000 });
   await sleep(8000); await shot(page, "4-overworld");
-  await page.evaluate(() => {
-    const g = (window as any).__game; const s = g.scene.getScene("Overworld");
-    void s.guarded.call(s, () => s.wildEncounter.call(s, 2));
-  });
+  const hasHook = await page.evaluate(() => !!(window as any).__game);
+  if (hasHook) {
+    await page.evaluate(() => { const g = (window as any).__game; const s = g.scene.getScene("Overworld"); void s.guarded.call(s, () => s.wildEncounter.call(s, 2)); });
+  } else {
+    // production build: walk the route like a player until grass triggers an encounter (the Proof Strip appears in battle)
+    const hudGone = async () => (await page.getByText(/ROLLUP · devnet/).count()) > 0;
+    const hold = async (k: string, tiles: number) => { await page.keyboard.down(k); await sleep(tiles * 260); await page.keyboard.up(k); };
+    const t0 = Date.now(); let dir = "ArrowRight"; let started = false;
+    await hold("ArrowDown", 4);
+    while (!started && Date.now() - t0 < 240000) {
+      for (let i = 0; i < 8 && !started; i++) { await hold(dir, 1); await page.keyboard.press("z"); started = await hudGone(); }
+      dir = dir === "ArrowRight" ? "ArrowLeft" : "ArrowRight";
+      if (!started) { await hold(Math.random() < 0.8 ? "ArrowDown" : "ArrowUp", 2); started = await hudGone(); }
+    }
+    check("walked into an encounter", started);
+  }
   await sleep(9000); await shot(page, "5-battle-onchain");
   // play: Enter = FIGHT, Enter = first move; repeat until the match ends
   for (let i = 0; i < 40; i++) { await page.keyboard.press("Enter"); await sleep(900); if (i % 6 === 5) await shot(page, "6-mid"); }

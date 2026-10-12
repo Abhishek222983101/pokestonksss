@@ -31,14 +31,14 @@ const make = (num: number, id: string, name: string, type: TypeId, sector: strin
 });
 
 export const BROKERMON: BrokerMon[] = [
-  make(0, 'sol', 'Voltfox', 0, 'Layer 1', 'Sparks off every green candle and never sits still.', 'tsla', ['#9945ff', '#14f195']),
-  make(1, 'btc', 'Ironhorn', 1, 'Store of value', 'Old, heavy, and somehow always up over a long enough horizon.', 'aapl', ['#f7931a', '#4a3a28']),
-  make(2, 'eth', 'Prismoth', 2, 'Smart contracts', 'Its wings split one beam of light into a thousand tiny contracts.', 'coin', ['#627eea', '#e8e6ff']),
-  make(3, 'sui', 'Surgeling', 3, 'Layer 1', 'Rides every wave and pretends it planned the swell.', 'amzn', ['#4da2ff', '#e8f6ff']),
-  make(4, 'zec', 'Veilwisp', 4, 'Privacy', 'You cannot see its balance, only the damage it leaves.', 'mstr', ['#f4b728', '#26222e']),
-  make(5, 'bnb', 'Gildcrest', 1, 'Exchange', 'A golden crest that grows heavier with every burn.', 'msft', ['#f3ba2f', '#2a2a30']),
-  make(6, 'doge', 'Moonpup', 0, 'Meme', 'Howls at the chart, chases it anyway, wags regardless.', 'gme', ['#c9a43c', '#7a5a22']),
-  make(7, 'xrp', 'Ripplet', 3, 'Payments', 'Small ripples, patient currents, a very long legal memory.', 'nke', ['#5a6a7a', '#a8d8ff']),
+  make(0, 'sol', 'Voltfox', 0, 'Layer 1', 'Sparks off every green candle and never sits still.', 'voltfox', ['#9945ff', '#14f195']),
+  make(1, 'btc', 'Ironhorn', 1, 'Store of value', 'Old, heavy, and somehow always up over a long enough horizon.', 'ironhorn', ['#f7931a', '#4a3a28']),
+  make(2, 'eth', 'Prismoth', 2, 'Smart contracts', 'Its wings split one beam of light into a thousand tiny contracts.', 'prismoth', ['#627eea', '#e8e6ff']),
+  make(3, 'sui', 'Surgeling', 3, 'Layer 1', 'Rides every wave and pretends it planned the swell.', 'surgeling', ['#4da2ff', '#e8f6ff']),
+  make(4, 'zec', 'Veilwisp', 4, 'Privacy', 'You cannot see its balance, only the damage it leaves.', 'veilwisp', ['#f4b728', '#26222e']),
+  make(5, 'bnb', 'Gildcrest', 1, 'Exchange', 'A golden crest that grows heavier with every burn.', 'gildcrest', ['#f3ba2f', '#2a2a30']),
+  make(6, 'doge', 'Moonpup', 0, 'Meme', 'Howls at the chart, chases it anyway, wags regardless.', 'moonpup', ['#c9a43c', '#7a5a22']),
+  make(7, 'xrp', 'Ripplet', 3, 'Payments', 'Small ripples, patient currents, a very long legal memory.', 'ripplet', ['#5a6a7a', '#a8d8ff']),
 ];
 
 const BY_ID = new Map(BROKERMON.map((b) => [b.id, b]));

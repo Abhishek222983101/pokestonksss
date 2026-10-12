@@ -15,3 +15,4 @@ programs/**/target
 deploy-keys
 *.so
 .DS_Store
+.env*

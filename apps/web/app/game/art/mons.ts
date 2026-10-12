@@ -2,17 +2,12 @@ import { getBroker, isBrokerId } from '../../../lib/brokermon';
 import { PixelGrid, makeRamp } from './pixel';
 import { Painter } from './paint';
 import { MON, type Facing, type MonCtx, type MonPainter } from './monkit';
-import { aapl, msft } from './species/normal';
-import { tsla, nvda } from './species/electric';
-import { xom, cvx } from './species/grass';
-import { gme, amd } from './species/fire';
-import { amzn, nke } from './species/water';
-import { coin, mstr } from './species/psychic';
+import { voltfox, ironhorn, prismoth, surgeling, veilwisp, gildcrest, moonpup, ripplet } from './species/brokermon';
 
 export type { Facing };
 export { MON as MON_GRID };
 
-const PAINTERS: Record<string, MonPainter> = { aapl, msft, tsla, nvda, xom, cvx, gme, amd, amzn, nke, coin, mstr };
+const PAINTERS: Record<string, MonPainter> = { voltfox, ironhorn, prismoth, surgeling, veilwisp, gildcrest, moonpup, ripplet };
 
 const gridCache = new Map<string, PixelGrid>();
 
