@@ -483,17 +483,17 @@ export class BattleScene extends Phaser.Scene {
       : undefined;
     this.overlay = new EndOverlay(this, {
       won, turns: res.turns, forfeit, foeLabel: snap.opponent.label,
-      ratingBefore: res.ratingBefore, ratingAfter: res.ratingAfter, progress,
+      ratingBefore: res.ratingBefore, ratingAfter: res.ratingAfter, progress, privateDuel: snap.kind === 'private',
       onContinue: () => void this.close(),
     });
     if (snap.onChain) {
-      this.overlay.setSaved('Result written on Solana. Saving your rating…', '#f8d858');
+      this.overlay.setSaved(snap.kind === 'private' ? 'Result settled in the Private ER. Committing to Solana…' : 'Result written on Solana. Saving your rating…', '#f8d858');
       let tries = 0, saved = false, badgesShown = false;
       const poll = this.time.addEvent({ delay: 600, loop: true, callback: () => {
         const r = this.src.getSnapshot().result;
-        if (r?.signature && !saved) { saved = true; this.overlay?.setSaved('Saved to Solana ✓  Open "Proof" to verify every transaction', '#58d858'); }
+        if (r?.signature && !saved) { saved = true; this.overlay?.setSaved(snap.kind === 'private' ? 'Committed to Solana from the Private ER ✓  Open "Proof"' : 'Saved to Solana ✓  Open "Proof" to verify every transaction', '#58d858'); }
         if (r?.badges?.length && !badgesShown) { badgesShown = true; this.overlay?.setBadges(r.badges.map((id) => BADGES[id]?.name ?? `Badge ${id}`)); }
-        if (!saved && tries === 12) this.overlay?.setSaved('Rating is live on the rollup (saved to Solana in batches)', '#58d858');
+        if (!saved && tries === 12 && snap.kind !== 'private') this.overlay?.setSaved('Rating is live on the rollup (saved to Solana in batches)', '#58d858');
         if (++tries > 36 || (saved && (badgesShown || tries > 18))) poll.remove();
       } });
     }

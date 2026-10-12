@@ -28,6 +28,12 @@ export type BattlePhase = 'PICKING' | 'RESOLVING' | 'FINISHED';
 export interface BattleSnapshot {
   /** True when this battle runs on the Ephemeral Rollup (shows proof/saved lines). */
   onChain?: boolean;
+  /** 'private' = sealed duel inside the Private ER (TEE): no rating, shows the sealed-duel result card. */
+  kind?: 'private';
+  /** The opponent has sealed their pick for this turn (public bit, carries no secret). */
+  oppLocked?: boolean;
+  /** Unix ms when the current turn times out (duels), if known. */
+  deadlineMs?: number;
   phase: BattlePhase;
   /** Champions for side 0 (always the local player) and side 1. */
   champions: [Champion, Champion];

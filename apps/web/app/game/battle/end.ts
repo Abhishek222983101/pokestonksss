@@ -11,6 +11,8 @@ export interface EndOptions {
   ratingBefore: number;
   ratingAfter: number;
   /** Creature XP / level change from this win (chain battles). Levels are display levels (1-based). */
+  /** Private ER duel: no rating, show the sealed-duel result card instead. */
+  privateDuel?: boolean;
   progress?: { name: string; fromName: string; levelBefore: number; levelAfter: number; xpGain: number; evolved: boolean; pctBefore: number; pctAfter: number; maxed: boolean };
   onContinue: () => void;
 }
@@ -39,7 +41,14 @@ export class EndOverlay {
     const s2 = txt(scene, W / 2, 258, `${o.turns} turn${o.turns === 1 ? '' : 's'} vs ${o.foeLabel}`, 10, '#a8b8f8').setOrigin(0.5).setDepth(102);
     this.objs.push(dim, panel, title, s1, s2);
 
-    // rating card
+    if (o.privateDuel) {
+      const card = scene.add.graphics().setDepth(102);
+      drawFrame(card, W / 2 - 270, 292, 540, 120, { fill: C.navyDark, border: C.slate, borderW: 3 });
+      const l1 = txt(scene, W / 2, 316, 'PRIVATE ER DUEL', 11, '#a8b8f8').setOrigin(0.5).setDepth(103);
+      const l2 = txt(scene, W / 2, 350, 'Both picks stayed sealed in the TEE', 11, '#f8f8d0').setOrigin(0.5).setDepth(103);
+      const l3 = txt(scene, W / 2, 378, 'until each turn resolved', 11, '#f8f8d0').setOrigin(0.5).setDepth(103);
+      this.objs.push(card, l1, l2, l3);
+    } else {
     const delta = o.ratingAfter - o.ratingBefore;
     const card = scene.add.graphics().setDepth(102);
     drawFrame(card, W / 2 - 270, 292, 540, 120, { fill: C.navyDark, border: C.slate, borderW: 3 });
@@ -57,9 +66,11 @@ export class EndOverlay {
       onComplete: () => { after.setText(String(o.ratingAfter)); dTxt.setText(`${delta >= 0 ? '+' : ''}${delta}`).setAlpha(1); audio.sfx(delta >= 0 ? 'levelup' : 'menu_back'); },
     });
 
+    }
+
     // creature progress: xp bar, level up, evolution
     const pr = o.progress;
-    if (pr) {
+    if (pr && !o.privateDuel) {
       const y = 424;
       const head = txt(scene, W / 2, y, `${pr.name.toUpperCase()}  LV ${pr.levelAfter}   +${pr.xpGain} XP`, 11, '#f8f8d0').setOrigin(0.5).setDepth(103);
       const barBg = scene.add.graphics().setDepth(102);

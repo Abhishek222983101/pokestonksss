@@ -14,7 +14,7 @@ const flip = (s: Side): Side => (s === 0 ? 1 : 0);
 const hex = (a: ArrayLike<number>) => Array.from(a, (b) => b.toString(16).padStart(2, '0')).join('');
 const sealKey = (arena: string, turn: number) => `pokestonksss.seal.${arena}.${turn}`;
 
-function swapEvent(e: TurnEvent): TurnEvent {
+export function swapEvent(e: TurnEvent): TurnEvent {
   const hp = (h: [number, number]): [number, number] => [h[1], h[0]];
   switch (e.kind) {
     case 'mood': return { ...e, side: flip(e.side) };
