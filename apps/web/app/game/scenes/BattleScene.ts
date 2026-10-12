@@ -416,7 +416,7 @@ export class BattleScene extends Phaser.Scene {
         if (this.played >= snap.turns.length) break;
         const rec = snap.turns[this.played];
         this.stopIdle();
-        await playTurn({ scene: this, combatants: this.cmb, champions: snap.champions, movePct: snap.movePct, dialog: this.dialog }, rec.events, rec.state);
+        await playTurn({ scene: this, combatants: this.cmb, champions: snap.champions, movePct: snap.movePct, dialog: this.dialog, picks: rec.picks }, rec.events, rec.state);
         this.played++;
         for (const k of [0, 1] as const) if (this.cmb[k].sprite.visible) this.startIdle(this.cmb[k]);
       }

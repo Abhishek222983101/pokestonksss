@@ -74,6 +74,8 @@ pub struct Fighter {
     pub charged: bool,
     /// Picked GUARD on the previous turn.
     pub last_guard: bool,
+    /// Momentum level 0..=3: +10% strike damage per level; built by out-reading the opponent (see `resolve_turn`).
+    pub momentum: u8,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -102,7 +104,7 @@ impl MatchState {
             o[b + 1..b + 3].copy_from_slice(&f.hp.to_le_bytes());
             o[b + 3..b + 5].copy_from_slice(&f.max_hp.to_le_bytes());
             o[b + 5] = f.charged as u8;
-            o[b + 6] = f.last_guard as u8;
+            o[b + 6] = (f.last_guard as u8) | (f.momentum.min(3) << 1);
         }
         o
     }
@@ -114,10 +116,10 @@ impl MatchState {
             species(b[o])?;
             let hp = u16::from_le_bytes([b[o + 1], b[o + 2]]);
             let max_hp = u16::from_le_bytes([b[o + 3], b[o + 4]]);
-            if hp > max_hp || b[o + 5] > 1 || b[o + 6] > 1 {
+            if hp > max_hp || b[o + 5] > 1 || b[o + 6] > 7 {
                 return None;
             }
-            *f = Fighter { species: b[o], hp, max_hp, charged: b[o + 5] == 1, last_guard: b[o + 6] == 1 };
+            *f = Fighter { species: b[o], hp, max_hp, charged: b[o + 5] == 1, last_guard: b[o + 6] & 1 == 1, momentum: (b[o + 6] >> 1) & 3 };
         }
         if b[1] != NO_WINNER && b[1] > 1 {
             return None;
@@ -128,7 +130,7 @@ impl MatchState {
 
 pub fn new_fighter(species_id: u8) -> Option<Fighter> {
     let s = species(species_id)?;
-    Some(Fighter { species: species_id, hp: s.hp, max_hp: s.hp, charged: false, last_guard: false })
+    Some(Fighter { species: species_id, hp: s.hp, max_hp: s.hp, charged: false, last_guard: false, momentum: 0 })
 }
 
 /// Type effectiveness in percent: 200 super, 100 neutral, 50 resisted.
@@ -157,6 +159,8 @@ pub struct DamageIn {
     /// 100 normal, 20 target guarded, 50 target guarded again.
     pub guard_pct: u32,
     pub vulnerable: bool,
+    /// Attacker's momentum level 0..=3.
+    pub momentum: u32,
 }
 
 pub fn mood_pct(m: Mood) -> u32 {
@@ -180,6 +184,7 @@ pub fn damage(i: &DamageIn) -> u32 {
     d = d * if i.charged { 200 } else { 100 } / 100;
     d = d * i.guard_pct / 100;
     d = d * if i.vulnerable { 130 } else { 100 } / 100;
+    d = d * (100 + 10 * i.momentum.min(3)) / 100;
     d.max(1)
 }
 
@@ -235,6 +240,11 @@ impl Default for Events {
     fn default() -> Self {
         Events::new()
     }
+}
+
+/// The triangle: Strike beats Charge, Charge beats Guard, Guard beats Strike.
+pub fn beats(a: MoveKind, b: MoveKind) -> bool {
+    matches!((a, b), (MoveKind::Strike, MoveKind::Charge) | (MoveKind::Charge, MoveKind::Guard) | (MoveKind::Guard, MoveKind::Strike))
 }
 
 fn kind_of(s: &Species, pick: u8) -> MoveKind {
@@ -324,6 +334,7 @@ pub fn resolve_turn(st: &mut MatchState, picks: [u8; 2], rnd: &[u8; 32], mood: [
             charged: was_charged,
             guard_pct,
             vulnerable: kinds[d] == MoveKind::Charge,
+            momentum: st.f[a].momentum as u32,
         });
         let dmg = dmg.min(st.f[d].hp as u32) as u16;
         // Reported damage is the HP actually removed (overkill is clipped).
@@ -337,6 +348,15 @@ pub fn resolve_turn(st: &mut MatchState, picks: [u8; 2], rnd: &[u8; 32], mood: [
         }
     }
     // 3. bookkeeping
+    // Momentum: out-reading the opponent (Pump > Leverage > Hedge > Pump) builds it; being out-read resets it.
+    for s in 0..2usize {
+        let (mine, theirs) = (kinds[s], kinds[1 - s]);
+        if beats(mine, theirs) {
+            st.f[s].momentum = (st.f[s].momentum + 1).min(3);
+        } else if beats(theirs, mine) {
+            st.f[s].momentum = 0;
+        }
+    }
     st.f[0].last_guard = kinds[0] == MoveKind::Guard;
     st.f[1].last_guard = kinds[1] == MoveKind::Guard;
     st.turn += 1;
@@ -382,6 +402,7 @@ pub fn preview_damage(st: &MatchState, side: u8, slot: u8, mood: Mood) -> Option
         charged: st.f[side as usize].charged,
         guard_pct: 100,
         vulnerable: false,
+        momentum: st.f[side as usize].momentum as u32,
     };
     let min = damage(&i);
     i.variance = 100;

@@ -22,8 +22,8 @@ export const ROSTER_DATA = {
       "asset": "SOL",
       "feed": 6,
       "type": "SPEED",
-      "hp": 144,
-      "atk": 103,
+      "hp": 158,
+      "atk": 108,
       "def": 90,
       "spd": 105,
       "palette": [
@@ -37,15 +37,15 @@ export const ROSTER_DATA = {
           "name": "Sparkline Dash",
           "kind": "strike",
           "type": "SPEED",
-          "power": 48,
-          "acc": 95
+          "power": 44,
+          "acc": 100
         },
         {
           "name": "Tidal Tail",
           "kind": "strike",
           "type": "ARCANE",
-          "power": 63,
-          "acc": 90
+          "power": 60,
+          "acc": 92
         },
         {
           "name": "Hedge",
@@ -63,8 +63,8 @@ export const ROSTER_DATA = {
       "asset": "BTC",
       "feed": 1,
       "type": "ARMOR",
-      "hp": 164,
-      "atk": 87,
+      "hp": 180,
+      "atk": 83,
       "def": 113,
       "spd": 60,
       "palette": [
@@ -78,15 +78,15 @@ export const ROSTER_DATA = {
           "name": "Hardfork Horn",
           "kind": "strike",
           "type": "ARMOR",
-          "power": 48,
-          "acc": 95
+          "power": 56,
+          "acc": 90
         },
         {
           "name": "Dusk Gore",
           "kind": "strike",
           "type": "TIDE",
-          "power": 63,
-          "acc": 90
+          "power": 66,
+          "acc": 85
         },
         {
           "name": "Hedge",
@@ -104,7 +104,7 @@ export const ROSTER_DATA = {
       "asset": "ETH",
       "feed": 2,
       "type": "ARCANE",
-      "hp": 146,
+      "hp": 161,
       "atk": 108,
       "def": 99,
       "spd": 90,
@@ -119,15 +119,15 @@ export const ROSTER_DATA = {
           "name": "Gas Prism Beam",
           "kind": "strike",
           "type": "ARCANE",
-          "power": 48,
+          "power": 50,
           "acc": 95
         },
         {
           "name": "Flutter Rush",
           "kind": "strike",
           "type": "SHADE",
-          "power": 63,
-          "acc": 90
+          "power": 62,
+          "acc": 92
         },
         {
           "name": "Hedge",
@@ -145,8 +145,8 @@ export const ROSTER_DATA = {
       "asset": "SUI",
       "feed": 11,
       "type": "TIDE",
-      "hp": 165,
-      "atk": 98,
+      "hp": 182,
+      "atk": 100,
       "def": 100,
       "spd": 80,
       "palette": [
@@ -160,14 +160,14 @@ export const ROSTER_DATA = {
           "name": "Crest Crash",
           "kind": "strike",
           "type": "TIDE",
-          "power": 48,
-          "acc": 95
+          "power": 46,
+          "acc": 98
         },
         {
           "name": "Undertow Bite",
           "kind": "strike",
           "type": "SPEED",
-          "power": 63,
+          "power": 64,
           "acc": 90
         },
         {
@@ -186,8 +186,8 @@ export const ROSTER_DATA = {
       "asset": "ZEC",
       "feed": 66,
       "type": "SHADE",
-      "hp": 144,
-      "atk": 100,
+      "hp": 158,
+      "atk": 97,
       "def": 95,
       "spd": 105,
       "palette": [
@@ -201,15 +201,15 @@ export const ROSTER_DATA = {
           "name": "Shielded Spook",
           "kind": "strike",
           "type": "SHADE",
-          "power": 48,
-          "acc": 95
+          "power": 52,
+          "acc": 92
         },
         {
           "name": "Plate Shatter",
           "kind": "strike",
           "type": "ARMOR",
-          "power": 63,
-          "acc": 90
+          "power": 68,
+          "acc": 86
         },
         {
           "name": "Hedge",
@@ -227,8 +227,8 @@ export const ROSTER_DATA = {
       "asset": "BNB",
       "feed": 15,
       "type": "ARMOR",
-      "hp": 163,
-      "atk": 95,
+      "hp": 179,
+      "atk": 96,
       "def": 102,
       "spd": 80,
       "palette": [
@@ -242,15 +242,15 @@ export const ROSTER_DATA = {
           "name": "Gilded Bash",
           "kind": "strike",
           "type": "ARMOR",
-          "power": 48,
-          "acc": 95
+          "power": 54,
+          "acc": 92
         },
         {
           "name": "Burn Bolt",
           "kind": "strike",
           "type": "TIDE",
-          "power": 63,
-          "acc": 90
+          "power": 60,
+          "acc": 95
         },
         {
           "name": "Hedge",
@@ -268,9 +268,9 @@ export const ROSTER_DATA = {
       "asset": "DOGE",
       "feed": 13,
       "type": "SPEED",
-      "hp": 163,
-      "atk": 89,
-      "def": 95,
+      "hp": 179,
+      "atk": 95,
+      "def": 97,
       "spd": 110,
       "palette": [
         "#C2A633",
@@ -283,15 +283,15 @@ export const ROSTER_DATA = {
           "name": "Zoomie Rocket",
           "kind": "strike",
           "type": "SPEED",
-          "power": 48,
-          "acc": 95
+          "power": 42,
+          "acc": 100
         },
         {
           "name": "Bonk Plate",
           "kind": "strike",
           "type": "ARCANE",
-          "power": 63,
-          "acc": 90
+          "power": 58,
+          "acc": 94
         },
         {
           "name": "Hedge",
@@ -309,7 +309,7 @@ export const ROSTER_DATA = {
       "asset": "XRP",
       "feed": 14,
       "type": "TIDE",
-      "hp": 155,
+      "hp": 170,
       "atk": 106,
       "def": 95,
       "spd": 90,
@@ -324,15 +324,15 @@ export const ROSTER_DATA = {
           "name": "Ledger Wave",
           "kind": "strike",
           "type": "TIDE",
-          "power": 48,
-          "acc": 95
+          "power": 50,
+          "acc": 94
         },
         {
           "name": "Quick Settle",
           "kind": "strike",
           "type": "SPEED",
-          "power": 63,
-          "acc": 90
+          "power": 64,
+          "acc": 88
         },
         {
           "name": "Hedge",

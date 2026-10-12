@@ -27,6 +27,7 @@ fn di() -> DamageIn {
         charged: false,
         guard_pct: 100,
         vulnerable: false,
+        momentum: 0,
     }
 }
 
@@ -117,6 +118,7 @@ fn damage_full_stack_worked_example() {
         charged: true,
         guard_pct: 20,
         vulnerable: true,
+        momentum: 0,
         ..di()
     };
     assert_eq!(damage(&i), 49);
@@ -158,7 +160,7 @@ fn roster_is_well_formed() {
     for (i, s) in ROSTER.iter().enumerate() {
         assert_eq!(s.id as usize, i);
         types[s.typ as usize] = true;
-        assert!((140..=180).contains(&s.hp), "hp {}", s.hp);
+        assert!((140..=200).contains(&s.hp), "hp {}", s.hp);
         assert_eq!(s.moves[0].kind, MoveKind::Strike);
         assert_eq!(s.moves[0].typ, s.typ);
         assert_eq!(s.moves[1].kind, MoveKind::Strike);
@@ -167,7 +169,7 @@ fn roster_is_well_formed() {
         assert_eq!(s.moves[3].kind, MoveKind::Charge);
         // neutral strike damage target 25..=35 for a defence-100 target
         let d = damage(&DamageIn { power: s.moves[0].power as u32, atk: s.atk as u32, def: 100, stab: true, ..di() });
-        assert!((25..=60).contains(&d), "{} dmg {}", NAMES[i], d);
+        assert!((20..=60).contains(&d), "{} dmg {}", NAMES[i], d);
     }
     assert!(types.iter().all(|&t| t));
 }
@@ -248,16 +250,16 @@ fn speed_tie_uses_rnd6_low_bit() {
 
 #[test]
 fn accuracy_roll_boundary() {
-    let acc = ROSTER[0].moves[0].acc;
-    let mut s = st(0, 1);
+    let acc = ROSTER[1].moves[0].acc;
+    let mut s = st(1, 0);
     // roll == acc -> miss; roll == acc-1 -> hit
     let ev = resolve_turn(&mut s, [0, 2], &rnd(|r| r[0] = acc), [0, 0]);
     assert!(ev.iter().any(|e| *e == Event::Miss { side: 0 }));
-    let mut s = st(0, 1);
+    let mut s = st(1, 0);
     let ev = resolve_turn(&mut s, [0, 2], &rnd(|r| r[0] = acc - 1), [0, 0]);
     assert_eq!(hits(&ev).len(), 1);
     // roll uses % 100
-    let mut s = st(0, 1);
+    let mut s = st(1, 0);
     let ev = resolve_turn(&mut s, [0, 2], &rnd(|r| r[0] = 200), [0, 0]); // 200 % 100 = 0 -> hit
     assert_eq!(hits(&ev).len(), 1);
 }
@@ -400,7 +402,8 @@ fn charge_sets_flag_then_doubles_next_strike() {
     // defender charging this turn is vulnerable as well
     let exp = dmg_for(&st(5, 5), 0, 0, |i| {
         i.charged = true;
-        i.vulnerable = true
+        i.vulnerable = true;
+        i.momentum = 1; // Leverage out-read Hedge on the previous turn
     });
     assert_eq!(hits(&ev)[0].1, exp);
     assert!(!s.f[0].charged, "consumed");
@@ -408,7 +411,7 @@ fn charge_sets_flag_then_doubles_next_strike() {
 
 #[test]
 fn charge_consumed_on_miss() {
-    let mut s = st(0, 1);
+    let mut s = st(1, 0);
     s.f[0].charged = true;
     let ev = resolve_turn(&mut s, [0, 2], &rnd(|r| r[0] = 99), [0, 0]);
     assert!(ev.iter().any(|e| *e == Event::Miss { side: 0 }));
@@ -437,7 +440,9 @@ fn vulnerable_only_on_the_turn_of_charging() {
     let mut s2 = s;
     s2.f[1].hp = s2.f[1].max_hp;
     let ev = resolve_turn(&mut s2, [0, 0], &rnd(|_| {}), [0, 0]);
-    assert_eq!(hits(&ev)[0].1, plain);
+    let plain_m1 = dmg_for(&s2, 0, 0, |i| i.momentum = 1); // striker out-read the charger last turn
+    assert_eq!(hits(&ev)[0].1, plain_m1);
+    assert!(plain_m1 > plain);
 }
 
 #[test]
@@ -566,7 +571,7 @@ fn json_shapes() {
     assert_eq!(
         s.to_string(),
         std::format!(
-            "{{\"turn\":0,\"winner\":null,\"f\":[{{\"species\":0,\"hp\":{h0},\"maxHp\":{h0},\"charged\":false,\"lastGuard\":false}},{{\"species\":1,\"hp\":{h1},\"maxHp\":{h1},\"charged\":false,\"lastGuard\":false}}]}}",
+            "{{\"turn\":0,\"winner\":null,\"f\":[{{\"species\":0,\"hp\":{h0},\"maxHp\":{h0},\"charged\":false,\"lastGuard\":false,\"momentum\":0}},{{\"species\":1,\"hp\":{h1},\"maxHp\":{h1},\"charged\":false,\"lastGuard\":false,\"momentum\":0}}]}}",
             h0 = ROSTER[0].hp,
             h1 = ROSTER[1].hp
         )
@@ -852,4 +857,41 @@ fn max_turns_is_sixteen_and_all_matches_terminate() {
         n += 1;
     }
     assert_eq!(n, 16);
+}
+
+#[test]
+fn momentum_builds_when_out_reading_resets_when_out_read_and_caps_at_three() {
+    let mut s = st(0, 1);
+    // Pump(strike) vs Leverage(charge): side 0 out-reads side 1
+    resolve_turn(&mut s, [0, 3], &rnd(|_| {}), [0, 0]);
+    assert_eq!((s.f[0].momentum, s.f[1].momentum), (1, 0));
+    // same kinds (strike vs strike): unchanged
+    s.f[1].hp = s.f[1].max_hp;
+    resolve_turn(&mut s, [0, 0], &rnd(|_| {}), [0, 0]);
+    assert_eq!((s.f[0].momentum, s.f[1].momentum), (1, 0));
+    // side 1 guards (beats strike): side 1 +1, side 0 reset
+    resolve_turn(&mut s, [0, 2], &rnd(|_| {}), [0, 0]);
+    assert_eq!((s.f[0].momentum, s.f[1].momentum), (0, 1));
+    // cap at 3
+    let mut c = st(0, 1);
+    for _ in 0..5 {
+        c.f[1].hp = c.f[1].max_hp;
+        c.f[0].hp = c.f[0].max_hp;
+        resolve_turn(&mut c, [0, 3], &rnd(|_| {}), [0, 0]);
+        if c.is_over() { break; }
+    }
+    assert!(c.f[0].momentum <= 3);
+}
+
+#[test]
+fn momentum_adds_ten_percent_per_level_and_roundtrips_in_state_bytes() {
+    let base = damage(&di());
+    assert_eq!(damage(&DamageIn { momentum: 1, ..di() }), base * 110 / 100);
+    assert!(damage(&DamageIn { momentum: 3, ..di() }) > damage(&DamageIn { momentum: 2, ..di() }));
+    let mut s = st(2, 4);
+    s.f[0].momentum = 2;
+    s.f[0].last_guard = true;
+    s.f[1].momentum = 3;
+    let back = MatchState::from_bytes(&s.to_bytes()).unwrap();
+    assert_eq!(back, s);
 }

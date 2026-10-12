@@ -73,6 +73,7 @@ pub fn bot_pick(st: &MatchState, side: u8, rnd: &[u8; 32], tier: Tier) -> u8 {
                     charged: me.charged,
                     guard_pct: 100,
                     vulnerable: false,
+                    momentum: me.momentum as u32,
                 });
                 d.min(opp.hp as u32) * mv.acc as u32
             }

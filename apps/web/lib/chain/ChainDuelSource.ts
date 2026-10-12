@@ -119,8 +119,8 @@ export class ChainDuelSource implements BattleSource {
     const onChain: MatchState = {
       turn: a.match.turn,
       fighters: [
-        { champ: this.hostSpecies, hp: f[0].hp, maxHp: f[0].maxHp, charged: f[0].charged, lastGuard: f[0].lastGuard },
-        { champ: this.guestSpecies, hp: f[1].hp, maxHp: f[1].maxHp, charged: f[1].charged, lastGuard: f[1].lastGuard },
+        { champ: this.hostSpecies, hp: f[0].hp, maxHp: f[0].maxHp, charged: f[0].charged, lastGuard: f[0].lastGuard, momentum: f[0].momentum },
+        { champ: this.guestSpecies, hp: f[1].hp, maxHp: f[1].maxHp, charged: f[1].charged, lastGuard: f[1].lastGuard, momentum: f[1].momentum },
       ],
     };
     const finished = a.phase === PHASE.FINISHED;

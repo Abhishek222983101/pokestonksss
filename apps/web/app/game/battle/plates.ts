@@ -17,6 +17,9 @@ export class MonPlate {
   private tickerT: Phaser.GameObjects.Text;
   private moodT: Phaser.GameObjects.Text;
   private stageT: Phaser.GameObjects.Text;
+  private momentum = 0;
+  private charged = false;
+  private hedged = false;
   private shown = 0;
   private maxHp = 1;
   private tw?: Phaser.Tweens.Tween;
@@ -118,11 +121,24 @@ export class MonPlate {
 
   /** Status line under the name: LEVERAGE x2 while charged, HEDGED after a guard. */
   setFlags(charged: boolean, hedged: boolean) {
+    this.charged = charged;
+    this.hedged = hedged;
+    this.renderFlags();
+  }
+
+  /** Momentum 0..3: +10% strike damage per level, earned by out-reading the opponent. */
+  setMomentum(level: number) {
+    this.momentum = Math.max(0, Math.min(3, level));
+    this.renderFlags();
+  }
+
+  private renderFlags() {
     const parts: string[] = [];
-    if (charged) parts.push('LEVERAGED x2');
-    if (hedged) parts.push('HEDGED');
-    this.stageT.setText(parts.join(' '));
-    this.stageT.setColor(charged ? '#a86a10' : '#484878');
+    if (this.momentum > 0) parts.push(`MOMENTUM ${'▮'.repeat(this.momentum)}${'▯'.repeat(3 - this.momentum)} +${this.momentum * 10}%`);
+    if (this.charged) parts.push('LEVERAGED x2');
+    if (this.hedged) parts.push('HEDGED');
+    this.stageT.setText(parts.join('  '));
+    this.stageT.setColor(this.momentum > 0 ? '#a86a10' : this.charged ? '#a86a10' : '#484878');
   }
 
   setMood(buff: number, pct: number) {

@@ -17,7 +17,7 @@ describe("sdk", () => {
     b[0] = 2; b[1] = 255; b[2] = 3; b[3] = 100; b[4] = 0; b[5] = 120; b[6] = 0; b[7] = 1; b[8] = 0; b[9] = 4; b[10] = 50; b[11] = 0; b[12] = 90; b[13] = 0; b[14] = 0; b[15] = 1;
     const m = decodeMatch(b);
     expect(m.turn).toBe(2);
-    expect(m.sides[0]).toEqual({ species: 3, hp: 100, maxHp: 120, charged: true, lastGuard: false });
+    expect(m.sides[0]).toEqual({ species: 3, hp: 100, maxHp: 120, charged: true, lastGuard: false, momentum: 0 });
     expect(m.sides[1].lastGuard).toBe(true);
   });
   it("pdas are deterministic and feeds cover 8 species", () => {

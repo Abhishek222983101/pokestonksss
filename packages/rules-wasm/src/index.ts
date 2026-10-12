@@ -25,6 +25,8 @@ export interface FighterState {
   maxHp: number;
   charged: boolean;
   lastGuard: boolean;
+  /** Momentum level 0..3 (+10% strike damage per level). */
+  momentum: number;
 }
 export interface MatchState {
   turn: number;
@@ -107,7 +109,7 @@ export function stateToBytes(s: MatchState): Uint8Array {
     o[b + 3] = f.maxHp & 255;
     o[b + 4] = f.maxHp >> 8;
     o[b + 5] = f.charged ? 1 : 0;
-    o[b + 6] = f.lastGuard ? 1 : 0;
+    o[b + 6] = (f.lastGuard ? 1 : 0) | ((f.momentum & 3) << 1);
   });
   return o;
 }

@@ -13,6 +13,8 @@ export interface TurnCtx {
   /** Price move since the bell per side, for the mood chip. */
   movePct: [number, number];
   dialog: DialogBox;
+  /** Both sealed picks of this turn, revealed together before the animations (slot per side). */
+  picks?: [number, number];
 }
 
 const other = (s: Side): Side => (s === 0 ? 1 : 0);
@@ -22,10 +24,17 @@ const other = (s: Side): Side => (s === 0 ? 1 : 0);
  * only input (from the BattleSource), so a replayed or chain-delivered turn animates identically.
  */
 export async function playTurn(ctx: TurnCtx, events: TurnEvent[], after: MatchState): Promise<void> {
+  if (ctx.picks) {
+    // The simultaneous reveal: both sealed picks side by side, before anything resolves.
+    const mv = (s: Side) => ctx.champions[s].moves[ctx.picks![s]].name.toUpperCase();
+    const who = (s: Side) => (s === 0 ? 'YOU' : ctx.combatants[1].name.toUpperCase());
+    await ctx.dialog.say(`${who(0)}: ${mv(0)}\n${who(1)}: ${mv(1)}`, { holdMs: 900 });
+  }
   for (const ev of events) await playEvent(ctx, ev);
   // snap plates to the authoritative state (also covers any event we did not animate)
   for (const s of [0, 1] as const) {
     void ctx.combatants[s].plate.setHp(after.fighters[s].hp, false);
+    ctx.combatants[s].plate.setMomentum(after.fighters[s].momentum);
     ctx.combatants[s].plate.setFlags(after.fighters[s].charged, after.fighters[s].lastGuard);
   }
 }

@@ -2,8 +2,7 @@
  * Rules bridge. This is the ONLY module the UI imports for game rules.
  *
  * Until `packages/rules-wasm` exists, `rules` is backed by the temporary TypeScript port of docs/RULES.md in
- * `./rulesTs.ts`. Swapping to WASM later means replacing the import at the bottom of this file with the
- * wasm wrapper (same `RulesApi` shape) - nothing else in the app changes.
+ * the Rust rules engine compiled to WASM (`./rulesWasm.ts`), the same code the on-chain program runs.
  */
 
 export const TYPE_NAMES = ['SPEED', 'ARMOR', 'ARCANE', 'TIDE', 'SHADE'] as const;
@@ -47,6 +46,8 @@ export interface FighterState {
   maxHp: number;
   charged: boolean;
   lastGuard: boolean;
+  /** Momentum level 0..3: +10% strike damage per level, built by out-reading the opponent. */
+  momentum: number;
 }
 
 export interface MatchState {

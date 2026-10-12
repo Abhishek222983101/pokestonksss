@@ -2,7 +2,7 @@ export const PHASE = { IDLE: 0, WAITING: 1, PICKING: 2, REVEALING: 3, ROLLING: 4
 export const MODE = { PRACTICE: 0, DUEL: 1 } as const;
 export const NO_WINNER = 255;
 
-export interface Side { species: number; hp: number; maxHp: number; charged: boolean; lastGuard: boolean }
+export interface Side { species: number; hp: number; maxHp: number; charged: boolean; lastGuard: boolean; momentum: number }
 export interface MatchView { turn: number; winner: number; sides: [Side, Side] }
 
 /** Decodes duel_rules::MatchState bytes (16 B): turn, winner, then per side species, hp(2), maxhp(2), charged, last_guard. */
@@ -11,7 +11,7 @@ export function decodeMatch(b: ArrayLike<number>): MatchView {
   const dv = new DataView(u.buffer, u.byteOffset, u.byteLength);
   const side = (i: number): Side => {
     const o = 2 + i * 7;
-    return { species: u[o], hp: dv.getUint16(o + 1, true), maxHp: dv.getUint16(o + 3, true), charged: u[o + 5] === 1, lastGuard: u[o + 6] === 1 };
+    return { species: u[o], hp: dv.getUint16(o + 1, true), maxHp: dv.getUint16(o + 3, true), charged: u[o + 5] === 1, lastGuard: (u[o + 6] & 1) === 1, momentum: (u[o + 6] >> 1) & 3 };
   };
   return { turn: u[0], winner: u[1], sides: [side(0), side(1)] };
 }

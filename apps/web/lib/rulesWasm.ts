@@ -28,11 +28,11 @@ function champions(): Champion[] {
 
 const toW = (s: MatchState): w.MatchState => ({
   turn: s.turn, winner: null,
-  f: s.fighters.map((f) => ({ species: f.champ, hp: f.hp, maxHp: f.maxHp, charged: f.charged, lastGuard: f.lastGuard })) as [w.FighterState, w.FighterState],
+  f: s.fighters.map((f) => ({ species: f.champ, hp: f.hp, maxHp: f.maxHp, charged: f.charged, lastGuard: f.lastGuard, momentum: f.momentum })) as [w.FighterState, w.FighterState],
 });
 const fromW = (s: w.MatchState): MatchState => ({
   turn: s.turn,
-  fighters: s.f.map((f): FighterState => ({ champ: f.species, hp: f.hp, maxHp: f.maxHp, charged: f.charged, lastGuard: f.lastGuard })) as [FighterState, FighterState],
+  fighters: s.f.map((f): FighterState => ({ champ: f.species, hp: f.hp, maxHp: f.maxHp, charged: f.charged, lastGuard: f.lastGuard, momentum: f.momentum })) as [FighterState, FighterState],
 });
 
 function resolve(state: MatchState, picks: [Slot, Slot], rnd: Uint8Array, mood: [number, number]): TurnResult {
