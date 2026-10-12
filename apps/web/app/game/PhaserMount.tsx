@@ -8,6 +8,8 @@ interface PhaserMountProps {
   speciesId: string;
   /** Route seed for deterministic encounters (VRF output once chain-wired); omitted offline. */
   routeSeed?: number;
+  /** Duel mode: skip the overworld and open this battle source directly. */
+  duelSource?: unknown;
   onExit: () => void;
 }
 
@@ -16,13 +18,22 @@ interface PhaserMountProps {
  * (never state) and is destroyed on unmount, which makes React 19 StrictMode's mount → unmount →
  * remount safe: the first instance is torn down before the second is created.
  */
-export default function PhaserMount({ routeId, speciesId, routeSeed, onExit }: PhaserMountProps) {
+export default function PhaserMount({ routeId, speciesId, routeSeed, duelSource, onExit }: PhaserMountProps) {
   const host = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const exitRef = useRef(onExit);
   const seedRef = useRef(routeSeed);
+  const duelRef = useRef(duelSource);
   useEffect(() => { exitRef.current = onExit; });
   const [rotateHint, setRotateHint] = useState(false);
+
+  // Duel mode has no overworld to return to: closing the battle leaves the game.
+  useEffect(() => {
+    if (!duelSource) return;
+    let off = () => {};
+    void import('./events').then(({ EventBus }) => { off = EventBus.on('battle:closed', () => exitRef.current()); });
+    return () => off();
+  }, [duelSource]);
 
   // The game is 3:2 landscape; on a portrait phone it letterboxes to a small strip, so suggest rotating.
   useEffect(() => {
@@ -70,6 +81,7 @@ export default function PhaserMount({ routeId, speciesId, routeSeed, onExit }: P
             g.registry.set('routeId', routeId);
             g.registry.set('speciesId', speciesId);
             if (seedRef.current !== undefined) g.registry.set('routeSeed', seedRef.current);
+            if (duelRef.current) g.registry.set('duelSource', duelRef.current);
             g.registry.set('onExit', () => exitRef.current());
           },
         },

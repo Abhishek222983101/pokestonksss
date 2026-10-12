@@ -9,6 +9,7 @@ import { setBattleSourceFactory } from '../../game/flow/encounterFlow';
 import { EventBus } from '../../game/events';
 import OnboardingOverlay from './OnboardingOverlay';
 import ProofStrip from './ProofStrip';
+import DuelHost from './DuelHost';
 
 /**
  * Connects the finished offline game to MagicBlock: boots the guest identity (create + delegate), routes every
@@ -47,6 +48,7 @@ export default function ChainBridge() {
   return (
     <>
       {guest && status !== 'ready' && <OnboardingOverlay />}
+      <DuelHost />
       {inBattle && status === 'ready' && (
         <div className="pointer-events-none fixed left-2 top-1 z-40 max-w-[calc(100vw-1rem)]">
           <div className="pointer-events-auto panel panel-dialog on-navy !m-0 !py-1 !px-2 text-cream"><ProofStrip compact /></div>

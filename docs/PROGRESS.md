@@ -9,3 +9,7 @@
 - [x] P4 e2e-duel: sealed commit-reveal duel completes (10 turns, ~850 ms/turn incl. 4 txs + VRF); ratings zero-sum (988/1012); 6 negative tests rejected (wrong token, self join, double join, early claim_timeout, wrong salt, spectator commit)
 - [x] loadtest 10 guests × 2 battles: 20 battles, 116 turns, 0 errors; start p50 252 ms, lock p50 229 ms, resolve p50 73 ms (p95 352 ms)
 - Crank not used: duel timeouts use permissionless claim_timeout (client-triggered). Session keys: not used in v1 (guests sign directly).
+- [x] P2 rules: Rust no_std crate (56 tests) + WASM (12 vitest) + fixtures 640/256/80; balance PASS (all 8 BrokerMon 47.0–52.9% win rate, worst pairing 68.7%, avg 5.30 turns). Web now runs the SAME Rust rules via WASM (RulesGate); program re-deployed with final rules.
+- [x] Replay check: on-chain turn log replayed through rules-wasm in Node reproduces final HP + winner (3/3 battles) — `docs/e2e-practice.json`.
+- [x] P6/P7 UI: PokeStonks-grade game (title→select→globe→route→encounter) with on-chain practice battles via ChainBridge; Proof Strip; onboarding overlay; /judge (8 s self-test in headless Chromium, 0 page errors); /verify; duel host dialog (link+QR) and /d/[host] guest page.
+- [x] Browser e2e: `pnpm --filter scripts e2e:game` (full flow incl. real on-chain battle from UI).

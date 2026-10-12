@@ -91,7 +91,13 @@ export class PreloadScene extends Phaser.Scene {
         const wait = Math.max(0, MIN_SPLASH_MS - (this.time.now - started));
         this.time.delayedCall(wait + 120, () => {
           let left = false;
-          const leave = () => { if (left || !this.sys.isActive()) return; left = true; this.scene.start('Overworld'); };
+          const leave = () => {
+            if (left || !this.sys.isActive()) return;
+            left = true;
+            const duel = this.registry.get('duelSource');
+            if (duel) this.scene.start('Battle', { source: duel, routeId: 'sol', kind: 'trainer', trainerName: 'Friend' });
+            else this.scene.start('Overworld');
+          };
           cam.fadeOut(180, 0, 0, 0);
           cam.once('camerafadeoutcomplete', leave);
           // belt and braces: never get stuck on the splash if the fade event is missed
