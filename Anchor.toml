@@ -1,0 +1,19 @@
+[toolchain]
+anchor_version = "0.32.1"
+package_manager = "pnpm"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.devnet]
+er_vrf = "EuACsUBFjid6EoK2iN3piEv1auYicEViyVzJpkMvSta3"
+
+[programs.localnet]
+er_vrf = "DAEhW8UFWVTApkKoLqwkBkQoN2JTSSdJqz1n7y8UWMKX"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/blitz-deployer.json"
+
+[hooks]

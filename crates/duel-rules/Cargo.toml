@@ -1,0 +1,11 @@
+[package]
+name = "duel-rules"
+version = "0.1.0"
+edition = "2021"
+description = "Deterministic integer duel rules for PokeStonksss (no_std, no deps, SBF-safe)"
+license = "MIT"
+
+[lib]
+name = "duel_rules"
+
+[dependencies]

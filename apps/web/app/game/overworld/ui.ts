@@ -11,7 +11,7 @@ export const C = {
 } as const;
 
 export const TYPE_COLOR: Record<string, number> = {
-  Normal: 0xa8a878, Electric: 0xf8d030, Grass: 0x78c850, Fire: 0xf08030, Water: 0x6890f0, Psychic: 0xf85888,
+  SPEED: 0xf8d030, ARMOR: 0xb8b8d0, ARCANE: 0xa870f8, TIDE: 0x6890f0, SHADE: 0xa07858,
 };
 
 export function txt(

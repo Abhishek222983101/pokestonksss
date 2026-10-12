@@ -1,10 +1,8 @@
 import * as Phaser from 'phaser';
-import type { StatKey } from 'game-core';
 import { audio } from '../audio';
 import { C, TYPE_COLOR, drawFrame, hex, hpColor, txt } from './ui';
-import type { MonView } from '../net/session';
 
-const STAT_SHORT: Record<StatKey, string> = { atk: 'ATK', def: 'DEF', spa: 'SPA', spd: 'SPD', spe: 'SPE' };
+export interface PlateMon { name: string; typeName: string; hp: number; maxHp: number }
 
 /** The classic name/level/HP plate. One per combatant; the ally plate is larger and shows HP numbers. */
 export class MonPlate {
@@ -42,10 +40,10 @@ export class MonPlate {
     this.moodT = txt(scene, w - 18, h - 16, '', 8, '#2f8a34').setOrigin(1, 1);
     this.stageT = txt(scene, w - 18, 40, '', 8, '#484878').setOrigin(1, 0);
 
-    const hpLabel = txt(scene, 18, ally ? 60 : 56, 'HP', 10, '#c8502c');
-    this.barX = 50;
+    const hpLabel = txt(scene, 18, ally ? 60 : 56, 'MRG', 10, '#c8502c');
+    this.barX = 62;
     this.barY = ally ? 60 : 56;
-    this.barW = w - 50 - 20;
+    this.barW = w - 62 - 20;
     this.bar = scene.add.graphics();
     if (ally) this.hpNum = txt(scene, w - 20, 80, '', 11, hex(C.ink)).setOrigin(1, 0);
 
@@ -55,25 +53,25 @@ export class MonPlate {
     ]).setDepth(20);
   }
 
-  setMon(mon: MonView, ticker: string) {
+  setMon(mon: PlateMon, ticker: string) {
     this.nameT.setText(mon.name.toUpperCase());
-    this.lvT.setText(`Lv${mon.level}`);
+    this.lvT.setText(this.ally ? 'YOU' : 'HOUSE');
     this.maxHp = Math.max(1, mon.maxHp);
     this.shown = mon.hp;
     this.drawBar(mon.hp);
     this.hpNum?.setText(`${Math.ceil(mon.hp)}/${mon.maxHp}`);
 
     const chipY = this.ally ? 38 : 36;
-    const tw = Math.max(64, mon.affinity.length * 9 + 14);
+    const tw = Math.max(64, mon.typeName.length * 9 + 14);
     this.typeChip.clear();
     this.typeChip.fillStyle(C.ink, 1); this.typeChip.fillRoundedRect(18, chipY, tw + 2, 18, 4);
-    this.typeChip.fillStyle(TYPE_COLOR[mon.affinity] ?? C.gray, 1); this.typeChip.fillRoundedRect(19, chipY + 1, tw, 16, 3);
-    this.typeT.setText(mon.affinity.toUpperCase()).setPosition(19 + tw / 2, chipY + 9);
+    this.typeChip.fillStyle(TYPE_COLOR[mon.typeName] ?? C.gray, 1); this.typeChip.fillRoundedRect(19, chipY + 1, tw, 16, 3);
+    this.typeT.setText(mon.typeName.toUpperCase()).setPosition(19 + tw / 2, chipY + 9);
     const tkw = ticker.length * 9 + 14;
     this.tickerChip.clear();
     this.tickerChip.fillStyle(C.navy, 1); this.tickerChip.fillRoundedRect(24 + tw, chipY, tkw, 18, 4);
     this.tickerT.setText(ticker).setPosition(24 + tw + tkw / 2, chipY + 9);
-    this.setStages(mon.stages);
+    this.setFlags(false, false);
   }
 
   private drawBar(v: number) {
@@ -118,9 +116,13 @@ export class MonPlate {
     audio.lowHp(hp > 0 && hp / this.maxHp <= 0.2);
   }
 
-  setStages(st: Record<StatKey, number>) {
-    const parts = (Object.keys(st) as StatKey[]).filter((k) => st[k] !== 0).map((k) => `${STAT_SHORT[k]}${st[k] > 0 ? '▲' : '▼'}${Math.abs(st[k])}`);
-    this.stageT.setText(parts.slice(0, 3).join(' '));
+  /** Status line under the name: LEVERAGE x2 while charged, HEDGED after a guard. */
+  setFlags(charged: boolean, hedged: boolean) {
+    const parts: string[] = [];
+    if (charged) parts.push('LEVERAGED x2');
+    if (hedged) parts.push('HEDGED');
+    this.stageT.setText(parts.join(' '));
+    this.stageT.setColor(charged ? '#a86a10' : '#484878');
   }
 
   setMood(buff: number, pct: number) {

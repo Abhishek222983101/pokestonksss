@@ -129,7 +129,7 @@ export function paintCrate(g: PixelGrid, th: ThemePal) {
 
 export function paintDrum(g: PixelGrid, th: ThemePal) {
   const p = new Painter(g);
-  const body = makeRamp(th.id === 'energy' ? '#c0483a' : '#5a6a88');
+  const body = makeRamp(th.family === 'energy' ? '#c0483a' : '#5a6a88');
   softShadow(g, 8, 14, 6, 2);
   p.blob(8, 8.5, 5.4, 6.4, body, { pow: 3 });
   g.hline(3, 5, 10, body.deep); g.hline(3, 11, 10, body.deep);
@@ -183,7 +183,7 @@ export function paintPumpJack(th: ThemePal): PixelGrid {
   const g = new PixelGrid(32, 32);
   const p = new Painter(g);
   const steel = makeRamp('#59627a');
-  const rust = makeRamp(th.id === 'energy' ? '#c95a2c' : '#c95a2c');
+  const rust = makeRamp(th.family === 'energy' ? '#c95a2c' : '#c95a2c');
   softShadow(g, 16, 30, 14, 2);
   g.rect(3, 27, 26, 3, steel.mid); g.hline(3, 27, 26, steel.hi);
   // A-frame
@@ -289,7 +289,7 @@ export function paintTree(th: ThemePal, variant = 0): PixelGrid {
     if (g.get(x, y) === leaf.mid || g.get(x, y) === leaf2.mid) g.set(x, y, leaf.hi);
   }
   // blossom/fruit accents
-  if (th.id === 'meme' || th.id === 'crypto' || th.id === 'consumer')
+  if (th.family === 'meme' || th.family === 'crypto' || th.family === 'consumer')
     for (let i = 0; i < 6; i++) g.set(6 + Math.floor(hash2(i, 7, 8) * 20), 8 + Math.floor(hash2(i, 8, 8) * 14), th.flowers[i % 3]);
   g.outline(leaf.line);
   return g;

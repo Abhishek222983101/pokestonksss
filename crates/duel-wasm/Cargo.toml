@@ -1,0 +1,16 @@
+[package]
+name = "duel-wasm"
+version = "0.1.0"
+edition = "2021"
+description = "wasm-bindgen bindings for duel-rules"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+duel-rules = { path = "../duel-rules" }
+wasm-bindgen = "0.2"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-Oz", "--enable-bulk-memory", "--enable-nontrapping-float-to-int"]

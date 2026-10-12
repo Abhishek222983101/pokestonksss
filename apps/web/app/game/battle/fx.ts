@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import type { Affinity } from 'game-core';
+import type { TypeName } from '../../../lib/rules';
 import { audio } from '../audio';
 import { delay, tweenP, txt, TYPE_COLOR } from './ui';
 import type { Combatant } from './types';
@@ -134,44 +134,45 @@ function bolt(scene: Phaser.Scene, from: Pt, to: Pt) {
  * Type-specific attack animation from `from` to `to`. Every type reads differently at a glance:
  * lightning arcs, ember volleys, water arcs, leaf spirals, psychic ripples, plain impact stars.
  */
-export async function castType(scene: Phaser.Scene, type: Affinity, from: Pt, to: Pt): Promise<void> {
+export async function castType(scene: Phaser.Scene, type: TypeName, from: Pt, to: Pt): Promise<void> {
   const col = TYPE_COLOR[type] ?? 0xffffff;
   switch (type) {
-    case 'Electric': {
+    case 'SPEED': {
       scene.cameras.main.flash(70, 255, 240, 120);
       for (let i = 0; i < 4; i++) { bolt(scene, from, to); await delay(scene, 85); }
       impactStar(scene, to, 0xfff0a0, 1.2);
       break;
     }
-    case 'Fire': {
-      await projectiles(scene, from, to, 12, (i) => scene.add.circle(0, 0, rnd(6, 11), [0xf04020, 0xf08030, 0xffd050][i % 3]), { lift: 60, dur: 330, stagger: 30 });
+    case 'SHADE': {
+      await projectiles(scene, from, to, 12, (i) => scene.add.circle(0, 0, rnd(6, 11), [0x2a1a3a, 0x5a3a7a, 0x8a6aa8][i % 3]), { lift: 60, dur: 330, stagger: 30 });
       for (let i = 0; i < 14; i++) {
-        const p = scene.add.circle(to.x, to.y, rnd(5, 10), [0xf04020, 0xf08030, 0xffd050][i % 3]).setDepth(D + 1);
+        const p = scene.add.circle(to.x, to.y, rnd(5, 10), [0x2a1a3a, 0x5a3a7a, 0xa088c0][i % 3]).setDepth(D + 1);
         const a = (i / 14) * Math.PI * 2, r = rnd(40, 90);
         scene.tweens.add({ targets: p, x: to.x + Math.cos(a) * r, y: to.y + Math.sin(a) * r - 20, alpha: 0, scale: 0.2, duration: 420, ease: 'Cubic.easeOut', onComplete: () => p.destroy() });
       }
-      ring(scene, to, 0xf08030, 10, 80, 380);
+      ring(scene, to, 0x5a3a7a, 10, 80, 380);
       break;
     }
-    case 'Water': {
+    case 'TIDE': {
       await projectiles(scene, from, to, 12, () => scene.add.circle(0, 0, rnd(5, 9), 0x6890f0).setStrokeStyle(2, 0xdfeaff), { lift: 90, dur: 360, stagger: 32 });
       ring(scene, to, 0x9fbfff, 8, 96, 460);
       ring(scene, to, 0x6890f0, 8, 60, 380, 90);
       break;
     }
-    case 'Grass': {
-      await projectiles(scene, from, to, 9, (i) => scene.add.rectangle(0, 0, 16, 7, i % 2 ? 0x78c850 : 0x4aa838).setAngle(rnd(0, 180)), { lift: 50, dur: 360, stagger: 45, spread: 22 });
+    case 'ARMOR': {
+      await projectiles(scene, from, to, 9, (i) => scene.add.rectangle(0, 0, 18, 9, i % 2 ? 0xc8c8dc : 0x8c8ca8).setAngle(rnd(0, 180)), { lift: 50, dur: 360, stagger: 45, spread: 22 });
       for (let i = 0; i < 8; i++) {
-        const l = scene.add.rectangle(to.x, to.y, 12, 6, 0x78c850).setDepth(D + 1).setAngle(rnd(0, 180));
+        const l = scene.add.rectangle(to.x, to.y, 12, 6, 0xc8c8dc).setDepth(D + 1).setAngle(rnd(0, 180));
         scene.tweens.add({ targets: l, x: to.x + rnd(-60, 60), y: to.y + rnd(-50, 50), angle: l.angle + 200, alpha: 0, duration: 420, onComplete: () => l.destroy() });
       }
+      impactStar(scene, to, 0xe8e8f8, 1);
       break;
     }
-    case 'Psychic': {
-      scene.cameras.main.flash(120, 248, 88, 140);
-      ring(scene, to, 0xf85888, 6, 110, 520);
-      ring(scene, to, 0xffb3cc, 6, 150, 620, 120);
-      ring(scene, to, 0xf85888, 6, 190, 720, 240);
+    case 'ARCANE': {
+      scene.cameras.main.flash(120, 168, 112, 248);
+      ring(scene, to, 0xa870f8, 6, 110, 520);
+      ring(scene, to, 0xd8b8ff, 6, 150, 620, 120);
+      ring(scene, to, 0xa870f8, 6, 190, 720, 240);
       await delay(scene, 520);
       break;
     }
@@ -181,4 +182,30 @@ export async function castType(scene: Phaser.Scene, type: Affinity, from: Pt, to
       await delay(scene, 200);
     }
   }
+}
+
+/** Hedge: a blue shield bubble closes around the combatant, margin sparkles rise. */
+export async function shield(scene: Phaser.Scene, c: Combatant, heal: number): Promise<void> {
+  audio.sfx('heal');
+  const at = centerOf(c);
+  const bubble = scene.add.circle(at.x, at.y, 20).setDepth(D + 1).setStrokeStyle(6, 0x9fbfff, 1).setFillStyle(0x6890f0, 0.2);
+  scene.tweens.add({ targets: bubble, radius: 112, duration: 360, ease: 'Back.easeOut' });
+  scene.tweens.add({ targets: bubble, alpha: 0, delay: 520, duration: 260, onComplete: () => bubble.destroy() });
+  if (heal > 0) {
+    for (let i = 0; i < 6; i++) {
+      const s = txt(scene, at.x + (i - 2.5) * 22, at.y + 30, '+', 18, '#58d858', { stroke: '#181818', strokeThickness: 4 }).setOrigin(0.5).setDepth(D + 3);
+      scene.tweens.add({ targets: s, y: s.y - 70, alpha: 0, delay: i * 70, duration: 620, onComplete: () => s.destroy() });
+    }
+  }
+  await delay(scene, 780);
+}
+
+/** Leverage: a gold aura pulses and the combatant swells for a beat. */
+export async function powerUp(scene: Phaser.Scene, c: Combatant): Promise<void> {
+  audio.sfx('stat_up');
+  const at = centerOf(c);
+  ring(scene, at, 0xf8d858, 90, 20, 520);
+  ring(scene, at, 0xffffff, 120, 30, 620, 120);
+  scene.tweens.add({ targets: c.sprite, scaleX: c.baseScale * 1.12, scaleY: c.baseScale * 1.12, duration: 220, yoyo: true, ease: 'Sine.easeInOut', onComplete: () => c.sprite.setScale(c.baseScale) });
+  await statArrows(scene, c, true);
 }

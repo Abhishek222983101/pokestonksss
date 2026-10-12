@@ -1,7 +1,10 @@
 import { hex, makeRamp, type Color, type Ramp } from './pixel';
 
-export type RouteTheme = 'tech' | 'bluechip' | 'energy' | 'meme' | 'consumer' | 'crypto';
-export const ROUTE_THEMES: readonly RouteTheme[] = ['bluechip', 'tech', 'energy', 'meme', 'consumer', 'crypto'];
+/** The six generator families (tileset props, backdrop shapes). Routes are tinted variants of one family. */
+export type Family = 'tech' | 'bluechip' | 'energy' | 'meme' | 'consumer' | 'crypto';
+/** One themed route per asset. */
+export type RouteTheme = 'sol' | 'btc' | 'eth' | 'sui' | 'zec' | 'bnb' | 'doge' | 'xrp';
+export const ROUTE_THEMES: readonly RouteTheme[] = ['sol', 'btc', 'eth', 'sui', 'zec', 'bnb', 'doge', 'xrp'];
 
 export function isRouteTheme(t: unknown): t is RouteTheme {
   return typeof t === 'string' && (ROUTE_THEMES as readonly string[]).includes(t);
@@ -15,6 +18,7 @@ export type FloorStyle = 'wood' | 'plate' | 'checker' | 'marble';
 /** Everything that changes between routes: the tileset painter only ever reads this. */
 export interface ThemePal {
   id: RouteTheme;
+  family: Family;
   label: string;
   grass: { base: Color; hi: Color; lo: Color; tuft: Color };
   tall: { base: Color; mid: Color; tip: Color; lo: Color };
@@ -40,7 +44,8 @@ export interface ThemePal {
 const r = makeRamp;
 const h = hex;
 
-export const THEMES: Record<RouteTheme, ThemePal> = {
+type FamilyPal = Omit<ThemePal, 'id' | 'family'> & { id: Family };
+const FAMILIES: Record<Family, FamilyPal> = {
   bluechip: {
     id: 'bluechip', label: 'Blue-chip meadow',
     grass: { base: h('#58b04a'), hi: h('#7ccc62'), lo: h('#3f8f3e'), tuft: h('#2c7434') },
@@ -139,6 +144,74 @@ export const THEMES: Record<RouteTheme, ThemePal> = {
   },
 };
 
-export function getTheme(t: string): ThemePal {
-  return isRouteTheme(t) ? THEMES[t] : THEMES.bluechip;
+/* ------------------------------------------------------------------ tinting ---- */
+
+export interface Tint { hue: number; sat: number; light: number }
+
+function rgb2hsl(r: number, g: number, b: number): [number, number, number] {
+  r /= 255; g /= 255; b /= 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2;
+  if (mx === mn) return [0, 0, l];
+  const d = mx - mn, sat = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+  const hue = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [hue * 60, sat, l];
 }
+
+function hsl2rgb(h: number, s: number, l: number): [number, number, number] {
+  const k = (n: number) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
+}
+
+/** Hue-rotate / saturate / lighten one packed colour (alpha untouched). */
+export function tintColor(c: Color, t: Tint): Color {
+  const a = (c >>> 24) & 255;
+  const [h, s, l] = rgb2hsl(c & 255, (c >>> 8) & 255, (c >>> 16) & 255);
+  const [r, g, b] = hsl2rgb((h + t.hue + 360) % 360, Math.max(0, Math.min(1, s * t.sat)), Math.max(0, Math.min(1, l + t.light)));
+  return (((a << 24) | (b << 16) | (g << 8) | r) >>> 0);
+}
+
+/** Deep-map every packed colour in a palette-like object (numbers are colours; strings/booleans pass through). */
+export function tintDeep<T>(v: T, t: Tint): T {
+  if (typeof v === 'number') return tintColor(v, t) as unknown as T;
+  if (Array.isArray(v)) return v.map((x) => tintDeep(x, t)) as unknown as T;
+  if (v && typeof v === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, x] of Object.entries(v as Record<string, unknown>)) out[k] = tintDeep(x, t);
+    return out as T;
+  }
+  return v;
+}
+
+interface Variant { family: Family; label: string; tint: Tint; patch?: (p: ThemePal) => void }
+
+const VARIANTS: Record<RouteTheme, Variant> = {
+  sol:  { family: 'tech', label: 'Validator violet', tint: { hue: 52, sat: 1.05, light: 0.0 }, patch: (p) => { p.glow = h('#14f195'); p.accent = r('#9945ff'); p.flowers = [h('#14f195'), h('#f4f4ff'), h('#b46bff')]; p.iwallTrim = h('#14f195'); } },
+  btc:  { family: 'energy', label: 'Genesis desert', tint: { hue: 0, sat: 1.05, light: 0.0 }, patch: (p) => { p.glow = h('#f7931a'); p.accent = r('#f7931a'); } },
+  eth:  { family: 'crypto', label: 'Obelisk indigo', tint: { hue: -38, sat: 0.9, light: 0.02 }, patch: (p) => { p.glow = h('#8ea0ff'); p.accent = r('#8ea0ff'); p.iwallTrim = h('#8ea0ff'); } },
+  sui:  { family: 'consumer', label: 'Harbor azure', tint: { hue: 8, sat: 1.15, light: -0.02 }, patch: (p) => { p.glow = h('#4da2ff'); p.accent = r('#4da2ff'); } },
+  zec:  { family: 'bluechip', label: 'Shielded dusk', tint: { hue: 28, sat: 0.55, light: -0.2 }, patch: (p) => { p.glow = h('#f4b728'); p.accent = r('#f4b728'); p.flowers = [h('#f4b728'), h('#e8e0c8'), h('#7a6a9a')]; } },
+  bnb:  { family: 'tech', label: 'Exchange gold', tint: { hue: -150, sat: 1.25, light: 0.04 }, patch: (p) => { p.glow = h('#f3ba2f'); p.accent = r('#f3ba2f'); p.iwallTrim = h('#f3ba2f'); } },
+  doge: { family: 'meme', label: 'Moon meadow', tint: { hue: 70, sat: 0.85, light: 0.04 }, patch: (p) => { p.glow = h('#ffd23f'); p.accent = r('#c9a43c'); } },
+  xrp:  { family: 'consumer', label: 'Ledger steel', tint: { hue: -30, sat: 0.45, light: 0.0 }, patch: (p) => { p.glow = h('#a8d8ff'); p.accent = r('#a8d8ff'); } },
+};
+
+function build(id: RouteTheme): ThemePal {
+  const v = VARIANTS[id];
+  const base = FAMILIES[v.family];
+  const tinted = tintDeep(base, v.tint) as FamilyPal;
+  const pal: ThemePal = { ...tinted, id, family: v.family, label: v.label };
+  v.patch?.(pal);
+  return pal;
+}
+
+export const THEMES = Object.fromEntries(ROUTE_THEMES.map((t) => [t, build(t)])) as Record<RouteTheme, ThemePal>;
+
+export function getTheme(t: string): ThemePal {
+  return isRouteTheme(t) ? THEMES[t] : THEMES.sol;
+}
+
+/** Tint to apply to family-keyed art tables (backdrops, platforms) for a route theme. */
+export function tintOf(t: RouteTheme): Tint { return VARIANTS[t].tint; }
+export function familyOf(t: RouteTheme): Family { return VARIANTS[t].family; }

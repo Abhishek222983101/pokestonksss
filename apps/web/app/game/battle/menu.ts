@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { type Affinity, type Move, getMove, typeMult } from 'game-core';
+import { effectiveness, typeName, type DamagePreview, type MoveDef, type Slot, type TypeId } from '../../../lib/rules';
 import { audio } from '../audio';
 import { C, TYPE_COLOR, drawFrame, txt } from './ui';
 
@@ -84,37 +84,46 @@ export class CommandMenu {
   destroy() { this.hide(); }
 }
 
-export interface MoveItem { id: string; pp: number }
+const KIND_LABEL = { strike: 'PUMP', guard: 'HEDGE', charge: 'LEVERAGE' } as const;
+const KIND_SUB = { strike: 'ATTACK', guard: 'DEFEND', charge: 'POWER UP' } as const;
+const KIND_COLOR = { strike: 0, guard: 0x6890f0, charge: 0xf8d858 } as const;
+const BEATS = { strike: 'LEVERAGE', guard: 'PUMP', charge: 'HEDGE' } as const;
 
-/** 2×2 move buttons + an info panel (type, power, accuracy, PP, matchup vs the foe). */
+/** 2x2 move buttons + an info panel (type, power, accuracy, matchup and damage range vs the foe). */
 export class MoveMenu {
   private objs: Phaser.GameObjects.GameObject[] = [];
   private info: Phaser.GameObjects.GameObject[] = [];
   private idx = 0;
-  private cells: { x: number; y: number; w: number; h: number; g: Phaser.GameObjects.Graphics; move: Move; pp: number; maxPp: number; usable: boolean }[] = [];
+  private cells: { x: number; y: number; w: number; h: number; g: Phaser.GameObjects.Graphics; move: MoveDef }[] = [];
   private cursorT?: Phaser.GameObjects.Text;
   private keys: Array<[string, (e: KeyboardEvent) => void]> = [];
   private live = false;
 
-  constructor(private scene: Phaser.Scene, private foeAffinity: Affinity, private onPick: (moveId: string) => void, private onBack: () => void) {}
+  constructor(
+    private scene: Phaser.Scene,
+    private foeType: TypeId,
+    private preview: (slot: Slot) => DamagePreview,
+    private onPick: (slot: Slot) => void,
+    private onBack: () => void,
+  ) {}
 
-  show(moves: MoveItem[]) {
+  show(moves: readonly MoveDef[]) {
     this.hide();
     this.live = true;
     const w = 290, h = 50, gap = 10, x0 = 34, y0 = 514;
-    moves.slice(0, 4).forEach((mi, i) => {
-      const move = getMove(mi.id);
+    moves.slice(0, 4).forEach((move, i) => {
       const cx = x0 + (i % 2) * (w + gap), cy = y0 + Math.floor(i / 2) * (h + gap);
-      const usable = mi.pp > 0;
       const g = this.scene.add.graphics().setDepth(45);
-      const t = txt(this.scene, cx + 40, cy + 15, move.name.toUpperCase(), 12, usable ? '#181818' : '#7a7a86').setDepth(46);
-      const ppT = txt(this.scene, cx + w - 14, cy + 32, `PP ${mi.pp}/${move.pp}`, 9, usable ? '#484878' : '#a04040').setOrigin(1, 0).setDepth(46);
-      const dot = this.scene.add.circle(cx + 20, cy + h / 2, 9, TYPE_COLOR[move.type] ?? C.gray).setDepth(46).setStrokeStyle(2, C.ink);
-      const zone = this.scene.add.zone(cx + w / 2, cy + h / 2, w, h).setDepth(47).setInteractive({ useHandCursor: usable });
+      const t = txt(this.scene, cx + 40, cy + 12, move.name.toUpperCase(), move.name.length > 13 ? 10 : 12, '#181818').setDepth(46);
+      const sub = txt(this.scene, cx + 40, cy + 32, KIND_LABEL[move.kind], 8, '#484878').setDepth(46);
+      const side = txt(this.scene, cx + w - 14, cy + 32, move.kind === 'strike' ? `PWR ${move.power}` : KIND_SUB[move.kind], 8, '#484878').setOrigin(1, 0).setDepth(46);
+      const dotCol = move.kind === 'strike' ? (TYPE_COLOR[typeName(move.type)] ?? C.gray) : KIND_COLOR[move.kind];
+      const dot = this.scene.add.circle(cx + 20, cy + h / 2, 9, dotCol).setDepth(46).setStrokeStyle(2, C.ink);
+      const zone = this.scene.add.zone(cx + w / 2, cy + h / 2, w, h).setDepth(47).setInteractive({ useHandCursor: true });
       zone.on('pointerover', () => this.move(i, false));
       zone.on('pointerdown', () => { this.move(i, false); this.pick(); });
-      this.cells.push({ x: cx, y: cy, w, h, g, move, pp: mi.pp, maxPp: move.pp, usable });
-      this.objs.push(g, t, ppT, dot, zone);
+      this.cells.push({ x: cx, y: cy, w, h, g, move });
+      this.objs.push(g, t, sub, side, dot, zone);
     });
 
     const back = txt(this.scene, 940, 520, '◀ BACK', 10, '#f8d858').setOrigin(1, 0).setDepth(46).setInteractive({ useHandCursor: true });
@@ -125,7 +134,7 @@ export class MoveMenu {
     this.scene.tweens.add({ targets: this.cursorT, alpha: 0.3, duration: 380, yoyo: true, repeat: -1 });
     this.objs.push(this.cursorT);
 
-    this.idx = Math.max(0, this.cells.findIndex((c) => c.usable));
+    this.idx = 0;
     this.redraw();
 
     const bind = (k: string, fn: (e: KeyboardEvent) => void) => { this.scene.input.keyboard?.on(`keydown-${k}`, fn); this.keys.push([k, fn]); };
@@ -147,16 +156,15 @@ export class MoveMenu {
   private pick() {
     const c = this.cells[this.idx];
     if (!this.live || !c) return;
-    if (!c.usable) { audio.sfx('error'); return; }
     audio.sfx('menu_select');
-    this.onPick(c.move.id);
+    this.onPick(c.move.slot);
   }
 
   private redraw() {
     this.cells.forEach((c, i) => {
       const sel = i === this.idx;
       c.g.clear();
-      drawFrame(c.g, c.x, c.y, c.w, c.h, { fill: c.usable ? (sel ? C.cream : 0xe4e4bc) : 0xc4c4c8, border: sel ? C.gold : C.slate, borderW: sel ? 4 : 3 });
+      drawFrame(c.g, c.x, c.y, c.w, c.h, { fill: sel ? C.cream : 0xe4e4bc, border: sel ? C.gold : C.slate, borderW: sel ? 4 : 3 });
     });
     const s = this.cells[this.idx];
     this.cursorT?.setPosition(s.x - 16, s.y + s.h / 2);
@@ -168,25 +176,33 @@ export class MoveMenu {
     this.info = [];
     const x = 660, y = 546, m = c.move;
     const add = (o: Phaser.GameObjects.GameObject) => { this.info.push(o); return o; };
+    const chipCol = m.kind === 'strike' ? (TYPE_COLOR[typeName(m.type)] ?? C.gray) : KIND_COLOR[m.kind];
+    const chipLabel = m.kind === 'strike' ? typeName(m.type) : KIND_LABEL[m.kind];
+    const cw = Math.max(108, chipLabel.length * 11 + 22);
     const chip = this.scene.add.graphics().setDepth(46);
-    chip.fillStyle(C.ink, 1); chip.fillRoundedRect(x, y - 30, 108, 20, 5);
-    chip.fillStyle(TYPE_COLOR[m.type] ?? C.gray, 1); chip.fillRoundedRect(x + 1, y - 29, 106, 18, 4);
+    chip.fillStyle(C.ink, 1); chip.fillRoundedRect(x, y - 30, cw, 20, 5);
+    chip.fillStyle(chipCol, 1); chip.fillRoundedRect(x + 1, y - 29, cw - 2, 18, 4);
     add(chip);
-    add(txt(this.scene, x + 54, y - 20, m.type.toUpperCase(), 9, '#181818').setOrigin(0.5).setDepth(47));
-    add(txt(this.scene, x + 120, y - 26, m.category === 'status' ? 'STATUS' : m.category === 'physical' ? 'PHYS' : 'SPEC', 9, '#f8d858').setDepth(47));
-    if (m.category === 'status') {
-      const eff = (m.effects ?? []).map((e) => `${e.target === 'self' ? 'YOU' : 'FOE'} ${e.stat.toUpperCase()} ${e.stages > 0 ? '+' : ''}${e.stages}`).join('  ');
-      add(txt(this.scene, x, y + 2, eff, 9, '#ffffff').setDepth(47));
-      add(txt(this.scene, x, y + 26, `ACC ${m.accuracy}`, 9, '#ffffff').setDepth(47));
-    } else {
+    add(txt(this.scene, x + cw / 2, y - 20, chipLabel, 9, '#181818').setOrigin(0.5).setDepth(47));
+    add(txt(this.scene, x + cw + 12, y - 26, `BEATS ${BEATS[m.kind]}`, 8, '#f8d858').setDepth(47));
+    if (m.kind === 'strike') {
+      const pv = this.preview(m.slot);
       add(txt(this.scene, x, y + 2, `POWER ${m.power}`, 10, '#ffffff').setDepth(47));
-      add(txt(this.scene, x + 150, y + 2, `ACC ${m.accuracy}`, 10, '#ffffff').setDepth(47));
-      const mult = typeMult(m.type, this.foeAffinity);
-      const label = mult > 1 ? 'SUPER EFFECTIVE x2' : mult < 1 ? 'NOT VERY EFFECTIVE x0.5' : 'NEUTRAL';
+      add(txt(this.scene, x + 150, y + 2, `ACC ${m.acc}`, 10, '#ffffff').setDepth(47));
+      const mult = effectiveness(m.type, this.foeType);
+      const label = mult > 1 ? 'SUPER EFFECTIVE x2' : mult < 1 ? 'RESISTED x0.5' : 'NEUTRAL';
       const col = mult > 1 ? '#58d858' : mult < 1 ? '#f88858' : '#c8c8d8';
       add(txt(this.scene, x, y + 28, label, 9, col).setDepth(47));
+      add(txt(this.scene, x, y + 46, `~${pv.min}-${pv.max} MARGIN`, 8, '#a8b8f8').setDepth(47));
+    } else if (m.kind === 'guard') {
+      add(txt(this.scene, x, y + 2, 'BLOCKS 80% OF PUMP', 9, '#ffffff').setDepth(47));
+      add(txt(this.scene, x, y + 24, '+10% MARGIN BACK', 9, '#58d858').setDepth(47));
+      add(txt(this.scene, x, y + 46, 'TWICE IN A ROW: WEAKER', 8, '#a8b8f8').setDepth(47));
+    } else {
+      add(txt(this.scene, x, y + 2, 'NEXT PUMP HITS x2', 9, '#ffffff').setDepth(47));
+      add(txt(this.scene, x, y + 24, 'EXPOSED: TAKE +30%', 9, '#f88858').setDepth(47));
+      add(txt(this.scene, x, y + 46, 'NO DAMAGE THIS TURN', 8, '#a8b8f8').setDepth(47));
     }
-    if (m.priority > 0) add(txt(this.scene, x, y + 46, 'GOES FIRST', 8, '#f8d858').setDepth(47));
   }
 
   hide() {

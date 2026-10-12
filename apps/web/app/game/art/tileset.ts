@@ -176,7 +176,7 @@ function cut(dst: PixelGrid, src: PixelGrid, sx: number, sy: number, id: number)
 const cache = new Map<RouteTheme, PixelGrid>();
 
 /** Whole 16-column tile atlas for a route theme, painted procedurally (memoised). */
-export function drawTilesetGrid(theme: RouteTheme = 'bluechip'): PixelGrid {
+export function drawTilesetGrid(theme: RouteTheme = 'sol'): PixelGrid {
   const hit = cache.get(theme);
   if (hit) return hit;
   const th = getTheme(theme);
@@ -266,6 +266,6 @@ export function drawTilesetGrid(theme: RouteTheme = 'bluechip'): PixelGrid {
 }
 
 /** 16x16-tile atlas as a canvas (`theme` re-tints ground, props, buildings and interiors). */
-export function drawTileset(theme: RouteTheme = 'bluechip'): HTMLCanvasElement {
+export function drawTileset(theme: RouteTheme = 'sol'): HTMLCanvasElement {
   return drawTilesetGrid(theme).toCanvas(1);
 }

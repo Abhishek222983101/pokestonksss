@@ -12,7 +12,7 @@ export const C = {
 } as const;
 
 export const TYPE_COLOR: Record<string, number> = {
-  Normal: 0xa8a878, Electric: 0xf8d030, Grass: 0x78c850, Fire: 0xf08030, Water: 0x6890f0, Psychic: 0xf85888,
+  SPEED: 0xf8d030, ARMOR: 0xb8b8d0, ARCANE: 0xa870f8, TIDE: 0x6890f0, SHADE: 0xa07858,
 };
 
 export const hex = (n: number) => `#${n.toString(16).padStart(6, '0')}`;
@@ -55,15 +55,6 @@ export const delay = (scene: Phaser.Scene, ms: number) =>
 
 export function tweenP(scene: Phaser.Scene, cfg: Phaser.Types.Tweens.TweenBuilderConfig): Promise<void> {
   return new Promise((res) => { scene.tweens.add({ ...cfg, onComplete: () => res() }); });
-}
-
-/** Format an 18-decimal integer string as a short decimal ("0.11"). */
-export function formatToken(raw: string | undefined, dp = 4): string {
-  if (!raw || !/^\d+$/.test(raw)) return '0';
-  const s = raw.padStart(19, '0');
-  const whole = s.slice(0, -18).replace(/^0+(?=\d)/, '');
-  const frac = s.slice(-18).slice(0, dp).replace(/0+$/, '');
-  return frac ? `${whole}.${frac}` : whole;
 }
 
 export const isTouch = () =>

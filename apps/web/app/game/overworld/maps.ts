@@ -1,6 +1,6 @@
 import { hash2, hashStr, rng } from '../art/pixel';
 import { ATLAS_COLS, ATLAS_ROWS, TILE, TILE_COUNT, blobTile, gid, isTallGrass, N, E, S, W, NE, SE, SW, NW } from '../art/tileset';
-import type { RouteTheme } from '../art/themes';
+import { familyOf, type RouteTheme } from '../art/themes';
 import {
   DIR_VEC, LAYER,
   type BuiltMap, type Dir, type MapMeta, type NpcSpec, type NpcSprite, type SignSpec, type SpawnSpec,
@@ -20,83 +20,109 @@ interface Flavour {
 }
 
 const FLAVOUR: Record<RouteTheme, Flavour> = {
-  bluechip: {
+  sol: {
     trainers: [
-      { name: 'Analyst Ash', intro: ['My model says you are undervalued!', 'Let us mark you to market!'], after: ['Rebalancing my portfolio...', 'Come back after earnings.'] },
-      { name: 'Banker Bo', intro: ['Steady hands win. Yours are shaking!'], after: ['A dividend of defeat. Noted.'] },
-      { name: 'Retiree Ray', intro: ['Forty years of index funds!', 'Let me show you patience.'], after: ['Time in the market beats you.'] },
+      { name: 'Validator Val', intro: ['Four hundred milliseconds!', 'That is how long you have left.'], after: ['Skipped a slot. Rebooting...'] },
+      { name: 'MEV Max', intro: ['I saw your move before you did.', 'Sandwiching you right now!'], after: ['Frontrun by a better bot.'] },
+      { name: 'Dev Dani', intro: ['Shipped to mainnet on a Friday!', 'Try to catch my bugs!'], after: ['Rolling back... give me a minute.'] },
     ],
     folk: [
-      { name: 'Clerk', lines: ['Blue-chips never sleep.', 'Slow and steady wins the route.'] },
-      { name: 'Gardener', lines: ['The tall grass is thick today.', 'Something is rustling in there...'] },
-      { name: 'Passerby', lines: ['Heal at the Exchange if your', 'BrokerMon looks tired.'] },
+      { name: 'Node Op', lines: ['The racks hum all night here.', 'Uptime is a lifestyle.'] },
+      { name: 'Intern', lines: ['I only came for the airdrop.', 'And now there are wild monsters.'] },
+      { name: 'Degen', lines: ['Fees here are 0.00025 SOL.', 'I still complain about them.'] },
     ],
-    exchange: 'Welcome to The Exchange! Settle your positions?',
+    exchange: 'Exchange terminal online. Top up your margin?',
   },
-  tech: {
+  btc: {
     trainers: [
-      { name: 'Dev Dana', intro: ['Shipping to prod on a Friday!', 'Try to catch my bugs!'], after: ['Rolling back... give me a minute.'] },
-      { name: 'Miner Mox', intro: ['My rig is hot and so am I!'], after: ['Out of memory. Out of luck.'] },
-      { name: 'Sysadmin Sol', intro: ['Have you tried turning it off?', 'Let me reboot your run!'], after: ['Uptime: zero. Come back later.'] },
+      { name: 'Miner Mox', intro: ['My rig is hot and so am I!', 'Hash after hash, punch after punch!'], after: ['Block rejected. Try again.'] },
+      { name: 'Hodl Hank', intro: ['Never sold a single sat!', 'Fight me, paper hands!'], after: ['Still holding. Still bruised.'] },
+      { name: 'Maxi Mel', intro: ['Everything else is a shitcoin.', 'Including your monster!'], after: ['Fine. Maybe one altcoin.'] },
     ],
     folk: [
-      { name: 'Engineer', lines: ['The racks hum all night here.', 'Latency is a state of mind.'] },
-      { name: 'Intern', lines: ['I only came for the free lunch.', 'And now there are wild monsters.'] },
-      { name: 'Designer', lines: ['Everything here is pixel perfect.', 'Well. Sixteen pixels perfect.'] },
+      { name: 'Foreman', lines: ['Mind the rigs, kid.', 'Difficulty adjusts every 2016 blocks.'] },
+      { name: 'Pizza Guy', lines: ['I once paid 10,000 BTC for two pizzas.', 'Do not ask how I feel.'] },
+      { name: 'Satoshi?', lines: ['I am definitely not Satoshi.', 'Please stop asking.'] },
     ],
-    exchange: 'Exchange terminal online. Sync your positions?',
+    exchange: 'Welcome to the Exchange. Reset your margin?',
   },
-  energy: {
+  eth: {
     trainers: [
-      { name: 'Roughneck Rex', intro: ['Struck a gusher and a fight!', 'Ready to get dirty?'], after: ['My rig needs maintenance.'] },
-      { name: 'Driller Dee', intro: ['I drill deep. So do my attacks!'], after: ['Dry well. Dry spirit.'] },
-      { name: 'Pumper Pat', intro: ['Barrels do not fill themselves!'], after: ['Pressure is low. Come back.'] },
-    ],
-    folk: [
-      { name: 'Foreman', lines: ['Mind the pumpjacks, kid.', 'Oil and grass grow deep here.'] },
-      { name: 'Roughneck', lines: ['Dust in the wind, and monsters in the brush.'] },
-      { name: 'Driver', lines: ['Prices swing like the beam of a pumpjack.'] },
-    ],
-    exchange: 'Step in from the dust. Settle up at the Exchange?',
-  },
-  meme: {
-    trainers: [
-      { name: 'Apeman Al', intro: ['DIAMOND HANDS! Never selling!', 'Fight me, smooth brain!'], after: ['Still holding. Still bruised.'] },
-      { name: 'Diamond Di', intro: ['To the moon or to the dirt!'], after: ['Buying the dip on my pride.'] },
-      { name: 'WSB Wes', intro: ['YOLO! All in on this battle!'], after: ['Position closed. Loss porn incoming.'] },
-    ],
-    folk: [
-      { name: 'Ape', lines: ['I like the stock.', 'The stock likes me back.'] },
-      { name: 'Trader', lines: ['Squeeze season never ends.', 'Watch out for the neon signs.'] },
-      { name: 'Lurker', lines: ['I just read the comments.', 'The grass is very rocket-shaped.'] },
-    ],
-    exchange: 'Welcome to the Exchange. Tendies for your team?',
-  },
-  consumer: {
-    trainers: [
-      { name: 'Shopper Sue', intro: ['Sale on battles today!', 'Buy one, get one beaten!'], after: ['Returning this loss for store credit.'] },
-      { name: 'Courier Cal', intro: ['Next-day delivery of a beating!'], after: ['Package undelivered. Try again.'] },
-      { name: 'Stylist Sam', intro: ['Fresh kicks demand a fresh fight!'], after: ['Scuffed shoes. Scuffed pride.'] },
-    ],
-    folk: [
-      { name: 'Vendor', lines: ['Fresh crates just arrived!', 'Do not lean on the boxes.'] },
-      { name: 'Sailor', lines: ['The harbor smells like sale season.'] },
-      { name: 'Shopper', lines: ['Everything here ships in two days.', 'Or was it one?'] },
-    ],
-    exchange: 'Welcome to the Exchange shop! Heal up inside?',
-  },
-  crypto: {
-    trainers: [
-      { name: 'Validator Val', intro: ['I secure this route. And your loss!'], after: ['Awaiting finality...'] },
-      { name: 'Whale Wil', intro: ['My bags are heavy. So is my swing!'], after: ['Liquidity is thin today.'] },
-      { name: 'Miner Mia', intro: ['Hash after hash, punch after punch!'], after: ['Block rejected. Try again.'] },
+      { name: 'Solidity Sol', intro: ['Reentrancy attack incoming!', 'Hope your contract is audited!'], after: ['Revert. Out of gas.'] },
+      { name: 'Staker Stu', intro: ['Thirty-two ETH and a dream!', 'Let me validate your defeat!'], after: ['Slashed. Rough day.'] },
+      { name: 'NFT Nia', intro: ['My monster is a JPEG.', 'And it hits very hard!'], after: ['Floor price collapsed.'] },
     ],
     folk: [
       { name: 'Scribe', lines: ['Every step here is written to the ledger.', 'Immutable, like my fear.'] },
-      { name: 'Hodler', lines: ['I lost my keys years ago.', 'Still not selling.'] },
-      { name: 'Sage', lines: ['The obelisks hum when blocks confirm.'] },
+      { name: 'Rollup Fan', lines: ['Layer twos are the future.', 'Layer threes are the future of the future.'] },
+      { name: 'Sage', lines: ['The obelisks hum when blocks confirm.', 'Gas is high today.'] },
     ],
     exchange: 'Welcome to the Exchange. Settle your positions on-chain?',
+  },
+  sui: {
+    trainers: [
+      { name: 'Dockhand Dex', intro: ['Every crate is an object!', 'And you are about to be one.'], after: ['Object moved. Shipment lost.'] },
+      { name: 'Captain Kai', intro: ['Parallel execution, parallel punches!', 'All aboard the beating!'], after: ['Man overboard. Me, specifically.'] },
+      { name: 'Mover Mia', intro: ['Move is the safest language!', 'Unlike your strategy.'], after: ['Borrow checker said no.'] },
+    ],
+    folk: [
+      { name: 'Vendor', lines: ['Fresh crates just arrived!', 'Do not lean on the boxes.'] },
+      { name: 'Sailor', lines: ['The harbor smells like a fresh airdrop.', 'Or maybe fish.'] },
+      { name: 'Clerk', lines: ['Everything here finalizes in under a second.', 'Except the paperwork.'] },
+    ],
+    exchange: 'Welcome to the Exchange shop! Top up your margin inside?',
+  },
+  zec: {
+    trainers: [
+      { name: 'Shadow Zed', intro: ['You cannot see my wallet.', 'You cannot see my next move!'], after: ['Nobody saw that loss. Right?'] },
+      { name: 'Proof Pru', intro: ['I can prove I will win...', 'without showing you how!'], after: ['Proof failed. Awkward.'] },
+      { name: 'Cypher Cy', intro: ['Privacy is a right!', 'Losing is not!'], after: ['Encrypted my embarrassment.'] },
+    ],
+    folk: [
+      { name: 'Lamplighter', lines: ['The lamps glow, but the paths stay hidden.', 'Walk softly.'] },
+      { name: 'Ghost', lines: ['I am not here.', 'You did not see me.'] },
+      { name: 'Auditor', lines: ['I can verify everything.', 'I just cannot see anything.'] },
+    ],
+    exchange: 'Welcome to the Exchange. Shielded margin top-up?',
+  },
+  bnb: {
+    trainers: [
+      { name: 'Burner Bo', intro: ['Quarterly burn starts now!', 'Starting with your hopes!'], after: ['Supply reduced. Mood: ash.'] },
+      { name: 'Launchpad Lou', intro: ['New listing: your defeat!', 'Zero fees, all pain!'], after: ['Delisted. Ouch.'] },
+      { name: 'Whale Wil', intro: ['My bags are heavy. So is my swing!'], after: ['Liquidity is thin today.'] },
+    ],
+    folk: [
+      { name: 'Concierge', lines: ['Welcome to Burn Boulevard.', 'Mind the golden towers.'] },
+      { name: 'Trader', lines: ['Spot, futures, earn, I do it all.', 'Sleep is not in the product list.'] },
+      { name: 'Tourist', lines: ['Everything here costs gas.', 'Even the gas costs gas.'] },
+    ],
+    exchange: 'Welcome to the Exchange. Premium margin refills available!',
+  },
+  doge: {
+    trainers: [
+      { name: 'Shibe Sam', intro: ['Much battle. Very fight.', 'Wow!'], after: ['Such defeat. Many sad.'] },
+      { name: 'Apeman Al', intro: ['DIAMOND HANDS! Never selling!', 'Fight me, smooth brain!'], after: ['Still holding. Still bruised.'] },
+      { name: 'Elon Ed', intro: ['I tweeted. The price moved.', 'Now your monster moves too!'], after: ['Deleted the tweet.'] },
+    ],
+    folk: [
+      { name: 'Ape', lines: ['I like the coin.', 'The coin likes me back.'] },
+      { name: 'Trader', lines: ['Moon season never ends.', 'Watch out for the neon signs.'] },
+      { name: 'Lurker', lines: ['I just read the comments.', 'The grass is very rocket-shaped.'] },
+    ],
+    exchange: 'Welcome to the Exchange. Tendies for your margin?',
+  },
+  xrp: {
+    trainers: [
+      { name: 'Banker Bea', intro: ['Settling cross-border in three seconds!', 'You? Settled in two.'], after: ['Payment delayed. Regulation.'] },
+      { name: 'Courier Cal', intro: ['Next-day delivery of a beating!'], after: ['Package undelivered. Try again.'] },
+      { name: 'Lawyer Lex', intro: ['I have been in court for years.', 'Let me argue with your monster!'], after: ['Case pending. Forever.'] },
+    ],
+    folk: [
+      { name: 'Dockworker', lines: ['Crates cross borders here fast.', 'The paperwork takes longer.'] },
+      { name: 'Sailor', lines: ['The pier smells like a settlement.', 'Or low tide.'] },
+      { name: 'Escrow Elf', lines: ['I hold things so you do not have to.', 'For a very small fee.'] },
+    ],
+    exchange: 'Welcome to the Exchange. Refill your margin?',
   },
 };
 
@@ -250,6 +276,7 @@ export function buildRouteMap(theme: RouteTheme, seed: number | string, opts: Ro
   const b = new Builder(w, h);
   const rand = rng(hashStr(`${seed}:${theme}`));
   const jit = (n: number) => Math.round((rand() * 2 - 1) * n);
+  const family = familyOf(theme);
   const flavour = FLAVOUR[theme];
   const routeName = opts.routeName ?? 'Route';
 
@@ -368,26 +395,26 @@ export function buildRouteMap(theme: RouteTheme, seed: number | string, opts: Ro
   };
   const clearOf = (x: number, y: number, ww: number, hh: number) => b.areaFree(x, y, ww, hh, 1);
 
-  if (theme === 'bluechip') {
+  if (family === 'bluechip') {
     for (const [x, y] of [[CX - 3, 15], [CX + 3, 15], [CX - 3, 20], [CX + 3, 20], [CX - 3, 31], [CX + 3, 31], [18, 9], [30, 9]] as const)
       if (b.isFree(x, y) || b.occ[b.i(x, y)] === KEEP) { b.occ[b.i(x, y)] = FREE; tryTall(x, y, TILE.LAMP_T, TILE.LAMP_B); }
   }
-  if (theme === 'tech') {
+  if (family === 'tech') {
     for (const [x, y] of [[bx - 2, by + 3], [bx + 6, by + 3], [17, 9], [31, 9]] as const)
       { b.occ[b.i(x, y)] = FREE; tryTall(x, y, TILE.RACK_T, TILE.RACK_B); }
     scatter(6, (x, y) => (clearOf(x, y - 1, 1, 2) ? tryTall(x, y, TILE.RACK_T, TILE.RACK_B) : false));
   }
-  if (theme === 'meme') {
+  if (family === 'meme') {
     for (const [x, y] of [[bx - 2, by + 3], [bx + 6, by + 3]] as const) { b.occ[b.i(x, y)] = FREE; tryTall(x, y, TILE.ROCKET_T, TILE.ROCKET_B); }
     scatter(5, (x, y) => (clearOf(x, y, 1, 1) ? (b.setDecor(x, y, TILE.NEON), true) : false));
   }
-  if (theme === 'crypto') {
+  if (family === 'crypto') {
     for (const [x, y] of [[19, 10], [29, 10], [19, 12], [29, 12]] as const) {
       const idx = b.i(x, y); b.path[idx] = 0; b.paths[idx] = 0; b.occ[idx] = FREE; tryTall(x, y, TILE.OBELISK_T, TILE.OBELISK_B);
     }
     scatter(4, (x, y) => (clearOf(x, y - 1, 1, 2) ? tryTall(x, y, TILE.OBELISK_T, TILE.OBELISK_B) : false));
   }
-  if (theme === 'energy') {
+  if (family === 'energy') {
     scatter(3, (x, y) => {
       if (!clearOf(x, y, 2, 2)) return false;
       b.setOver(x, y, TILE.PUMP_TL); b.setOver(x + 1, y, TILE.PUMP_TR);
@@ -397,7 +424,7 @@ export function buildRouteMap(theme: RouteTheme, seed: number | string, opts: Ro
     }, 600, 5);
     scatter(6, (x, y) => (clearOf(x, y, 1, 1) ? (b.setDecor(x, y, TILE.DRUM), true) : false));
   }
-  if (theme === 'consumer') {
+  if (family === 'consumer') {
     scatter(8, (x, y) => (clearOf(x, y, 1, 1) ? (b.setDecor(x, y, TILE.CRATE), true) : false));
   }
 
@@ -406,7 +433,7 @@ export function buildRouteMap(theme: RouteTheme, seed: number | string, opts: Ro
   const addSign = (id: string, x: number, y: number, text: string[]) => {
     b.occ[b.i(x, y)] = FREE; b.setDecor(x, y, TILE.SIGN); signs.push({ id, x, y, text });
   };
-  addSign('sign_exchange', CX - 2, by + 4, ['THE EXCHANGE', 'Settle your positions and heal your BrokerMon.']);
+  addSign('sign_exchange', CX - 2, by + 4, ['THE EXCHANGE', 'Settle your positions and top up your margin.']);
   addSign('sign_route', CX + 2, by + 4, [routeName.toUpperCase(), 'Wild BrokerMon lurk in the tall grass!', 'Trainers watch the trails.']);
   addSign('sign_exit', CX + 2, h - 4, ['EXIT ROUTE', 'The gate to the south leads back to the globe.']);
   addSign('sign_trail_w', CX - 3, 23, ['WEST TRAIL', 'Tall grass ahead. Mind the trainers.']);
@@ -504,7 +531,7 @@ export function buildRouteMap(theme: RouteTheme, seed: number | string, opts: Ro
 export const INTERIOR_W = 12;
 export const INTERIOR_H = 9;
 
-export function buildExchangeInterior(theme: RouteTheme = 'bluechip', routeName = 'Route'): BuiltMap {
+export function buildExchangeInterior(theme: RouteTheme = 'sol', routeName = 'Route'): BuiltMap {
   const w = INTERIOR_W, h = INTERIOR_H;
   const b = new Builder(w, h);
   const flavour = FLAVOUR[theme];
@@ -538,8 +565,8 @@ export function buildExchangeInterior(theme: RouteTheme = 'bluechip', routeName 
     signs: [{ id: 'sign_shelf', x: 4, y: 1, text: ['A ledger of everything ever traded on ' + routeName + '.'] }],
     npcs: [
       { id: 'teller', name: 'Teller', sprite: 'npc_3', x: 5, y: 2, facing: 'down', dialog: [flavour.exchange], wander: 0, role: 'teller' },
-      { id: 'analyst', name: 'Analyst', sprite: 'npc_1', x: 2, y: 5, facing: 'right', dialog: ['Tip: hit the tap bar on PERFECT for', 'bonus damage in battle.'], wander: 0, role: 'townsfolk' },
-      { id: 'trader', name: 'Trader', sprite: 'npc_2', x: 9, y: 5, facing: 'left', dialog: ['They say the tall grass hides rare', 'BrokerMon. I just watch the ticker.'], wander: 1, role: 'townsfolk' },
+      { id: 'analyst', name: 'Analyst', sprite: 'npc_1', x: 2, y: 5, facing: 'right', dialog: ['Tip: Pump beats Leverage, Leverage', 'beats Hedge, Hedge beats Pump.'], wander: 0, role: 'townsfolk' },
+      { id: 'trader', name: 'Trader', sprite: 'npc_2', x: 9, y: 5, facing: 'left', dialog: ['They say the tall grass hides wild', 'BrokerMon. I just watch the ticker.'], wander: 1, role: 'townsfolk' },
     ],
     trainers: [],
     exits: [],

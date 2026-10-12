@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { getMove, type SeatKey, type TurnEvent } from 'game-core';
+import { typeName, type Champion, type MatchState, type Side, type TurnEvent } from '../../../lib/rules';
 import { audio } from '../audio';
 import type { DialogBox } from './dialog';
 import type { Combatant } from './types';
@@ -8,82 +8,94 @@ import { delay } from './ui';
 
 export interface TurnCtx {
   scene: Phaser.Scene;
-  combatants: Record<SeatKey, Combatant>;
+  combatants: Record<Side, Combatant>;
+  champions: [Champion, Champion];
   dialog: DialogBox;
 }
 
-const other = (k: SeatKey): SeatKey => (k === 'A' ? 'B' : 'A');
+const other = (s: Side): Side => (s === 0 ? 1 : 0);
 
 /**
- * Plays one resolved turn, event by event, awaiting each animation before the next. The server sends
- * the SAME ordered list to both players, and this is the only consumer, so both screens show an
- * identical sequence regardless of packet timing.
+ * Plays one resolved turn, event by event, awaiting each animation before the next. The event list is the
+ * only input (from the BattleSource), so a replayed or chain-delivered turn animates identically.
  */
-export async function playTurn(ctx: TurnCtx, events: TurnEvent[]): Promise<void> {
+export async function playTurn(ctx: TurnCtx, events: TurnEvent[], after: MatchState): Promise<void> {
   for (const ev of events) await playEvent(ctx, ev);
+  // snap plates to the authoritative state (also covers any event we did not animate)
+  for (const s of [0, 1] as const) {
+    void ctx.combatants[s].plate.setHp(after.fighters[s].hp, false);
+    ctx.combatants[s].plate.setFlags(after.fighters[s].charged, after.fighters[s].lastGuard);
+  }
 }
 
 async function playEvent(ctx: TurnCtx, ev: TurnEvent): Promise<void> {
   const { scene, dialog } = ctx;
-  const actor = ctx.combatants[ev.by];
-  const target = ctx.combatants[other(ev.by)];
-  const move = getMove(ev.move);
-  const lines = ev.msg.split('\n').filter(Boolean);
-  const rest = lines.slice(1);
+  const nm = (s: Side) => ctx.combatants[s].name.toUpperCase();
 
-  await dialog.say(lines[0] ?? '', { holdMs: 380 });
-
-  if (move.category === 'status') {
-    if (ev.fx === 'miss') {
-      audio.sfx('miss');
-      await dialog.say(rest[0] ?? '', { holdMs: 650 });
-      return;
-    }
-    for (const s of ev.stats ?? []) {
-      const c = ctx.combatants[s.target];
-      await fx.statArrows(scene, c, s.stages > 0);
-      c.plate.setStages(stagesAfter(c, s.stat, s.now));
-    }
-    for (const l of rest) await dialog.say(l, { holdMs: 620 });
+  if (ev.kind === 'mood') {
+    const c = ctx.combatants[ev.side];
+    c.plate.setMood(ev.mood > 0 ? 1.1 : 0.9, ev.mood > 0 ? 10 : -10);
     return;
   }
 
-  // Damaging move.
-  const from = fx.centerOf(actor), to = fx.centerOf(target);
-  if (move.type === 'Normal') { audio.sfx('miss'); await fx.lunge(scene, actor); }
-  else { await Promise.all([fx.castType(scene, move.type, from, to), delay(scene, 60)]); }
+  if (ev.kind === 'guard') {
+    const c = ctx.combatants[ev.side];
+    await dialog.say(`${nm(ev.side)} hedges its position!`, { holdMs: 300 });
+    await fx.shield(scene, c, ev.heal);
+    if (ev.heal > 0) {
+      await c.plate.setHp(ev.hp[ev.side], true);
+      await dialog.say(`+${ev.heal} margin restored.`, { holdMs: 520 });
+    } else {
+      await dialog.say('Hedged twice in a row: no refill.', { holdMs: 520 });
+    }
+    c.plate.setFlags(false, true);
+    return;
+  }
 
-  if (ev.fx === 'miss') {
+  if (ev.kind === 'charge') {
+    const c = ctx.combatants[ev.side];
+    await dialog.say(`${nm(ev.side)} piles on leverage!`, { holdMs: 300 });
+    await fx.powerUp(scene, c);
+    c.plate.setFlags(true, false);
+    await dialog.say('Next Pump hits x2. But it is exposed!', { holdMs: 560 });
+    return;
+  }
+
+  if (ev.kind === 'ko') {
+    const c = ctx.combatants[ev.side];
+    await fx.faint(scene, c);
+    await dialog.say(`${nm(ev.side)} was liquidated!`, { holdMs: 900 });
+    return;
+  }
+
+  // strike (hit or miss)
+  const actor = ctx.combatants[ev.side];
+  const target = ctx.combatants[other(ev.side)];
+  const move = ctx.champions[ev.side].moves[ev.slot];
+  await dialog.say(`${nm(ev.side)} used ${move.name.toUpperCase()}!`, { holdMs: 380 });
+  const from = fx.centerOf(actor), to = fx.centerOf(target);
+  await Promise.all([fx.castType(scene, typeName(move.type), from, to), delay(scene, 60)]);
+
+  if (ev.kind === 'miss') {
     audio.sfx('miss');
     scene.tweens.add({ targets: target.sprite, x: target.baseX + (target.ally ? -40 : 40), duration: 140, yoyo: true, ease: 'Sine.easeOut' });
-    await dialog.say(rest[0] ?? '', { holdMs: 650 });
+    await dialog.say('It missed!', { holdMs: 650 });
+    actor.plate.setFlags(false, false);
     return;
   }
 
-  // Impact.
-  audio.sfx(ev.typeMult > 1 ? 'hit_super' : ev.typeMult < 1 ? 'hit_resist' : 'hit');
-  fx.shake(scene, ev.typeMult, ev.crit);
+  const mult = ev.eff / 100;
+  audio.sfx(mult > 1 ? 'hit_super' : mult < 1 ? 'hit_resist' : 'hit');
+  fx.shake(scene, mult, ev.crit);
   fx.squash(scene, target);
-  fx.damageNumber(scene, to, ev.dmg, ev.crit, ev.typeMult);
+  fx.damageNumber(scene, to, ev.dmg, ev.crit, mult);
   if (ev.crit) fx.critBurst(scene, to);
-  const hp = target.plate.setHp(ev.hp[target.seat], true);
+  const hp = target.plate.setHp(ev.hp[target.side], true);
   await fx.hitFlash(scene, target.sprite);
   await fx.hitStop(scene, 60);
   await hp;
-  if (ev.fx === 'recoil') await actor.plate.setHp(ev.hp[actor.seat], true);
-
-  for (const l of rest) {
-    if (/fainted!$/.test(l)) await fx.faint(scene, target);
-    await dialog.say(l, { holdMs: /fainted!$/.test(l) ? 900 : 620 });
-  }
+  actor.plate.setFlags(false, false);
+  if (ev.crit) await dialog.say('A critical hit!', { holdMs: 560 });
+  if (mult > 1) await dialog.say("It's super effective!", { holdMs: 620 });
+  else if (mult < 1) await dialog.say('It was resisted...', { holdMs: 620 });
 }
-
-/** Local mirror of a combatant's stages so the plate chips stay correct between snapshots. */
-const localStages = new WeakMap<Combatant, Record<string, number>>();
-function stagesAfter(c: Combatant, stat: string, now: number) {
-  const cur = localStages.get(c) ?? { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
-  cur[stat] = now;
-  localStages.set(c, cur);
-  return cur as Record<'atk' | 'def' | 'spa' | 'spd' | 'spe', number>;
-}
-export function resetStages(c: Combatant, st: Record<string, number>) { localStages.set(c, { ...st }); }

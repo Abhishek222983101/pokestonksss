@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { SPECIES_LIST } from 'game-core';
+import { BROKERMON as SPECIES_LIST } from '../../../lib/brokermon';
 import { renderMonGrid, MON_GRID } from './mons';
 import { drawTilesetGrid, ATLAS_COLS } from './tileset';
 import { CHAR_KEYS, CHAR_W, CHAR_H, CHAR_COLS, CHAR_ROWS, drawCharSheet } from './characters';
@@ -46,7 +46,7 @@ export function artSteps(scene: Phaser.Scene): ArtStep[] {
     steps.push({ label: `Tiles ${theme}`, run: () => {
       const atlas = drawTilesetGrid(theme);
       addSheet(scene, `tiles_${theme}`, atlas, 16, 16);
-      if (theme === 'bluechip') addSheet(scene, 'tiles', atlas, 16, 16);
+      if (theme === 'sol') addSheet(scene, 'tiles', atlas, 16, 16);
       addSheet(scene, `grass_cover_${theme}`, drawGrassCoverGrid(theme), 16, 8);
     } });
   }
@@ -67,7 +67,7 @@ export function artSteps(scene: Phaser.Scene): ArtStep[] {
       addGrid(scene, `bg_battle_${theme}`, drawBattleBgGrid(theme), BG_SCALE);
       addGrid(scene, `platform_foe_${theme}`, drawPlatformGrid('foe', theme), 4);
       addGrid(scene, `platform_ally_${theme}`, drawPlatformGrid('ally', theme), 4);
-      if (theme === 'bluechip') {
+      if (theme === 'sol') {
         addGrid(scene, 'platform_foe', drawPlatformGrid('foe', theme), 4);
         addGrid(scene, 'platform_ally', drawPlatformGrid('ally', theme), 4);
       }

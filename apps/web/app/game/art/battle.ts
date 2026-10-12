@@ -1,5 +1,5 @@
 import { PixelGrid, hex, mix, lighten, darken, hash2, rgba, withAlpha, type Color } from './pixel';
-import { getTheme, type RouteTheme } from './themes';
+import { familyOf, getTheme, tintColor, tintDeep, tintOf, type Family, type RouteTheme } from './themes';
 
 /** Logical battle-backdrop resolution; upscaled x4 to the 960x640 game canvas. */
 export const BG_W = 240;
@@ -18,7 +18,7 @@ interface BgSpec {
 }
 
 const c = hex;
-const SPECS: Record<RouteTheme, BgSpec> = {
+const SPECS: Record<Family, BgSpec> = {
   bluechip: {
     sky: [c('#3f86dc'), c('#84c4f0'), c('#e0f4fa')], far: c('#6ea486'), farHi: c('#88bc98'), near: c('#4c9058'), nearHi: c('#62a66a'),
     fog: c('#dff2f0'), groundA: c('#5cb44c'), groundB: c('#52a844'), line: c('#3f8f3e'), glow: c('#fff6c8'),
@@ -65,7 +65,7 @@ function ridge(g: PixelGrid, fn: (x: number) => number, fill: Color, hi: Color) 
 
 function themeFar(theme: RouteTheme, g: PixelGrid, spec: BgSpec) {
   const rnd = (i: number, s: number) => hash2(i, s, 77);
-  switch (theme) {
+  switch (familyOf(theme)) {
     case 'bluechip': {
       ridge(g, (x) => HORIZON - 13 - Math.sin(x / 19) * 5 - Math.sin(x / 7 + 1) * 2, spec.far, spec.farHi);
       ridge(g, (x) => HORIZON - 6 - Math.sin(x / 13 + 2) * 3, spec.near, spec.nearHi);
@@ -153,7 +153,7 @@ function groundColor(theme: RouteTheme, spec: BgSpec, x: number, y: number): Col
   let col: Color = cell ? spec.groundA : spec.groundB;
   // lines alias into noise near the horizon: fade them out over the first few rows
   const lineFade = Math.max(0, Math.min(1, (t - 0.05) * 7));
-  switch (theme) {
+  switch (familyOf(theme)) {
     case 'bluechip': {
       col = (fv & 1) ? spec.groundA : spec.groundB;                 // mowing stripes
       if (hash2(x, y, 3) < 0.05) col = spec.line;
@@ -206,7 +206,7 @@ const bgCache = new Map<RouteTheme, PixelGrid>();
 export function drawBattleBgGrid(theme: RouteTheme): PixelGrid {
   const hit = bgCache.get(theme);
   if (hit) return hit;
-  const spec = SPECS[theme];
+  const spec = tintDeep(SPECS[familyOf(theme)], tintOf(theme));
   const g = new PixelGrid(BG_W, BG_H);
   for (let y = 0; y <= HORIZON; y++) for (let x = 0; x < BG_W; x++) g.set(x, y, skyColor(spec, x, y));
   if (spec.stars) {
@@ -233,14 +233,14 @@ export function drawBattleBg(theme: RouteTheme): HTMLCanvasElement {
 export type PlatformKind = 'foe' | 'ally';
 const PLATFORM_LOGICAL: Record<PlatformKind, [number, number]> = { foe: [65, 22], ally: [80, 27] };
 
-export function drawPlatformGrid(kind: PlatformKind, theme: RouteTheme = 'bluechip'): PixelGrid {
+export function drawPlatformGrid(kind: PlatformKind, theme: RouteTheme = 'sol'): PixelGrid {
   const [w, h] = PLATFORM_LOGICAL[kind];
   const g = new PixelGrid(w, h);
   const th = getTheme(theme);
-  const TOPS: Record<RouteTheme, string> = {
+  const TOPS: Record<Family, string> = {
     bluechip: '#62bc52', tech: '#5c7cae', energy: '#d8ae70', meme: '#8452c0', consumer: '#f0e8d2', crypto: '#8a6cd8',
   };
-  const top = c(TOPS[theme]);
+  const top = tintColor(c(TOPS[familyOf(theme)]), tintOf(theme));
   const topHi = lighten(top, 0.22);
   const rim = darken(mix(top, th.path.lo, 0.5), 0.25);
   const rimDeep = darken(rim, 0.35);
@@ -279,7 +279,7 @@ export function drawPlatformGrid(kind: PlatformKind, theme: RouteTheme = 'bluech
   return g;
 }
 
-export function drawPlatform(kind: PlatformKind, theme: RouteTheme = 'bluechip'): HTMLCanvasElement {
+export function drawPlatform(kind: PlatformKind, theme: RouteTheme = 'sol'): HTMLCanvasElement {
   return drawPlatformGrid(kind, theme).toCanvas(4);
 }
 
