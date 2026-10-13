@@ -13,6 +13,8 @@ Beat a BrokerMon, capture its asset as a trophy token, level up, evolve. Every m
 
 <img src="docs/media/pokestonksss-banner.png" alt="PokeStonksss: the rollup is the game server" width="92%">
 
+### ▶️ [Watch the 2 minute demo](https://pokestonksss.vercel.app/judges) · [download the .mp4](https://pokestonksss.vercel.app/demo/demo.mp4)
+
 </div>
 
 ---
