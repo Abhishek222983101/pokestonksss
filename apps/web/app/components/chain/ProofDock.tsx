@@ -98,7 +98,7 @@ export default function ProofDock({ sealedMode }: { sealedMode?: string }) {
               <div>{saved ? <A href={saved.link}>commit_trainer ({saved.ms} ms)</A> : 'Saved after the battle ends.'}</div>
             </Row>
             <Row tag="VERIFY" title="Replay it yourself" why="Re-run the whole match from the on-chain log with the same Rust rules.">
-              <div><A href={`/verify/${me.toBase58()}`}>Open the verify page</A> · <A href="/judge">Judge self-test</A></div>
+              <div><A href={`/verify/${me.toBase58()}`}>Open the verify page</A> · <A href="/selftest">Judge self-test</A></div>
             </Row>
           </ul>
         </div>

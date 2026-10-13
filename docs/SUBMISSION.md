@@ -2,7 +2,7 @@
 
 **Project name:** PokeStonksss
 **One-liner:** A crypto creature battler where MagicBlock's rollups are the game server: instant, provably fair, private when you want it, and winning pays in badge tokens.
-**Live:** https://pokestonksss.vercel.app · Judge demo: https://pokestonksss.vercel.app/?demo=1 · Self-test: https://pokestonksss.vercel.app/judge · Repo: https://github.com/Abhishek222983101/pokestonksss
+**Live:** https://pokestonksss.vercel.app · Judge demo: https://pokestonksss.vercel.app/?demo=1 · Self-test: https://pokestonksss.vercel.app/selftest · Repo: https://github.com/Abhishek222983101/pokestonksss
 **Program (devnet):** FRxAb7Nw1GFyLkV7KN7fitTztiZuJ1y1oNEmcW3mHM1M · **Categories:** Games, Privacy, Consumer · **Evidence:** docs/PROOFS.md
 
 **Description (MagicBlock Blitz):**

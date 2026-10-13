@@ -25,7 +25,7 @@ Beat a BrokerMon, capture its asset as a trophy token, level up, evolve. Every m
 |---|---|---|
 | **0. Watch** | [**Demo video + download** on the judges page](https://pokestonksss.vercel.app/judges) | The whole project in 2 to 3 minutes |
 | **1. Play** | [**pokestonksss.vercel.app/?demo=1**](https://pokestonksss.vercel.app/?demo=1) | Guest in one click, walk into grass, beat the demo opponent in 2 to 4 turns. Level up, trophy token, badge |
-| **2. Prove the Private ER** | [**/judge** > *Run Private ER self-test*](https://pokestonksss.vercel.app/judge) | A full sealed duel inside the TEE in ~30 s. Four **peek proofs** show the opponent, a stranger and an anonymous visitor all read `null`. Every roll recomputed, result replayed from Solana |
+| **2. Prove the Private ER** | [**/selftest** > *Run Private ER self-test*](https://pokestonksss.vercel.app/selftest) | A full sealed duel inside the TEE in ~30 s. Four **peek proofs** show the opponent, a stranger and an anonymous visitor all read `null`. Every roll recomputed, result replayed from Solana |
 | **3. Two browsers** | [Judges page, section 3](https://pokestonksss.vercel.app/judges) | Duel yourself from two windows. Press **Proof > Peek at my opponent** mid-match |
 | **4. Every claim, with evidence** | [`docs/PROOFS.md`](docs/PROOFS.md) | Claim, how to verify it by hand, and the automated test that checks it |
 
@@ -91,13 +91,13 @@ sequenceDiagram
 
 | Guarantee | How it is enforced | Check it |
 |---|---|---|
-| Nobody can read a pick | EphemeralPermission with one member, enforced by the TEE. `s_lock` also refuses to run unless the permission is private and lists only the caller | Peek proofs on [/judge](https://pokestonksss.vercel.app/judge): own pick readable, opponent / stranger / anonymous get `null` |
+| Nobody can read a pick | EphemeralPermission with one member, enforced by the TEE. `s_lock` also refuses to run unless the permission is private and lists only the caller | Peek proofs on [/selftest](https://pokestonksss.vercel.app/selftest): own pick readable, opponent / stranger / anonymous get `null` |
 | Nobody can predict or steer a roll | Roll mixes a MagicBlock VRF seed (written before the duel went private) with both players' sealed nonces | `/verify/sealed/<match key>` recomputes every roll |
 | Nobody can probe the outcome by simulating | `s_resolve` requires a later slot than the last lock, so `simulate([lock(X), resolve])` is impossible | [`sealed.rs`](programs/pokestonksss/src/sealed.rs) `resolve` |
 | The result is final and public | `s_finish` commits and undelegates; the finished account is owned by our program on Solana with the full turn log | Explorer link on the last row of the self-test |
 | Rules are the same everywhere | One integer Rust rules crate runs in the program, the browser (WASM) and the replay verifier | `crates/duel-rules`, 64 tests |
 
-Measured on devnet: invite to live private duel in **about 7 s**, then **about 1 s per sealed turn**. A one-click run of the whole thing is on [/judge](https://pokestonksss.vercel.app/judge).
+Measured on devnet: invite to live private duel in **about 7 s**, then **about 1 s per sealed turn**. A one-click run of the whole thing is on [/selftest](https://pokestonksss.vercel.app/selftest).
 
 <table>
 <tr>
@@ -118,7 +118,7 @@ Measured on devnet: invite to live private duel in **about 7 s**, then **about 1
 | **Session keys** | Wallet approves once (create + delegate + session key in one tx), then a session key signs every move | Connect wallet, then **Proof > SESSION** |
 | **Crank** | A scheduled task settles a duel a player abandoned | Rollup duel > **Proof > CRANK** |
 | **Commit to Solana** | Rating, XP and trophies are committed from the rollup, then minted as SPL tokens | **Proof > SAVED**, **Rewards** panel |
-| **Private ER (TEE)** | Sealed picks, section above | [/judge](https://pokestonksss.vercel.app/judge) |
+| **Private ER (TEE)** | Sealed picks, section above | [/selftest](https://pokestonksss.vercel.app/selftest) |
 
 ## Rewards: "fight for the asset, capture it"
 

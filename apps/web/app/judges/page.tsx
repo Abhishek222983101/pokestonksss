@@ -54,7 +54,7 @@ export default function JudgesPage() {
         <h2 className="font-pixel t-10 mb-2">2. Quick start (30 seconds, one click)</h2>
         <ul className="space-y-2 text-sm">
           <li><Link className="btn btn-sm" href="/?demo=1">Play the judge demo</Link> You face a Dummy House Agent that never attacks, so any attack wins in 2 to 4 turns and you see the whole flow end to end.</li>
-          <li><Link className="btn btn-sm btn-secondary" href="/judge">Run the self-tests</Link> Two buttons: a real practice battle, and a full <b>Private ER</b> sealed duel with the privacy proofs. Every row links to the explorer.</li>
+          <li><Link className="btn btn-sm btn-secondary" href="/selftest">Run the self-tests</Link> Two buttons: a real practice battle, and a full <b>Private ER</b> sealed duel with the privacy proofs. Every row links to the explorer.</li>
         </ul>
       </Panel>
 
@@ -63,7 +63,7 @@ export default function JudgesPage() {
         <p className="text-sm mb-2">The idea: in a 1v1 duel both players pick a move at the same time. On a normal chain the second player can read the first player&apos;s pick. Here each pick is written into an account that only its owner&apos;s one-time key can read, inside a MagicBlock <b>Private Ephemeral Rollup (Intel TDX)</b>.</p>
         <p className="text-sm font-medium mb-1">Fastest: one click, one browser</p>
         <ol className="space-y-3 mb-4">
-          <Step n="a" title={<>Open <A href="/judge">/judge</A> and press <b>Run Private ER self-test</b></>} proves="the whole Private ER pipeline works from a browser in about 30 seconds">
+          <Step n="a" title={<>Open <A href="/selftest">/selftest</A> and press <b>Run Private ER self-test</b></>} proves="the whole Private ER pipeline works from a browser in about 30 seconds">
             <p>It creates two throwaway match keys and plays a full duel. Watch the rows turn green.</p>
           </Step>
           <Step n="b" title="Read the four Peek proof rows" proves="privacy is enforced by the rollup, not by our UI">
